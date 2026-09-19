@@ -158,47 +158,39 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
+import { useTreesStore } from '@/stores/trees'
 
 const router = useRouter()
 const toast = useToast()
+const treesStore = useTreesStore()
 
+const loading = ref(false)
 const filters = ref({
   search: '',
   sortBy: 'date'
 })
 
-const trees = ref([
-  {
-    id: 1,
-    name: 'Smith Family Tree',
-    description: 'The Smith family history from 1800 to present',
-    memberCount: 45,
-    lastUpdated: '2024-02-20T10:30:00Z',
-    thumbnail: null
-  },
-  {
-    id: 2,
-    name: 'Johnson Family Tree',
-    description: 'Johnson family genealogy and history',
-    memberCount: 32,
-    lastUpdated: '2024-02-19T15:45:00Z',
-    thumbnail: null
-  },
-  {
-    id: 3,
-    name: 'Williams Family Tree',
-    description: 'Williams family records and stories',
-    memberCount: 28,
-    lastUpdated: '2024-02-18T09:15:00Z',
-    thumbnail: null
+onMounted(async () => {
+  loading.value = true
+  try {
+    await treesStore.getTrees()
+  } catch (error) {
+    console.error('Failed to load trees:', error)
+  } finally {
+    loading.value = false
   }
-])
+})
 
 const filteredTrees = computed(() => {
-  let result = [...trees.value]
+  let result = (treesStore.trees || []).map(tree => ({
+    ...tree,
+    memberCount: tree.members || (tree.people ? tree.people.length : 0),
+    lastUpdated: tree.updated_at || tree.created_at || new Date().toISOString(),
+    thumbnail: tree.thumbnail || '/images/default-hero.svg'
+  }))
 
   // Apply search filter
   if (filters.value.search) {
@@ -206,7 +198,7 @@ const filteredTrees = computed(() => {
     result = result.filter(
       tree =>
         tree.name.toLowerCase().includes(searchLower) ||
-        tree.description.toLowerCase().includes(searchLower)
+        (tree.description && tree.description.toLowerCase().includes(searchLower))
     )
   }
 
@@ -216,7 +208,7 @@ const filteredTrees = computed(() => {
       case 'name':
         return a.name.localeCompare(b.name)
       case 'size':
-        return b.memberCount - a.memberCount
+        return (b.memberCount || 0) - (a.memberCount || 0)
       case 'date':
       default:
         return new Date(b.lastUpdated) - new Date(a.lastUpdated)
@@ -226,8 +218,14 @@ const filteredTrees = computed(() => {
   return result
 })
 
-const openTreeMenu = (tree) => {
-  // TODO: Implement tree menu with options like edit, share, delete
-  console.log('Open menu for tree:', tree)
+const openTreeMenu = async (tree) => {
+  if (confirm(`Do you want to delete "${tree.name}"?`)) {
+    try {
+      await treesStore.deleteTree(tree.id)
+      toast.success('Tree deleted')
+    } catch (e) {
+      toast.error('Failed to delete tree')
+    }
+  }
 }
 </script> 

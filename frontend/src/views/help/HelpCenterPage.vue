@@ -1,84 +1,155 @@
 <template>
-  <div class="min-h-screen bg-gray-50 py-8">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <!-- Header -->
-      <div class="text-center mb-12">
-        <h1 class="text-3xl font-extrabold text-gray-900 sm:text-4xl">
-          Help Center
+  <div class="app-page-shell py-8 px-4 sm:px-6 lg:px-8 font-sans transition-colors duration-300">
+    <div class="max-w-6xl mx-auto">
+      <!-- Royal Help Header Banner -->
+      <div class="mb-10 text-center max-w-2xl mx-auto">
+        <div
+          class="w-16 h-16 mx-auto mb-4 rounded-2xl border-2 border-[#C5A059] p-1 flex items-center justify-center shadow-xl"
+          :class="isLight ? 'bg-amber-50 shadow-amber-900/10' : 'bg-[#0B0C0E] shadow-black/80'"
+        >
+          <img src="/logo.png" alt="Kkevo Logo" class="w-full h-full object-contain" />
+        </div>
+        <h1
+          class="text-3xl sm:text-4xl font-serif font-black tracking-wider uppercase"
+          :class="isLight ? 'text-stone-900' : 'text-transparent bg-clip-text bg-gradient-to-r from-[#F3E5AB] via-[#D4AF37] to-[#C5A059]'"
+        >
+          Kkevo Family Guide & Help
         </h1>
-        <p class="mt-4 text-lg text-gray-500">
-          Find the help you need to make the most of your family tree
+        <p class="mt-2 text-sm" :class="isLight ? 'text-stone-600' : 'text-stone-400'">
+          Learn how to explore our pedigree, add relatives with 1 click, and preserve our oral history
         </p>
-      </div>
 
-      <!-- Search -->
-      <div class="max-w-2xl mx-auto mb-12">
-        <div class="relative">
+        <!-- Search Bar -->
+        <div class="mt-6 relative max-w-lg mx-auto">
           <input
-            type="text"
             v-model="searchQuery"
-            placeholder="Search help topics..."
-            class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            type="text"
+            placeholder="Search guides, adding relatives, privacy..."
+            class="w-full pl-10 pr-4 py-3 rounded-xl text-sm shadow-lg transition-colors focus:outline-none focus:ring-1 focus:ring-[#D4AF37]"
+            :class="isLight ? 'bg-white border-2 border-stone-200 text-stone-900 placeholder-stone-400' : 'bg-[#16181F] border border-[#C5A059]/40 text-stone-100 placeholder-stone-500'"
           />
-          <div class="absolute inset-y-0 right-0 flex items-center pr-3">
-            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </div>
+          <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm" :class="isLight ? 'text-stone-400' : 'text-stone-500'">🔍</span>
         </div>
       </div>
 
-      <!-- Quick Links -->
-      <div class="mb-12">
-        <h2 class="text-xl font-bold text-gray-900 mb-6">Quick Links</h2>
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <router-link
-            v-for="link in quickLinks"
-            :key="link.title"
-            :to="link.to"
-            class="flex items-center p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow"
+      <!-- Quick Action Cards -->
+      <div class="mb-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <router-link
+          to="/tree"
+          class="p-5 rounded-2xl border transition-all shadow-lg group flex flex-col justify-between"
+          :class="isLight ? 'bg-white border-[#C5A059]/35 hover:border-[#C5A059] shadow-amber-900/5' : 'bg-[#16181F] border-[#C5A059]/30 hover:border-[#D4AF37] shadow-black/60'"
+        >
+          <div>
+            <div class="text-3xl mb-3">🌳</div>
+            <h3 class="font-serif font-bold text-sm" :class="isLight ? 'text-stone-900 group-hover:text-[#996515]' : 'text-[#F3E5AB] group-hover:text-white'">Interactive Tree</h3>
+            <p class="text-xs mt-1" :class="isLight ? 'text-stone-600' : 'text-stone-400'">Navigate family pedigree, view ancestral connections.</p>
+          </div>
+          <div class="text-[11px] font-bold mt-4 flex items-center gap-1" :class="isLight ? 'text-[#855B14]' : 'text-[#D4AF37]'">
+            <span>Explore Tree</span>
+            <span>&rarr;</span>
+          </div>
+        </router-link>
+
+        <router-link
+          to="/people"
+          class="p-5 rounded-2xl border transition-all shadow-lg group flex flex-col justify-between"
+          :class="isLight ? 'bg-white border-[#C5A059]/35 hover:border-[#C5A059] shadow-amber-900/5' : 'bg-[#16181F] border-[#C5A059]/30 hover:border-[#D4AF37] shadow-black/60'"
+        >
+          <div>
+            <div class="text-3xl mb-3">👥</div>
+            <h3 class="font-serif font-bold text-sm" :class="isLight ? 'text-stone-900 group-hover:text-[#996515]' : 'text-[#F3E5AB] group-hover:text-white'">Family Directory</h3>
+            <p class="text-xs mt-1" :class="isLight ? 'text-stone-600' : 'text-stone-400'">Search clan members by name, generation, or village.</p>
+          </div>
+          <div class="text-[11px] font-bold mt-4 flex items-center gap-1" :class="isLight ? 'text-[#855B14]' : 'text-[#D4AF37]'">
+            <span>Find Members</span>
+            <span>&rarr;</span>
+          </div>
+        </router-link>
+
+        <router-link
+          to="/media"
+          class="p-5 rounded-2xl border transition-all shadow-lg group flex flex-col justify-between"
+          :class="isLight ? 'bg-white border-[#C5A059]/35 hover:border-[#C5A059] shadow-amber-900/5' : 'bg-[#16181F] border-[#C5A059]/30 hover:border-[#D4AF37] shadow-black/60'"
+        >
+          <div>
+            <div class="text-3xl mb-3">📸</div>
+            <h3 class="font-serif font-bold text-sm" :class="isLight ? 'text-stone-900 group-hover:text-[#996515]' : 'text-[#F3E5AB] group-hover:text-white'">Photos & Stories</h3>
+            <p class="text-xs mt-1" :class="isLight ? 'text-stone-600' : 'text-stone-400'">Safeguard treasured photos, ceremonies, and recordings.</p>
+          </div>
+          <div class="text-[11px] font-bold mt-4 flex items-center gap-1" :class="isLight ? 'text-[#855B14]' : 'text-[#D4AF37]'">
+            <span>Open Vault</span>
+            <span>&rarr;</span>
+          </div>
+        </router-link>
+
+        <router-link
+          to="/settings"
+          class="p-5 rounded-2xl border transition-all shadow-lg group flex flex-col justify-between"
+          :class="isLight ? 'bg-white border-[#C5A059]/35 hover:border-[#C5A059] shadow-amber-900/5' : 'bg-[#16181F] border-[#C5A059]/30 hover:border-[#D4AF37] shadow-black/60'"
+        >
+          <div>
+            <div class="text-3xl mb-3">🛡️</div>
+            <h3 class="font-serif font-bold text-sm" :class="isLight ? 'text-stone-900 group-hover:text-[#996515]' : 'text-[#F3E5AB] group-hover:text-white'">Privacy Controls</h3>
+            <p class="text-xs mt-1" :class="isLight ? 'text-stone-600' : 'text-stone-400'">Control your branch visibility and profile security.</p>
+          </div>
+          <div class="text-[11px] font-bold mt-4 flex items-center gap-1" :class="isLight ? 'text-[#855B14]' : 'text-[#D4AF37]'">
+            <span>Edit Settings</span>
+            <span>&rarr;</span>
+          </div>
+        </router-link>
+      </div>
+
+      <!-- FAQ & Step-by-Step Guidance -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div
+          v-for="guide in filteredGuides"
+          :key="guide.title"
+          class="p-6 rounded-2xl border shadow-xl transition-colors"
+          :class="isLight ? 'bg-white border-[#C5A059]/35 text-stone-900 shadow-amber-900/5' : 'bg-[#16181F] border-[#C5A059]/30 text-stone-100 shadow-black/80'"
+        >
+          <div class="flex items-center gap-3 mb-4">
+            <span class="text-2xl">{{ guide.icon }}</span>
+            <h3 class="font-serif font-bold text-lg" :class="isLight ? 'text-stone-900' : 'text-[#F3E5AB]'">{{ guide.title }}</h3>
+          </div>
+          <p class="text-xs leading-relaxed mb-4" :class="isLight ? 'text-stone-700' : 'text-stone-300'">
+            {{ guide.summary }}
+          </p>
+          <ol
+            class="space-y-2 text-xs list-decimal list-inside border-t pt-3"
+            :class="isLight ? 'border-stone-200 text-stone-600' : 'border-[#C5A059]/20 text-stone-400'"
           >
-            <div class="flex-shrink-0">
-              <component :is="link.icon" class="h-6 w-6 text-indigo-600" />
-            </div>
-            <div class="ml-4">
-              <h3 class="text-sm font-medium text-gray-900">{{ link.title }}</h3>
-              <p class="text-sm text-gray-500">{{ link.description }}</p>
-            </div>
+            <li v-for="(step, sIdx) in guide.steps" :key="sIdx">
+              <span class="font-semibold" :class="isLight ? 'text-stone-900' : 'text-stone-200'">{{ step.title }}:</span>
+              {{ step.desc }}
+            </li>
+          </ol>
+        </div>
+      </div>
+
+      <!-- Need Direct Support -->
+      <div
+        class="mt-12 text-center p-8 rounded-2xl border transition-colors"
+        :class="isLight ? 'bg-gradient-to-br from-white to-[#FAF6ED] border-[#C5A059]/40 text-stone-900 shadow-md' : 'bg-[#14151B] border-[#C5A059]/30 text-stone-100'"
+      >
+        <h3 class="text-xl font-serif font-bold" :class="isLight ? 'text-stone-900' : 'text-[#F3E5AB]'">Have Questions About Your Branch?</h3>
+        <p class="text-xs mt-2 max-w-md mx-auto leading-relaxed" :class="isLight ? 'text-stone-600' : 'text-stone-400'">
+          The Kkevo family lineage council is here to assist with historical dates, clan verification, and oral genealogy records.
+        </p>
+        <div class="mt-6 flex justify-center gap-4">
+          <router-link
+            to="/help/contact"
+            class="px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider text-black bg-gradient-to-r from-[#B8860B] via-[#D4AF37] to-[#C5A059] hover:brightness-110 shadow-md transition-all"
+          >
+            Contact Family Support
+          </router-link>
+          <router-link
+            to="/tree"
+            :class="['px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider border transition-all',
+              isLight ? 'bg-white hover:bg-stone-50 border-[#C5A059] text-stone-800' : 'bg-[#1F2128] hover:bg-[#282B33] border-[#C5A059]/40 text-[#F3E5AB]']"
+          >
+            Return to Tree View
           </router-link>
         </div>
-      </div>
-
-      <!-- Help Categories -->
-      <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
-        <div v-for="category in filteredCategories" :key="category.title" class="bg-white rounded-lg shadow-lg p-6">
-          <div class="flex items-center mb-4">
-            <component :is="category.icon" class="h-6 w-6 text-indigo-600" />
-            <h2 class="ml-3 text-xl font-bold text-gray-900">{{ category.title }}</h2>
-          </div>
-          <div class="space-y-4">
-            <router-link
-              v-for="topic in category.topics"
-              :key="topic.title"
-              :to="topic.to"
-              class="block p-4 rounded-lg hover:bg-gray-50"
-            >
-              <h3 class="text-lg font-medium text-gray-900">{{ topic.title }}</h3>
-              <p class="mt-1 text-sm text-gray-500">{{ topic.description }}</p>
-            </router-link>
-          </div>
-        </div>
-      </div>
-
-      <!-- Contact Support -->
-      <div class="mt-12 text-center">
-        <p class="text-gray-600 mb-4">Need more help?</p>
-        <router-link
-          to="/help/contact"
-          class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
-        >
-          Contact Support
-        </router-link>
       </div>
     </div>
   </div>
@@ -86,147 +157,64 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import {
-  HomeIcon,
-  UserGroupIcon,
-  PhotoIcon,
-  CogIcon,
-  ShieldCheckIcon,
-  QuestionMarkCircleIcon,
-  BookOpenIcon,
-  VideoCameraIcon,
-  ChatBubbleLeftRightIcon,
-  DocumentTextIcon,
-  UserCircleIcon,
-  ChartBarIcon
-} from '@heroicons/vue/24/outline'
+import { useThemeStore } from '@/stores/theme'
+
+const themeStore = useThemeStore()
+const isLight = computed(() => themeStore.isLight)
 
 const searchQuery = ref('')
 
-const quickLinks = [
+const guides = [
   {
-    title: 'Getting Started',
-    description: 'Learn the basics',
-    to: '/help/getting-started',
-    icon: HomeIcon
-  },
-  {
-    title: 'FAQ',
-    description: 'Common questions',
-    to: '/help/faq',
-    icon: QuestionMarkCircleIcon
-  },
-  {
-    title: 'User Guide',
-    description: 'Detailed documentation',
-    to: '/help/guide',
-    icon: BookOpenIcon
-  },
-  {
-    title: 'Video Tutorials',
-    description: 'Watch and learn',
-    to: '/help/tutorials',
-    icon: VideoCameraIcon
-  }
-]
-
-const categories = [
-  {
-    title: 'Family Tree Basics',
-    icon: UserGroupIcon,
-    topics: [
-      {
-        title: 'Creating Your First Tree',
-        description: 'Learn how to start building your family tree',
-        to: '/help/creating-tree'
-      },
-      {
-        title: 'Adding Family Members',
-        description: 'Add and manage people in your tree',
-        to: '/help/adding-members'
-      },
-      {
-        title: 'Managing Relationships',
-        description: 'Define and edit family relationships',
-        to: '/help/relationships'
-      }
+    icon: '⚡',
+    title: 'How to Add a Relative with 1 Click',
+    summary: 'Anyone can build the family tree easily without complex forms.',
+    steps: [
+      { title: 'Locate Person', desc: 'Click any person card on the Tree view or in the Family Directory.' },
+      { title: 'Click Quick Add', desc: 'Tap the prominent "Add Relative" button.' },
+      { title: 'Select Relationship', desc: 'Choose Child, Wife / Husband, Father, or Mother.' },
+      { title: 'Enter Name', desc: 'Type their name and click "Add to Family Tree" to link them instantly!' }
     ]
   },
   {
-    title: 'Media & Photos',
-    icon: PhotoIcon,
-    topics: [
-      {
-        title: 'Uploading Photos',
-        description: 'Add photos to your family tree',
-        to: '/help/uploading-photos'
-      },
-      {
-        title: 'Organizing Media',
-        description: 'Create albums and organize your media',
-        to: '/help/organizing-media'
-      },
-      {
-        title: 'Photo Editing',
-        description: 'Edit and enhance your photos',
-        to: '/help/photo-editing'
-      }
+    icon: '🔍',
+    title: 'Searching Village & Clan Origins',
+    summary: 'Trace lineage back to ancestral homelands and village settlements.',
+    steps: [
+      { title: 'Open Directory', desc: 'Click "Family Members" in the top navigation.' },
+      { title: 'Filter by Village', desc: 'Use the village search input to find all kin hailing from Bafoussam, Yaoundé, Douala, or the diaspora.' },
+      { title: 'Inspect Details', desc: 'Click any person card to view their generational depth and direct parents.' }
     ]
   },
   {
-    title: 'Privacy & Security',
-    icon: ShieldCheckIcon,
-    topics: [
-      {
-        title: 'Privacy Settings',
-        description: 'Control who can see your tree',
-        to: '/help/privacy-settings'
-      },
-      {
-        title: 'Data Protection',
-        description: 'How we protect your information',
-        to: '/help/data-protection'
-      },
-      {
-        title: 'Account Security',
-        description: 'Keep your account secure',
-        to: '/help/account-security'
-      }
+    icon: '📸',
+    title: 'Preserving Oral Histories & Photos',
+    summary: 'Safeguard memories for children and great-grandchildren.',
+    steps: [
+      { title: 'Visit Vault', desc: 'Navigate to "Photos & Stories" from the top menu.' },
+      { title: 'Upload Artifact', desc: 'Click "Upload Memory" and choose your photo, ceremony video, or voice recording.' },
+      { title: 'Add Cultural Context', desc: 'Add notes about who was present, the year, and the occasion.' }
     ]
   },
   {
-    title: 'Advanced Features',
-    icon: CogIcon,
-    topics: [
-      {
-        title: 'Tree Statistics',
-        description: 'View insights about your tree',
-        to: '/help/tree-statistics'
-      },
-      {
-        title: 'Collaboration',
-        description: 'Work together with family members',
-        to: '/help/collaboration'
-      },
-      {
-        title: 'Import/Export',
-        description: 'Transfer your tree data',
-        to: '/help/import-export'
-      }
+    icon: '👑',
+    title: 'Royal Titles & Elder Honors',
+    summary: 'Recognizing traditional titles and patriarchal / matriarchal lineage.',
+    steps: [
+      { title: 'Elder Profiles', desc: 'Elders are adorned with royal crest insignia on the pedigree tree.' },
+      { title: 'Direct Lineage', desc: 'Solid antique gold lines indicate direct lineage continuity.' },
+      { title: 'Preservation', desc: 'All ancestral entries are safeguarded in the central Kkevo registry.' }
     ]
   }
 ]
 
-const filteredCategories = computed(() => {
-  const query = searchQuery.value.toLowerCase()
-  if (!query) return categories
-
-  return categories.map(category => ({
-    ...category,
-    topics: category.topics.filter(topic =>
-      topic.title.toLowerCase().includes(query) ||
-      topic.description.toLowerCase().includes(query)
-    )
-  })).filter(category => category.topics.length > 0)
+const filteredGuides = computed(() => {
+  const q = searchQuery.value.toLowerCase().trim()
+  if (!q) return guides
+  return guides.filter(g =>
+    g.title.toLowerCase().includes(q) ||
+    g.summary.toLowerCase().includes(q) ||
+    g.steps.some(s => s.title.toLowerCase().includes(q) || s.desc.toLowerCase().includes(q))
+  )
 })
-</script> 
+</script>

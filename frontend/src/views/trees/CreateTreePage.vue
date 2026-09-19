@@ -281,6 +281,7 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
+import api from '@/services/api'
 
 const router = useRouter()
 const toast = useToast()
@@ -369,31 +370,19 @@ const createTree = async () => {
 
   isLoading.value = true
   try {
-    // TODO: Implement actual API call
-    const formData = new FormData()
-    formData.append('name', form.name)
-    formData.append('description', form.description)
-    formData.append('privacy', form.privacy)
-    formData.append('startingPerson', JSON.stringify(form.startingPerson))
-    
-    if (form.importFile) {
-      formData.append('importFile', form.importFile)
+    const payload = {
+      name: form.name,
+      description: form.description,
+      is_public: form.privacy === 'public',
+      startingPerson: form.startingPerson
     }
 
-    const response = await fetch('/api/trees/', {
-      method: 'POST',
-      body: formData
-    })
-
-    if (!response.ok) {
-      throw new Error('Failed to create tree')
-    }
-
-    const data = await response.json()
+    const response = await api.post('/trees/', payload)
+    const data = response.data
     toast.success('Family tree created successfully!')
     router.push(`/trees/${data.id}`)
   } catch (error) {
-    toast.error(error.message || 'Failed to create family tree')
+    toast.error(error.response?.data?.detail || error.message || 'Failed to create family tree')
   } finally {
     isLoading.value = false
   }

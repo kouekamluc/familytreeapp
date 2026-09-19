@@ -79,72 +79,121 @@
                 <!-- Relationships -->
                 <div class="mt-6 bg-white shadow rounded-lg">
                   <div class="px-4 py-5 sm:p-6">
-                    <h3 class="text-lg font-medium leading-6 text-gray-900">Relationships</h3>
-                    <div class="mt-6">
+                    <div class="flex justify-between items-center mb-4">
+                      <div>
+                        <h3 class="text-lg font-medium leading-6 text-gray-900">Relationships</h3>
+                        <p class="text-xs text-gray-500 mt-0.5">Direct 1-click relative addition to this profile</p>
+                      </div>
+                      <div class="flex gap-2">
+                        <button
+                          type="button"
+                          @click="openAddRelative('child')"
+                          class="inline-flex items-center px-2.5 py-1.5 border border-indigo-200 text-xs font-semibold rounded-md text-indigo-700 bg-indigo-50 hover:bg-indigo-100"
+                        >
+                          👶 + Child
+                        </button>
+                        <button
+                          type="button"
+                          @click="openAddRelative('spouse')"
+                          class="inline-flex items-center px-2.5 py-1.5 border border-pink-200 text-xs font-semibold rounded-md text-pink-700 bg-pink-50 hover:bg-pink-100"
+                        >
+                          💍 + Spouse
+                        </button>
+                      </div>
+                    </div>
+                    <div class="mt-4 border-t border-gray-100 pt-4">
                       <div class="space-y-6">
                         <!-- Parents -->
                         <div>
-                          <h4 class="text-sm font-medium text-gray-500">Parents</h4>
+                          <div class="flex justify-between items-center mb-2">
+                            <h4 class="text-sm font-semibold text-gray-700">Parents</h4>
+                            <div class="flex gap-1.5">
+                              <button
+                                type="button"
+                                @click="openAddRelative('father')"
+                                class="text-xs text-indigo-600 hover:text-indigo-800 font-semibold bg-gray-50 px-2 py-0.5 border border-indigo-200 rounded hover:bg-indigo-50"
+                              >
+                                + Add Father
+                              </button>
+                              <button
+                                type="button"
+                                @click="openAddRelative('mother')"
+                                class="text-xs text-indigo-600 hover:text-indigo-800 font-semibold bg-gray-50 px-2 py-0.5 border border-indigo-200 rounded hover:bg-indigo-50"
+                              >
+                                + Add Mother
+                              </button>
+                            </div>
+                          </div>
                           <div class="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                            <div v-for="parent in personStore.currentPerson?.parents" :key="parent.id" class="relative rounded-lg border border-gray-300 bg-white px-6 py-5 shadow-sm flex items-center space-x-3 hover:border-gray-400">
+                            <div v-for="parent in (personStore.currentPerson?.parents || [])" :key="parent.id" class="relative rounded-lg border border-gray-300 bg-white px-6 py-4 shadow-sm flex items-center space-x-3 hover:border-gray-400">
                               <div class="flex-1 min-w-0">
                                 <router-link :to="`/people/${parent.id}`" class="focus:outline-none">
                                   <span class="absolute inset-0" aria-hidden="true"></span>
-                                  <p class="text-sm font-medium text-gray-900">{{ parent.firstName }} {{ parent.lastName }}</p>
-                                  <p class="text-sm text-gray-500">{{ parent.relationship }}</p>
+                                  <p class="text-sm font-bold text-gray-900">{{ parent.firstName || parent.first_name }} {{ parent.lastName || parent.last_name }}</p>
+                                  <p class="text-xs text-gray-500">{{ parent.gender === 'M' ? 'Father' : (parent.gender === 'F' ? 'Mother' : 'Parent') }}</p>
                                 </router-link>
                               </div>
                             </div>
-                          </div>
-                        </div>
-
-                        <!-- Siblings -->
-                        <div>
-                          <h4 class="text-sm font-medium text-gray-500">Siblings</h4>
-                          <div class="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                            <div v-for="sibling in personStore.currentPerson?.siblings" :key="sibling.id" class="relative rounded-lg border border-gray-300 bg-white px-6 py-5 shadow-sm flex items-center space-x-3 hover:border-gray-400">
-                              <div class="flex-1 min-w-0">
-                                <router-link :to="`/people/${sibling.id}`" class="focus:outline-none">
-                                  <span class="absolute inset-0" aria-hidden="true"></span>
-                                  <p class="text-sm font-medium text-gray-900">{{ sibling.firstName }} {{ sibling.lastName }}</p>
-                                  <p class="text-sm text-gray-500">{{ sibling.relationship }}</p>
-                                </router-link>
-                              </div>
+                            <div v-if="!personStore.currentPerson?.parents?.length" class="text-xs text-gray-400 italic py-2">
+                              No parents recorded yet.
                             </div>
                           </div>
                         </div>
 
                         <!-- Spouse -->
                         <div>
-                          <h4 class="text-sm font-medium text-gray-500">Spouse</h4>
+                          <div class="flex justify-between items-center mb-2">
+                            <h4 class="text-sm font-semibold text-gray-700">Spouse / Wife</h4>
+                            <button
+                              type="button"
+                              @click="openAddRelative('spouse')"
+                              class="text-xs text-pink-600 hover:text-pink-800 font-semibold bg-gray-50 px-2.5 py-0.5 border border-pink-200 rounded hover:bg-pink-50"
+                            >
+                              + Add Spouse / Wife
+                            </button>
+                          </div>
                           <div class="mt-2">
-                            <div v-if="personStore.currentPerson?.spouse" class="relative rounded-lg border border-gray-300 bg-white px-6 py-5 shadow-sm flex items-center space-x-3 hover:border-gray-400">
+                            <div v-for="sp in (personStore.currentPerson?.spouses || (personStore.currentPerson?.spouse ? [personStore.currentPerson.spouse] : []))" :key="sp.id" class="relative rounded-lg border border-gray-300 bg-white px-6 py-4 shadow-sm flex items-center space-x-3 hover:border-gray-400 mb-2">
                               <div class="flex-1 min-w-0">
-                                <router-link :to="`/people/${personStore.currentPerson.spouse.id}`" class="focus:outline-none">
+                                <router-link :to="`/people/${sp.id}`" class="focus:outline-none">
                                   <span class="absolute inset-0" aria-hidden="true"></span>
-                                  <p class="text-sm font-medium text-gray-900">
-                                    {{ personStore.currentPerson.spouse.firstName }} {{ personStore.currentPerson.spouse.lastName }}
+                                  <p class="text-sm font-bold text-gray-900">
+                                    {{ sp.firstName || sp.first_name }} {{ sp.lastName || sp.last_name }}
                                   </p>
-                                  <p class="text-sm text-gray-500">Married {{ formatDate(personStore.currentPerson.spouse.marriageDate) }}</p>
+                                  <p class="text-xs text-gray-500">Spouse</p>
                                 </router-link>
                               </div>
                             </div>
-                            <div v-else class="text-sm text-gray-500">No spouse information available</div>
+                            <div v-if="!personStore.currentPerson?.spouses?.length && !personStore.currentPerson?.spouse" class="text-xs text-gray-400 italic py-2">
+                              No spouse recorded yet.
+                            </div>
                           </div>
                         </div>
 
                         <!-- Children -->
                         <div>
-                          <h4 class="text-sm font-medium text-gray-500">Children</h4>
+                          <div class="flex justify-between items-center mb-2">
+                            <h4 class="text-sm font-semibold text-gray-700">Children</h4>
+                            <button
+                              type="button"
+                              @click="openAddRelative('child')"
+                              class="text-xs text-indigo-600 hover:text-indigo-800 font-semibold bg-gray-50 px-2.5 py-0.5 border border-indigo-200 rounded hover:bg-indigo-50"
+                            >
+                              + Add Child
+                            </button>
+                          </div>
                           <div class="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                            <div v-for="child in personStore.currentPerson?.children" :key="child.id" class="relative rounded-lg border border-gray-300 bg-white px-6 py-5 shadow-sm flex items-center space-x-3 hover:border-gray-400">
+                            <div v-for="child in (personStore.currentPerson?.children || [])" :key="child.id" class="relative rounded-lg border border-gray-300 bg-white px-6 py-4 shadow-sm flex items-center space-x-3 hover:border-gray-400">
                               <div class="flex-1 min-w-0">
                                 <router-link :to="`/people/${child.id}`" class="focus:outline-none">
                                   <span class="absolute inset-0" aria-hidden="true"></span>
-                                  <p class="text-sm font-medium text-gray-900">{{ child.firstName }} {{ child.lastName }}</p>
-                                  <p class="text-sm text-gray-500">Born {{ formatDate(child.birthDate) }}</p>
+                                  <p class="text-sm font-bold text-gray-900">👶 {{ child.firstName || child.first_name }} {{ child.lastName || child.last_name }}</p>
+                                  <p class="text-xs text-gray-500">{{ child.birthDate || child.date_of_birth ? 'Born ' + formatDate(child.birthDate || child.date_of_birth) : 'Child' }}</p>
                                 </router-link>
                               </div>
+                            </div>
+                            <div v-if="!personStore.currentPerson?.children?.length" class="text-xs text-gray-400 italic py-2">
+                              No children recorded yet.
                             </div>
                           </div>
                         </div>
@@ -332,6 +381,15 @@
         </div>
       </div>
     </div>
+
+    <!-- Quick Add Relative Modal -->
+    <QuickAddRelativeModal
+      :is-open="showAddRelativeModal"
+      :target-person="personStore.currentPerson"
+      :initial-relation="initialRelativeRole"
+      @close="showAddRelativeModal = false"
+      @created="onRelativeCreated"
+    />
   </div>
 </template>
 
@@ -340,12 +398,26 @@ import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { usePeopleStore } from '@/stores/people'
 import { format } from 'date-fns'
+import QuickAddRelativeModal from '@/components/QuickAddRelativeModal.vue'
 
 const route = useRoute()
 const peopleStore = usePeopleStore()
 
 const showEditModal = ref(false)
 const showAddMediaModal = ref(false)
+
+// Quick add relative modal state
+const showAddRelativeModal = ref(false)
+const initialRelativeRole = ref('child')
+
+const openAddRelative = (role) => {
+  initialRelativeRole.value = role
+  showAddRelativeModal.value = true
+}
+
+const onRelativeCreated = async () => {
+  await peopleStore.fetchPerson(route.params.id)
+}
 
 const editForm = ref({
   firstName: '',

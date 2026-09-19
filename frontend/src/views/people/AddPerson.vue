@@ -196,14 +196,17 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePersonStore } from '@/stores/person'
 
+import { useToast } from 'vue-toastification'
+
 const router = useRouter()
+const toast = useToast()
 const personStore = usePersonStore()
 
 const form = ref({
   firstName: '',
   lastName: '',
   birthDate: '',
-  gender: '',
+  gender: 'M',
   birthPlace: '',
   biography: '',
   fatherId: '',
@@ -225,7 +228,6 @@ onMounted(async () => {
     availableSpouses.value = spouses
   } catch (error) {
     console.error('Error fetching available relationships:', error)
-    // Handle error (show notification, etc.)
   }
 })
 
@@ -233,10 +235,11 @@ const handleSubmit = async () => {
   try {
     loading.value = true
     const newPerson = await personStore.createPerson(form.value)
-    router.push(`/person/${newPerson.id}`)
+    toast.success('Person added successfully!')
+    router.push(`/people/${newPerson.id}`)
   } catch (error) {
     console.error('Error creating person:', error)
-    // Handle error (show notification, etc.)
+    toast.error('Failed to create person. Please check your inputs.')
   } finally {
     loading.value = false
   }

@@ -1,36 +1,39 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-md w-full space-y-8">
-      <div>
-        <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Sign in to your account
+  <div class="app-page-shell flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 font-sans">
+    <div class="max-w-md w-full space-y-8 app-card-panel border-2 border-[#C5A059] p-8 rounded-3xl shadow-2xl">
+      <div class="text-center">
+        <div class="w-24 h-24 mx-auto rounded-2xl border-2 border-[#C5A059] flex items-center justify-center p-2 shadow-xl mb-4 bg-amber-50/20">
+          <img src="/logo.png" alt="Kkevo Family Crest" class="w-full h-full object-contain" />
+        </div>
+        <h2 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#B8860B] via-[#D4AF37] to-[#C5A059] font-serif uppercase tracking-wider">
+          Kkevo Family
         </h2>
-        <p class="mt-2 text-center text-sm text-gray-600">
-          Or
-          <router-link to="/register" class="font-medium text-indigo-600 hover:text-indigo-500">
-            create a new account
-          </router-link>
+        <p class="mt-1 text-xs font-bold text-[#C5A059] uppercase tracking-widest">
+          Royal Heritage & Family Roots
+        </p>
+        <p class="mt-3 text-xs opacity-80">
+          Sign in to view and grow our family lineage
         </p>
       </div>
-      <form class="mt-8 space-y-6" @submit.prevent="handleSubmit">
-        <div class="rounded-md shadow-sm -space-y-px">
+      <form class="mt-6 space-y-5" @submit.prevent="handleSubmit">
+        <div class="space-y-3">
           <div>
-            <label for="email" class="sr-only">Email address</label>
+            <label for="username" class="block text-xs font-bold text-[#C5A059] mb-1">Username</label>
             <input
-              id="email"
-              v-model="form.email"
-              name="email"
-              type="email"
-              autocomplete="email"
+              id="username"
+              v-model="form.username"
+              name="username"
+              type="text"
+              autocomplete="username"
               required
-              class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-              :class="{ 'border-red-500': errors.email }"
-              placeholder="Email address"
+              class="w-full px-3.5 py-2.5 app-input-theme border rounded-xl text-sm placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#C5A059]"
+              :class="{ 'border-red-500': errors.username }"
+              placeholder="Enter username"
             />
-            <p v-if="errors.email" class="mt-1 text-sm text-red-600">{{ errors.email }}</p>
+            <p v-if="errors.username" class="mt-1 text-xs text-red-400">{{ errors.username }}</p>
           </div>
           <div>
-            <label for="password" class="sr-only">Password</label>
+            <label for="password" class="block text-xs font-bold text-[#C5A059] mb-1">Password</label>
             <input
               id="password"
               v-model="form.password"
@@ -38,58 +41,54 @@
               type="password"
               autocomplete="current-password"
               required
-              class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+              class="w-full px-3.5 py-2.5 app-input-theme border rounded-xl text-sm placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#C5A059]"
               :class="{ 'border-red-500': errors.password }"
-              placeholder="Password"
+              placeholder="Enter password"
             />
-            <p v-if="errors.password" class="mt-1 text-sm text-red-600">{{ errors.password }}</p>
+            <p v-if="errors.password" class="mt-1 text-xs text-red-400">{{ errors.password }}</p>
           </div>
         </div>
 
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between text-xs">
           <div class="flex items-center">
             <input
               id="remember-me"
               v-model="form.rememberMe"
               name="remember-me"
               type="checkbox"
-              class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+              class="h-4 w-4 text-[#C5A059] focus:ring-[#C5A059] bg-[#1C1E24] border-stone-600 rounded cursor-pointer"
             />
-            <label for="remember-me" class="ml-2 block text-sm text-gray-900">
+            <label for="remember-me" class="ml-2 block text-stone-300 cursor-pointer">
               Remember me
             </label>
           </div>
 
-          <div class="text-sm">
-            <router-link to="/password-reset" class="font-medium text-indigo-600 hover:text-indigo-500">
-              Forgot your password?
+          <div>
+            <router-link to="/password-reset" class="font-bold text-[#D4AF37] hover:underline">
+              Forgot password?
             </router-link>
           </div>
         </div>
 
-        <div>
+        <div class="space-y-3 pt-2">
           <button
             type="submit"
             :disabled="loading"
-            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            class="w-full flex justify-center py-3 px-4 rounded-xl text-sm font-black text-black bg-gradient-to-r from-[#B8860B] via-[#D4AF37] to-[#C5A059] hover:brightness-105 shadow-lg shadow-black/50 transition-all cursor-pointer"
             :class="{ 'opacity-50 cursor-not-allowed': loading }"
           >
-            <span class="absolute left-0 inset-y-0 flex items-center pl-3">
-              <svg
-                class="h-5 w-5 text-indigo-500 group-hover:text-indigo-400"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-                aria-hidden="true"
-              >
-                <path
-                  fill-rule="evenodd"
-                  d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-                  clip-rule="evenodd"
-                />
-              </svg>
-            </span>
-            {{ loading ? 'Signing in...' : 'Sign in' }}
+            {{ loading ? 'Signing in...' : 'Sign In to Kkevo Family' }}
+          </button>
+
+          <!-- Quick 1-Click Demo Login for instant testing -->
+          <button
+            type="button"
+            @click="handleDemoLogin"
+            :disabled="loading"
+            class="w-full flex items-center justify-center py-2.5 px-4 border border-[#C5A059]/60 rounded-xl text-xs font-black text-[#F3E5AB] bg-[#1C1E24] hover:bg-[#252832] transition-colors shadow-sm cursor-pointer"
+          >
+            <span class="mr-2">⚡</span>
+            <span>Quick Demo Login (testuser)</span>
           </button>
         </div>
 
@@ -124,13 +123,13 @@ const route = useRoute()
 const authStore = useAuthStore()
 
 const form = reactive({
-  email: '',
+  username: '',
   password: '',
   rememberMe: false
 })
 
 const errors = reactive({
-  email: '',
+  username: '',
   password: ''
 })
 
@@ -139,14 +138,11 @@ const authError = ref('')
 
 const validateForm = () => {
   let isValid = true
-  errors.email = ''
+  errors.username = ''
   errors.password = ''
 
-  if (!form.email) {
-    errors.email = 'Email is required'
-    isValid = false
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-    errors.email = 'Please enter a valid email address'
+  if (!form.username) {
+    errors.username = 'Username is required'
     isValid = false
   }
 
@@ -169,7 +165,7 @@ const handleSubmit = async () => {
 
   try {
     const success = await authStore.login({
-      email: form.email,
+      username: form.username,
       password: form.password
     })
 
@@ -177,10 +173,31 @@ const handleSubmit = async () => {
       const redirectPath = route.query.redirect || '/dashboard'
       router.push(redirectPath)
     } else {
-      authError.value = authStore.error || 'Invalid email or password'
+      authError.value = authStore.error || 'Invalid username or password'
     }
   } catch (error) {
-    authError.value = 'An unexpected error occurred. Please try again.'
+    authError.value = error.response?.data?.error || error.response?.data?.detail || 'Invalid username or password'
+  } finally {
+    loading.value = false
+  }
+}
+
+const handleDemoLogin = async () => {
+  form.username = 'testuser'
+  form.password = 'password123'
+  loading.value = true
+  authError.value = ''
+  try {
+    const success = await authStore.login({
+      username: 'testuser',
+      password: 'password123'
+    })
+    if (success) {
+      const redirectPath = route.query.redirect || '/dashboard'
+      router.push(redirectPath)
+    }
+  } catch (error) {
+    authError.value = error.response?.data?.error || 'Failed to sign in with demo account'
   } finally {
     loading.value = false
   }

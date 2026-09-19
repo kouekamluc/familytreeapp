@@ -1,86 +1,88 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-md w-full space-y-8">
-      <div>
-        <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Reset your password
-        </h2>
-        <p class="mt-2 text-center text-sm text-gray-600">
-          Enter your email address and we'll send you a link to reset your password.
-        </p>
+  <div class="min-h-screen bg-[#0E0F12] text-stone-100 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 font-sans selection:bg-[#C5A059] selection:text-black">
+    <div class="sm:mx-auto sm:w-full sm:max-w-md text-center">
+      <div class="relative w-20 h-20 mx-auto mb-4 rounded-2xl overflow-hidden border-2 border-[#C5A059] shadow-2xl shadow-black/80 bg-[#0B0C0E] flex items-center justify-center p-1">
+        <img
+          src="/logo.png"
+          alt="KKEVO FAMILY Crest"
+          class="w-full h-full object-contain"
+        />
       </div>
-      <form class="mt-8 space-y-6" @submit.prevent="handleSubmit">
-        <div>
-          <label for="email" class="sr-only">Email address</label>
-          <input
-            id="email"
-            v-model="form.email"
-            name="email"
-            type="email"
-            autocomplete="email"
-            required
-            class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-            :class="{ 'border-red-500': errors.email }"
-            placeholder="Email address"
-          />
-          <p v-if="errors.email" class="mt-1 text-sm text-red-600">{{ errors.email }}</p>
-        </div>
 
-        <div>
-          <button
-            type="submit"
-            :disabled="loading"
-            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            :class="{ 'opacity-50 cursor-not-allowed': loading }"
-          >
-            <span class="absolute left-0 inset-y-0 flex items-center pl-3">
-              <svg
-                class="h-5 w-5 text-indigo-500 group-hover:text-indigo-400"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-                aria-hidden="true"
-              >
-                <path
-                  fill-rule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z"
-                  clip-rule="evenodd"
-                />
-              </svg>
-            </span>
-            {{ loading ? 'Sending reset link...' : 'Send reset link' }}
-          </button>
-        </div>
+      <h1 class="text-2xl font-serif font-black tracking-wider uppercase text-transparent bg-clip-text bg-gradient-to-r from-[#F3E5AB] via-[#D4AF37] to-[#C5A059]">
+        Reset Password
+      </h1>
+      <p class="mt-2 text-xs text-stone-400">
+        Enter your registered email address to receive your password recovery link.
+      </p>
+    </div>
 
-        <div v-if="authError" class="rounded-md bg-red-50 p-4">
-          <div class="flex">
-            <div class="flex-shrink-0">
-              <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                <path
-                  fill-rule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                  clip-rule="evenodd"
-                />
-              </svg>
+    <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+      <div class="bg-[#16181F] py-8 px-6 sm:px-10 rounded-2xl border border-[#C5A059]/40 shadow-2xl shadow-black/80 relative">
+        <div class="absolute -top-px left-1/4 right-1/4 h-px bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent"></div>
+
+        <form class="space-y-5" @submit.prevent="handleSubmit">
+          <div>
+            <label for="email" class="block text-xs font-black uppercase tracking-wider text-[#F3E5AB]">
+              Email Address
+            </label>
+            <div class="mt-1.5">
+              <input
+                id="email"
+                v-model="form.email"
+                name="email"
+                type="email"
+                autocomplete="email"
+                required
+                placeholder="you@family.org"
+                class="appearance-none block w-full px-4 py-3 bg-[#1F2128] border border-[#C5A059]/40 rounded-xl shadow-inner text-stone-100 placeholder-stone-500 focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] sm:text-sm transition-colors"
+              />
             </div>
-            <div class="ml-3">
-              <h3 class="text-sm font-medium text-red-800">{{ authError }}</h3>
-            </div>
+            <p v-if="errors.email" class="mt-1 text-xs text-red-400">{{ errors.email }}</p>
           </div>
-        </div>
 
-        <div class="text-sm text-center">
-          <router-link to="/login" class="font-medium text-indigo-600 hover:text-indigo-500">
-            Back to login
+          <div v-if="authError" class="p-3 bg-red-950/60 border border-red-500/50 rounded-xl text-red-200 text-xs">
+            {{ authError }}
+          </div>
+
+          <div v-if="successMessage" class="p-3 bg-emerald-950/60 border border-emerald-500/50 rounded-xl text-emerald-200 text-xs">
+            {{ successMessage }}
+          </div>
+
+          <div>
+            <button
+              type="submit"
+              :disabled="loading"
+              class="w-full flex justify-center items-center py-3.5 px-4 rounded-xl shadow-lg font-black text-sm tracking-wide text-black bg-gradient-to-r from-[#B8860B] via-[#D4AF37] to-[#C5A059] hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-[#D4AF37] disabled:opacity-50 transition-all active:scale-[0.99]"
+            >
+              <svg
+                v-if="loading"
+                class="animate-spin -ml-1 mr-3 h-5 w-5 text-black"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span>{{ loading ? 'Sending link...' : 'Send Recovery Link' }}</span>
+            </button>
+          </div>
+        </form>
+
+        <div class="mt-6 text-center border-t border-[#C5A059]/20 pt-4">
+          <router-link to="/login" class="text-xs font-bold text-[#D4AF37] hover:underline flex items-center justify-center gap-1">
+            <span>&larr;</span>
+            <span>Back to Family Login</span>
           </router-link>
         </div>
-      </form>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
@@ -97,40 +99,27 @@ const errors = reactive({
 
 const loading = ref(false)
 const authError = ref('')
-
-const validateForm = () => {
-  let isValid = true
-  errors.email = ''
-
-  if (!form.email) {
-    errors.email = 'Email is required'
-    isValid = false
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-    errors.email = 'Please enter a valid email address'
-    isValid = false
-  }
-
-  return isValid
-}
+const successMessage = ref('')
 
 const handleSubmit = async () => {
-  if (!validateForm()) return
-
+  if (!form.email) {
+    errors.email = 'Please enter your email'
+    return
+  }
   loading.value = true
   authError.value = ''
-
   try {
-    const success = await authStore.requestPasswordReset(form.email)
-
-    if (success) {
-      router.push('/password-reset/sent')
-    } else {
-      authError.value = authStore.error || 'Failed to send reset link'
+    if (authStore.requestPasswordReset) {
+      await authStore.requestPasswordReset(form.email)
     }
-  } catch (error) {
-    authError.value = 'An unexpected error occurred. Please try again.'
+    successMessage.value = 'A password recovery link has been sent to your email.'
+    setTimeout(() => {
+      router.push('/password-reset/sent')
+    }, 1500)
+  } catch (err) {
+    authError.value = err.message || 'Unable to process reset request.'
   } finally {
     loading.value = false
   }
 }
-</script> 
+</script>

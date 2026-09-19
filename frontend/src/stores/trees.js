@@ -13,8 +13,8 @@ export const useTreesStore = defineStore('trees', () => {
       loading.value = true
       error.value = null
       const response = await api.get('/trees/')
-      trees.value = response.data
-      return true
+      trees.value = Array.isArray(response.data) ? response.data : (response.data.results || [])
+      return trees.value
     } catch (err) {
       error.value = err.response?.data?.message || 'Failed to fetch trees'
       return false
@@ -193,4 +193,7 @@ export const useTreesStore = defineStore('trees', () => {
     getTreeSettings,
     updateTreeSettings
   }
-}) 
+})
+
+export const useTreeStore = useTreesStore
+ 

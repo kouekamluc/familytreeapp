@@ -19,13 +19,21 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    # path('api/', include('users.urls')),
-    path('api/', include('family.urls')),
-    path('api/', include('data_management.urls')),
-    path('api/', include('backup.urls')),
+    path('api/auth/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh_short'),
+    path('api/auth/', include('users.urls')),
+    path('api/users/', include('users.urls')),
+    path('api/', include('family.urls')),  # This will include all family app URLs under /api/
+    path('api/data/', include('data_management.urls')),
+    path('api/backup/', include('backup.urls')),
     path('api-auth/', include('rest_framework.urls')),
     
     # API Documentation
