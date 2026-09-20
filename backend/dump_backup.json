@@ -1,0 +1,1318 @@
+[
+{
+  "model": "sessions.session",
+  "pk": "72v2mcev9pnhsl0rbr61gglhuqeczq8g",
+  "fields": {
+    "session_data": ".eJxVjEEOwiAQRe_C2hAoMIhL956BDMMgVUOT0q6MdzckXej2v_f-W0Tctxr3zmucs7gILU6_W0J6chsgP7DdF0lL29Y5yaHIg3Z5WzK_rof7d1Cx11FDtokKgNIKWSUHwIS2ZE2AuiRk54MypItBfQYwjoLzfrI8BaKM4vMFA4Q4hA:1uL9Iy:UxjZP_pjbGi5AvxFHdSt0i_Ow0HZQzffVimnB0m7LtY",
+    "expire_date": "2025-06-13T23:38:28.445Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "lgz4lu1sbzkuc8eoisdqewwn0pusw5fu",
+  "fields": {
+    "session_data": ".eJxVjDsOwjAQRO_iGln-JpiSPmew1p4FB5AjxUmFuDuJlALKmfdm3iLSupS4Np7jCHERVpx-u0T5yXUHeFC9TzJPdZnHJHdFHrTJYQK_rof7d1ColW2tbCKrLW46IyiLQNQlHzzIaUWevSUHGEAZt0Wt-p4Tm5D1uQNTFp8v9KE4ng:1uL9wq:GCbm_EL4ff8ykp9J1J0tu4supe79xm_azJVHbvRpl60",
+    "expire_date": "2025-06-14T00:19:40.778Z"
+  }
+},
+{
+  "model": "users.user",
+  "fields": {
+    "password": "pbkdf2_sha256$720000$F0e8A2V5qrQekJoBlSh7pJ$gNghTiAI9lGkrk5U1hgOY1BFdaKlVMcOgLHdPFZpxko=",
+    "last_login": "2025-05-30T23:38:28.441Z",
+    "is_superuser": true,
+    "username": "kouekam",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2025-05-30T16:10:18.620Z",
+    "email": "luckevinkouekam@gmail.com",
+    "first_name": "",
+    "last_name": "",
+    "bio": "",
+    "profile_picture": "",
+    "date_of_birth": null,
+    "phone_number": "",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "users.user",
+  "fields": {
+    "password": "pbkdf2_sha256$720000$IZKUdaSk6O2KlnEolEngmp$m8nbriWrYGu0q3pz8NG8ff/rzPw/Rfo23R6ij7jFFSM=",
+    "last_login": null,
+    "is_superuser": true,
+    "username": "KKLK",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2025-05-30T22:33:39.911Z",
+    "email": "luv@gmail.com",
+    "first_name": "",
+    "last_name": "",
+    "bio": "",
+    "profile_picture": "",
+    "date_of_birth": null,
+    "phone_number": "",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "users.user",
+  "fields": {
+    "password": "pbkdf2_sha256$720000$Bl9EXdyFONZpifQQXHVmKi$2MYEDPE632G5SDXwETT6A1WIc0gMcqIRax5YQ+6Pc3k=",
+    "last_login": "2025-05-31T00:19:40.762Z",
+    "is_superuser": true,
+    "username": "kklk1",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2025-05-30T23:38:19.570Z",
+    "email": "luckevinkouekam2@gmail.com",
+    "first_name": "",
+    "last_name": "",
+    "bio": "",
+    "profile_picture": "",
+    "date_of_birth": null,
+    "phone_number": "",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "users.user",
+  "fields": {
+    "password": "pbkdf2_sha256$720000$gAYr3ywgEbgcI1MWjy8xrr$XSBH6s5kckRcZ5qHaCYIUZPfTE4wf4/Q5U6+6+x6SF0=",
+    "last_login": "2025-05-31T00:11:48Z",
+    "is_superuser": false,
+    "username": "kamgou",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2025-05-30T23:57:00Z",
+    "email": "kouekamkamgouluc@gmail.com",
+    "first_name": "kklk",
+    "last_name": "LKA",
+    "bio": "",
+    "profile_picture": "",
+    "date_of_birth": "2025-05-31",
+    "phone_number": "",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "users.user",
+  "fields": {
+    "password": "pbkdf2_sha256$720000$GHCchKf32OTnrtC7CDRiUV$6U0Iek+LcOR56GOWJ6aG14RQuEAqd8TJO4ww+CEtVKU=",
+    "last_login": null,
+    "is_superuser": true,
+    "username": "testuser",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2025-05-30T23:59:45.637Z",
+    "email": "test@example.com",
+    "first_name": "",
+    "last_name": "",
+    "bio": "",
+    "profile_picture": "",
+    "date_of_birth": null,
+    "phone_number": "",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "users.heritagekey",
+  "pk": 1,
+  "fields": {
+    "key": "KKEVO-ROYAL-2026-ROOT",
+    "user": [
+      "testuser"
+    ],
+    "name": "Sacred Royal Lineage Key (Demo)",
+    "role": "CURATOR",
+    "is_active": false,
+    "expires_at": null,
+    "last_used_at": "2026-09-20T15:09:46.497Z",
+    "usage_count": 4,
+    "created_at": "2026-09-19T19:25:44.545Z",
+    "updated_at": "2026-09-20T15:13:39.811Z"
+  }
+},
+{
+  "model": "users.heritagekey",
+  "pk": 2,
+  "fields": {
+    "key": "KKEVO-ELDER-7777",
+    "user": [
+      "testuser"
+    ],
+    "name": "Sacred Elder Council Key",
+    "role": "ROYAL_PATRIARCH",
+    "is_active": false,
+    "expires_at": null,
+    "last_used_at": "2026-09-19T20:01:31.928Z",
+    "usage_count": 1,
+    "created_at": "2026-09-19T19:25:44.549Z",
+    "updated_at": "2026-09-20T15:13:46.921Z"
+  }
+},
+{
+  "model": "users.heritagekey",
+  "pk": 3,
+  "fields": {
+    "key": "KKEVO-ROYAL-QIAH-FTRS",
+    "user": [
+      "kouekam"
+    ],
+    "name": "Primary Royal Lineage Key",
+    "role": "CURATOR",
+    "is_active": true,
+    "expires_at": null,
+    "last_used_at": null,
+    "usage_count": 0,
+    "created_at": "2026-09-19T19:25:44.555Z",
+    "updated_at": "2026-09-19T19:25:44.555Z"
+  }
+},
+{
+  "model": "users.heritagekey",
+  "pk": 4,
+  "fields": {
+    "key": "KKEVO-ROYAL-47YF-9LW4",
+    "user": [
+      "KKLK"
+    ],
+    "name": "Primary Royal Lineage Key",
+    "role": "CURATOR",
+    "is_active": true,
+    "expires_at": null,
+    "last_used_at": null,
+    "usage_count": 0,
+    "created_at": "2026-09-19T19:25:44.560Z",
+    "updated_at": "2026-09-19T19:25:44.560Z"
+  }
+},
+{
+  "model": "users.heritagekey",
+  "pk": 5,
+  "fields": {
+    "key": "KKEVO-ROYAL-WCT3-365O",
+    "user": [
+      "kklk1"
+    ],
+    "name": "Primary Royal Lineage Key",
+    "role": "CURATOR",
+    "is_active": true,
+    "expires_at": null,
+    "last_used_at": null,
+    "usage_count": 0,
+    "created_at": "2026-09-19T19:25:44.566Z",
+    "updated_at": "2026-09-19T19:25:44.566Z"
+  }
+},
+{
+  "model": "users.heritagekey",
+  "pk": 6,
+  "fields": {
+    "key": "KKEVO-ROYAL-UBPD-PPMW",
+    "user": [
+      "kamgou"
+    ],
+    "name": "Primary Royal Lineage Key",
+    "role": "FAMILY_MEMBER",
+    "is_active": true,
+    "expires_at": null,
+    "last_used_at": "2026-09-19T20:01:31.955Z",
+    "usage_count": 1,
+    "created_at": "2026-09-19T19:25:44.572Z",
+    "updated_at": "2026-09-19T19:25:44.572Z"
+  }
+},
+{
+  "model": "users.heritagekey",
+  "pk": 7,
+  "fields": {
+    "key": "KKEVO-ROYAL-N9AH-FYAJ",
+    "user": [
+      "testuser"
+    ],
+    "name": "Nouvelle Clé de Famille",
+    "role": "FAMILY_MEMBER",
+    "is_active": true,
+    "expires_at": null,
+    "last_used_at": null,
+    "usage_count": 0,
+    "created_at": "2026-09-20T15:11:24.389Z",
+    "updated_at": "2026-09-20T15:11:24.389Z"
+  }
+},
+{
+  "model": "users.heritagekey",
+  "pk": 8,
+  "fields": {
+    "key": "KKEVO-ROYAL-89Q9-KWDE",
+    "user": [
+      "testuser"
+    ],
+    "name": "Nouvelle Clé de Famille",
+    "role": "ROYAL_PATRIARCH",
+    "is_active": true,
+    "expires_at": null,
+    "last_used_at": null,
+    "usage_count": 0,
+    "created_at": "2026-09-20T15:13:23.185Z",
+    "updated_at": "2026-09-20T15:13:23.185Z"
+  }
+},
+{
+  "model": "family.familytree",
+  "pk": 1,
+  "fields": {
+    "name": "Kkevo Royal Lineage Tree",
+    "description": "Ancestral records of the Henderson lineage",
+    "owner": [
+      "testuser"
+    ],
+    "is_public": true,
+    "created_at": "2026-09-18T13:28:26.422Z",
+    "updated_at": "2026-09-19T06:07:40.248Z",
+    "members": [
+      [
+        "kouekam"
+      ],
+      [
+        "KKLK"
+      ],
+      [
+        "kklk1"
+      ],
+      [
+        "kamgou"
+      ],
+      [
+        "testuser"
+      ]
+    ]
+  }
+},
+{
+  "model": "family.person",
+  "pk": 11,
+  "fields": {
+    "user": null,
+    "family_tree": 1,
+    "first_name": "Jean",
+    "last_name": "Kkevo",
+    "gender": "M",
+    "date_of_birth": "1930-03-15",
+    "date_of_death": null,
+    "birth_place": "Bafoussam",
+    "current_location": "",
+    "traditional_name": "Tadji Jean",
+    "village_of_origin": "Bandjoun",
+    "clan_totem": "Leopard 🐆",
+    "generation_tier": 1,
+    "biography": "Honored Patriarch of the Kkevo lineage.",
+    "is_living": true,
+    "profile_picture": "",
+    "created_at": "2026-09-18T18:20:47.085Z",
+    "updated_at": "2026-09-18T18:28:16.689Z"
+  }
+},
+{
+  "model": "family.person",
+  "pk": 12,
+  "fields": {
+    "user": null,
+    "family_tree": 1,
+    "first_name": "Amina",
+    "last_name": "Kkevo",
+    "gender": "F",
+    "date_of_birth": "1935-07-22",
+    "date_of_death": null,
+    "birth_place": "Bandjoun",
+    "current_location": "",
+    "traditional_name": "Ma Amina",
+    "village_of_origin": "Bandjoun",
+    "clan_totem": "Leopard 🐆",
+    "generation_tier": 1,
+    "biography": "Beloved Matriarch and wisdom keeper.",
+    "is_living": true,
+    "profile_picture": "",
+    "created_at": "2026-09-18T18:20:47.088Z",
+    "updated_at": "2026-09-18T18:28:16.670Z"
+  }
+},
+{
+  "model": "family.person",
+  "pk": 13,
+  "fields": {
+    "user": null,
+    "family_tree": 1,
+    "first_name": "Arthur",
+    "last_name": "Kkevo",
+    "gender": "M",
+    "date_of_birth": "1960-04-12",
+    "date_of_death": null,
+    "birth_place": "Bafoussam",
+    "current_location": "",
+    "traditional_name": "Nji Arthur Kkevo",
+    "village_of_origin": "Bandjoun",
+    "clan_totem": "Leopard 🐆",
+    "generation_tier": 2,
+    "biography": "Elder son of Jean and Amina, community pillar.",
+    "is_living": true,
+    "profile_picture": "",
+    "created_at": "2026-09-18T18:20:47.092Z",
+    "updated_at": "2026-09-18T18:28:16.674Z"
+  }
+},
+{
+  "model": "family.person",
+  "pk": 14,
+  "fields": {
+    "user": null,
+    "family_tree": 1,
+    "first_name": "Eleanor",
+    "last_name": "Kkevo",
+    "gender": "F",
+    "date_of_birth": "1964-08-23",
+    "date_of_death": null,
+    "birth_place": "Douala",
+    "current_location": "",
+    "traditional_name": "Meme Eleanor",
+    "village_of_origin": "Bafoussam",
+    "clan_totem": "Elephant 🐘",
+    "generation_tier": 2,
+    "biography": "Cherished mother and master storyteller.",
+    "is_living": true,
+    "profile_picture": "",
+    "created_at": "2026-09-18T18:20:47.095Z",
+    "updated_at": "2026-09-18T18:28:16.681Z"
+  }
+},
+{
+  "model": "family.person",
+  "pk": 15,
+  "fields": {
+    "user": null,
+    "family_tree": 1,
+    "first_name": "Chloe",
+    "last_name": "Kkevo",
+    "gender": "F",
+    "date_of_birth": "1962-10-05",
+    "date_of_death": null,
+    "birth_place": "Bafoussam",
+    "current_location": "",
+    "traditional_name": "Magne Chloe",
+    "village_of_origin": "Bandjoun",
+    "clan_totem": "Leopard 🐆",
+    "generation_tier": 2,
+    "biography": "Daughter of Jean and Amina, cultural archivist.",
+    "is_living": true,
+    "profile_picture": "",
+    "created_at": "2026-09-18T18:20:47.098Z",
+    "updated_at": "2026-09-18T18:28:16.678Z"
+  }
+},
+{
+  "model": "family.person",
+  "pk": 16,
+  "fields": {
+    "user": null,
+    "family_tree": 1,
+    "first_name": "Robert",
+    "last_name": "Kkevo",
+    "gender": "M",
+    "date_of_birth": "1958-02-18",
+    "date_of_death": null,
+    "birth_place": "Yaoundé",
+    "current_location": "",
+    "traditional_name": "Fo Robert",
+    "village_of_origin": "Dschang",
+    "clan_totem": "Lion 🦁",
+    "generation_tier": 2,
+    "biography": "Husband of Chloe, respected teacher.",
+    "is_living": true,
+    "profile_picture": "",
+    "created_at": "2026-09-18T18:20:47.101Z",
+    "updated_at": "2026-09-18T18:28:16.705Z"
+  }
+},
+{
+  "model": "family.person",
+  "pk": 17,
+  "fields": {
+    "user": null,
+    "family_tree": 1,
+    "first_name": "Liam",
+    "last_name": "Kkevo",
+    "gender": "M",
+    "date_of_birth": "1992-11-05",
+    "date_of_death": null,
+    "birth_place": "Douala",
+    "current_location": "",
+    "traditional_name": "Kem Liam",
+    "village_of_origin": "Bandjoun",
+    "clan_totem": "Leopard 🐆",
+    "generation_tier": 3,
+    "biography": "",
+    "is_living": true,
+    "profile_picture": "",
+    "created_at": "2026-09-18T18:20:47.104Z",
+    "updated_at": "2026-09-18T18:28:16.692Z"
+  }
+},
+{
+  "model": "family.person",
+  "pk": 18,
+  "fields": {
+    "user": null,
+    "family_tree": 1,
+    "first_name": "Grace",
+    "last_name": "Kkevo",
+    "gender": "F",
+    "date_of_birth": "1996-06-14",
+    "date_of_death": null,
+    "birth_place": "Douala",
+    "current_location": "",
+    "traditional_name": "Ngouh Grace",
+    "village_of_origin": "Bandjoun",
+    "clan_totem": "Leopard 🐆",
+    "generation_tier": 3,
+    "biography": "",
+    "is_living": true,
+    "profile_picture": "",
+    "created_at": "2026-09-18T18:20:47.108Z",
+    "updated_at": "2026-09-18T18:28:16.686Z"
+  }
+},
+{
+  "model": "family.person",
+  "pk": 19,
+  "fields": {
+    "user": null,
+    "family_tree": 1,
+    "first_name": "Lucas",
+    "last_name": "Kkevo",
+    "gender": "M",
+    "date_of_birth": "1990-09-30",
+    "date_of_death": null,
+    "birth_place": "Yaoundé",
+    "current_location": "",
+    "traditional_name": "Tchio Lucas",
+    "village_of_origin": "Dschang",
+    "clan_totem": "Lion 🦁",
+    "generation_tier": 3,
+    "biography": "",
+    "is_living": true,
+    "profile_picture": "",
+    "created_at": "2026-09-18T18:20:47.111Z",
+    "updated_at": "2026-09-18T18:28:16.696Z"
+  }
+},
+{
+  "model": "family.person",
+  "pk": 20,
+  "fields": {
+    "user": null,
+    "family_tree": 1,
+    "first_name": "Marie",
+    "last_name": "Kkevo",
+    "gender": "F",
+    "date_of_birth": "1994-12-01",
+    "date_of_death": null,
+    "birth_place": "Yaoundé",
+    "current_location": "",
+    "traditional_name": "Magne Marie",
+    "village_of_origin": "Dschang",
+    "clan_totem": "Lion 🦁",
+    "generation_tier": 3,
+    "biography": "",
+    "is_living": true,
+    "profile_picture": "",
+    "created_at": "2026-09-18T18:20:47.114Z",
+    "updated_at": "2026-09-18T18:28:16.701Z"
+  }
+},
+{
+  "model": "family.person",
+  "pk": 21,
+  "fields": {
+    "user": null,
+    "family_tree": 1,
+    "first_name": "kamgou",
+    "last_name": "Kkevo",
+    "gender": "M",
+    "date_of_birth": "1889-01-17",
+    "date_of_death": "1940-01-06",
+    "birth_place": "Bafoussam",
+    "current_location": "",
+    "traditional_name": "chef",
+    "village_of_origin": "Bafoussam",
+    "clan_totem": "elephan",
+    "generation_tier": 1,
+    "biography": "",
+    "is_living": false,
+    "profile_picture": "",
+    "created_at": "2026-09-18T19:05:02.280Z",
+    "updated_at": "2026-09-18T19:16:12.652Z"
+  }
+},
+{
+  "model": "family.person",
+  "pk": 22,
+  "fields": {
+    "user": null,
+    "family_tree": 1,
+    "first_name": "Helene",
+    "last_name": "Kkevo",
+    "gender": "F",
+    "date_of_birth": "1895-04-12",
+    "date_of_death": "1968-11-20",
+    "birth_place": "",
+    "current_location": "",
+    "traditional_name": "Mefe Helene",
+    "village_of_origin": "Bandjoun",
+    "clan_totem": "Elephant 🐘",
+    "generation_tier": 1,
+    "biography": "Founding Royal Matriarch and guardian of customary crown jewels.",
+    "is_living": false,
+    "profile_picture": "",
+    "created_at": "2026-09-19T05:48:16.368Z",
+    "updated_at": "2026-09-19T05:48:16.368Z"
+  }
+},
+{
+  "model": "family.person",
+  "pk": 23,
+  "fields": {
+    "user": null,
+    "family_tree": 1,
+    "first_name": "Michel",
+    "last_name": "Kkevo",
+    "gender": "M",
+    "date_of_birth": "1933-08-15",
+    "date_of_death": "2015-02-10",
+    "birth_place": "",
+    "current_location": "",
+    "traditional_name": "Tadji Michel",
+    "village_of_origin": "Bandjoun",
+    "clan_totem": "Leopard 🐆",
+    "generation_tier": 1,
+    "biography": "Royal elder, customary judge, and keeper of ancestral lands.",
+    "is_living": false,
+    "profile_picture": "",
+    "created_at": "2026-09-19T05:48:16.372Z",
+    "updated_at": "2026-09-19T05:48:16.372Z"
+  }
+},
+{
+  "model": "family.person",
+  "pk": 24,
+  "fields": {
+    "user": null,
+    "family_tree": 1,
+    "first_name": "Victorine",
+    "last_name": "Kkevo",
+    "gender": "F",
+    "date_of_birth": "1938-12-05",
+    "date_of_death": null,
+    "birth_place": "",
+    "current_location": "",
+    "traditional_name": "Ma Victorine",
+    "village_of_origin": "Baham",
+    "clan_totem": "Panther",
+    "generation_tier": 1,
+    "biography": "Venerated matriarch and customary historian of the Western grassfields.",
+    "is_living": true,
+    "profile_picture": "",
+    "created_at": "2026-09-19T05:48:16.377Z",
+    "updated_at": "2026-09-19T05:48:16.377Z"
+  }
+},
+{
+  "model": "family.person",
+  "pk": 25,
+  "fields": {
+    "user": null,
+    "family_tree": 1,
+    "first_name": "Samuel",
+    "last_name": "Kkevo",
+    "gender": "M",
+    "date_of_birth": "1962-06-22",
+    "date_of_death": null,
+    "birth_place": "",
+    "current_location": "",
+    "traditional_name": "Nji Samuel",
+    "village_of_origin": "Bandjoun",
+    "clan_totem": "Leopard 🐆",
+    "generation_tier": 2,
+    "biography": "Lineage dignitary and ambassador for customary affairs.",
+    "is_living": true,
+    "profile_picture": "",
+    "created_at": "2026-09-19T05:48:16.382Z",
+    "updated_at": "2026-09-19T05:48:16.382Z"
+  }
+},
+{
+  "model": "family.person",
+  "pk": 26,
+  "fields": {
+    "user": null,
+    "family_tree": 1,
+    "first_name": "Odette",
+    "last_name": "Kkevo",
+    "gender": "F",
+    "date_of_birth": "1965-09-14",
+    "date_of_death": null,
+    "birth_place": "",
+    "current_location": "",
+    "traditional_name": "Meme Odette",
+    "village_of_origin": "Bafoussam",
+    "clan_totem": "Lioness",
+    "generation_tier": 2,
+    "biography": "Royal educator and matriarchal patron of lineage charities.",
+    "is_living": true,
+    "profile_picture": "",
+    "created_at": "2026-09-19T05:48:16.386Z",
+    "updated_at": "2026-09-19T05:48:16.386Z"
+  }
+},
+{
+  "model": "family.person",
+  "pk": 27,
+  "fields": {
+    "user": null,
+    "family_tree": 1,
+    "first_name": "Celine",
+    "last_name": "Kkevo",
+    "gender": "F",
+    "date_of_birth": "1993-03-30",
+    "date_of_death": null,
+    "birth_place": "",
+    "current_location": "",
+    "traditional_name": "Soh Celine",
+    "village_of_origin": "Bandjoun",
+    "clan_totem": "Gazelle",
+    "generation_tier": 3,
+    "biography": "Senior archivist documenting oral traditions into digital vaults.",
+    "is_living": true,
+    "profile_picture": "",
+    "created_at": "2026-09-19T05:48:16.390Z",
+    "updated_at": "2026-09-19T05:48:16.390Z"
+  }
+},
+{
+  "model": "family.person",
+  "pk": 28,
+  "fields": {
+    "user": null,
+    "family_tree": 1,
+    "first_name": "Nelly",
+    "last_name": "Kkevo",
+    "gender": "F",
+    "date_of_birth": "1998-07-19",
+    "date_of_death": null,
+    "birth_place": "",
+    "current_location": "",
+    "traditional_name": "Magne Nelly",
+    "village_of_origin": "Douala",
+    "clan_totem": "Dove",
+    "generation_tier": 3,
+    "biography": "Architect and steward of modern dynasty heritage projects.",
+    "is_living": true,
+    "profile_picture": "",
+    "created_at": "2026-09-19T05:48:16.394Z",
+    "updated_at": "2026-09-19T05:48:16.394Z"
+  }
+},
+{
+  "model": "family.person",
+  "pk": 29,
+  "fields": {
+    "user": null,
+    "family_tree": 1,
+    "first_name": "Noah",
+    "last_name": "Kkevo",
+    "gender": "M",
+    "date_of_birth": "2021-05-10",
+    "date_of_death": null,
+    "birth_place": "",
+    "current_location": "",
+    "traditional_name": "Kem Noah",
+    "village_of_origin": "Bandjoun",
+    "clan_totem": "Leopard 🐆",
+    "generation_tier": 4,
+    "biography": "Fourth-generation prince representing the living future of the Kkevo royal line.",
+    "is_living": true,
+    "profile_picture": "",
+    "created_at": "2026-09-19T05:48:16.398Z",
+    "updated_at": "2026-09-19T05:48:16.398Z"
+  }
+},
+{
+  "model": "family.person",
+  "pk": 30,
+  "fields": {
+    "user": null,
+    "family_tree": 1,
+    "first_name": "Aria",
+    "last_name": "Kkevo",
+    "gender": "F",
+    "date_of_birth": "2023-10-02",
+    "date_of_death": null,
+    "birth_place": "",
+    "current_location": "",
+    "traditional_name": "Magne Aria",
+    "village_of_origin": "Bandjoun",
+    "clan_totem": "Leopard 🐆",
+    "generation_tier": 4,
+    "biography": "Fourth-generation princess and youngest royal blossom.",
+    "is_living": true,
+    "profile_picture": "",
+    "created_at": "2026-09-19T05:48:16.403Z",
+    "updated_at": "2026-09-19T05:48:16.403Z"
+  }
+},
+{
+  "model": "family.person",
+  "pk": 31,
+  "fields": {
+    "user": null,
+    "family_tree": 1,
+    "first_name": "David",
+    "last_name": "Kkevo",
+    "gender": "M",
+    "date_of_birth": "1995-11-28",
+    "date_of_death": null,
+    "birth_place": "",
+    "current_location": "",
+    "traditional_name": "Fo David",
+    "village_of_origin": "Yaounde",
+    "clan_totem": "Eagle 🦅",
+    "generation_tier": 3,
+    "biography": "Diplomat and technology entrepreneur supporting family endowments.",
+    "is_living": true,
+    "profile_picture": "",
+    "created_at": "2026-09-19T05:48:16.407Z",
+    "updated_at": "2026-09-19T05:48:16.407Z"
+  }
+},
+{
+  "model": "family.relationship",
+  "pk": 9,
+  "fields": {
+    "person1": 11,
+    "person2": 12,
+    "relationship_type": "SPOUSE",
+    "start_date": null,
+    "end_date": null,
+    "is_current": true,
+    "notes": "",
+    "created_at": "2026-09-18T18:20:47.117Z",
+    "updated_at": "2026-09-18T18:20:47.117Z"
+  }
+},
+{
+  "model": "family.relationship",
+  "pk": 10,
+  "fields": {
+    "person1": 13,
+    "person2": 14,
+    "relationship_type": "SPOUSE",
+    "start_date": null,
+    "end_date": null,
+    "is_current": true,
+    "notes": "",
+    "created_at": "2026-09-18T18:20:47.120Z",
+    "updated_at": "2026-09-18T18:20:47.120Z"
+  }
+},
+{
+  "model": "family.relationship",
+  "pk": 11,
+  "fields": {
+    "person1": 16,
+    "person2": 15,
+    "relationship_type": "SPOUSE",
+    "start_date": null,
+    "end_date": null,
+    "is_current": true,
+    "notes": "",
+    "created_at": "2026-09-18T18:20:47.124Z",
+    "updated_at": "2026-09-18T18:20:47.124Z"
+  }
+},
+{
+  "model": "family.relationship",
+  "pk": 12,
+  "fields": {
+    "person1": 11,
+    "person2": 13,
+    "relationship_type": "PARENT",
+    "start_date": null,
+    "end_date": null,
+    "is_current": true,
+    "notes": "",
+    "created_at": "2026-09-18T18:20:47.127Z",
+    "updated_at": "2026-09-18T18:20:47.127Z"
+  }
+},
+{
+  "model": "family.relationship",
+  "pk": 13,
+  "fields": {
+    "person1": 11,
+    "person2": 15,
+    "relationship_type": "PARENT",
+    "start_date": null,
+    "end_date": null,
+    "is_current": true,
+    "notes": "",
+    "created_at": "2026-09-18T18:20:47.130Z",
+    "updated_at": "2026-09-18T18:20:47.130Z"
+  }
+},
+{
+  "model": "family.relationship",
+  "pk": 14,
+  "fields": {
+    "person1": 12,
+    "person2": 13,
+    "relationship_type": "PARENT",
+    "start_date": null,
+    "end_date": null,
+    "is_current": true,
+    "notes": "",
+    "created_at": "2026-09-18T18:20:47.133Z",
+    "updated_at": "2026-09-18T18:20:47.133Z"
+  }
+},
+{
+  "model": "family.relationship",
+  "pk": 15,
+  "fields": {
+    "person1": 12,
+    "person2": 15,
+    "relationship_type": "PARENT",
+    "start_date": null,
+    "end_date": null,
+    "is_current": true,
+    "notes": "",
+    "created_at": "2026-09-18T18:20:47.136Z",
+    "updated_at": "2026-09-18T18:20:47.136Z"
+  }
+},
+{
+  "model": "family.relationship",
+  "pk": 16,
+  "fields": {
+    "person1": 13,
+    "person2": 17,
+    "relationship_type": "PARENT",
+    "start_date": null,
+    "end_date": null,
+    "is_current": true,
+    "notes": "",
+    "created_at": "2026-09-18T18:20:47.139Z",
+    "updated_at": "2026-09-18T18:20:47.139Z"
+  }
+},
+{
+  "model": "family.relationship",
+  "pk": 17,
+  "fields": {
+    "person1": 14,
+    "person2": 17,
+    "relationship_type": "PARENT",
+    "start_date": null,
+    "end_date": null,
+    "is_current": true,
+    "notes": "",
+    "created_at": "2026-09-18T18:20:47.143Z",
+    "updated_at": "2026-09-18T18:20:47.143Z"
+  }
+},
+{
+  "model": "family.relationship",
+  "pk": 18,
+  "fields": {
+    "person1": 13,
+    "person2": 18,
+    "relationship_type": "PARENT",
+    "start_date": null,
+    "end_date": null,
+    "is_current": true,
+    "notes": "",
+    "created_at": "2026-09-18T18:20:47.146Z",
+    "updated_at": "2026-09-18T18:20:47.146Z"
+  }
+},
+{
+  "model": "family.relationship",
+  "pk": 19,
+  "fields": {
+    "person1": 14,
+    "person2": 18,
+    "relationship_type": "PARENT",
+    "start_date": null,
+    "end_date": null,
+    "is_current": true,
+    "notes": "",
+    "created_at": "2026-09-18T18:20:47.149Z",
+    "updated_at": "2026-09-18T18:20:47.149Z"
+  }
+},
+{
+  "model": "family.relationship",
+  "pk": 20,
+  "fields": {
+    "person1": 15,
+    "person2": 19,
+    "relationship_type": "PARENT",
+    "start_date": null,
+    "end_date": null,
+    "is_current": true,
+    "notes": "",
+    "created_at": "2026-09-18T18:20:47.152Z",
+    "updated_at": "2026-09-18T18:20:47.152Z"
+  }
+},
+{
+  "model": "family.relationship",
+  "pk": 21,
+  "fields": {
+    "person1": 16,
+    "person2": 19,
+    "relationship_type": "PARENT",
+    "start_date": null,
+    "end_date": null,
+    "is_current": true,
+    "notes": "",
+    "created_at": "2026-09-18T18:20:47.155Z",
+    "updated_at": "2026-09-18T18:20:47.155Z"
+  }
+},
+{
+  "model": "family.relationship",
+  "pk": 22,
+  "fields": {
+    "person1": 15,
+    "person2": 20,
+    "relationship_type": "PARENT",
+    "start_date": null,
+    "end_date": null,
+    "is_current": true,
+    "notes": "",
+    "created_at": "2026-09-18T18:20:47.158Z",
+    "updated_at": "2026-09-18T18:20:47.158Z"
+  }
+},
+{
+  "model": "family.relationship",
+  "pk": 23,
+  "fields": {
+    "person1": 16,
+    "person2": 20,
+    "relationship_type": "PARENT",
+    "start_date": null,
+    "end_date": null,
+    "is_current": true,
+    "notes": "",
+    "created_at": "2026-09-18T18:20:47.162Z",
+    "updated_at": "2026-09-18T18:20:47.162Z"
+  }
+},
+{
+  "model": "family.relationship",
+  "pk": 24,
+  "fields": {
+    "person1": 21,
+    "person2": 11,
+    "relationship_type": "PARENT",
+    "start_date": null,
+    "end_date": null,
+    "is_current": true,
+    "notes": "",
+    "created_at": "2026-09-18T19:05:02.445Z",
+    "updated_at": "2026-09-18T19:05:02.445Z"
+  }
+},
+{
+  "model": "family.relationship",
+  "pk": 25,
+  "fields": {
+    "person1": 21,
+    "person2": 22,
+    "relationship_type": "SPOUSE",
+    "start_date": null,
+    "end_date": null,
+    "is_current": true,
+    "notes": "",
+    "created_at": "2026-09-19T05:48:27.005Z",
+    "updated_at": "2026-09-19T05:48:27.005Z"
+  }
+},
+{
+  "model": "family.relationship",
+  "pk": 26,
+  "fields": {
+    "person1": 22,
+    "person2": 11,
+    "relationship_type": "PARENT",
+    "start_date": null,
+    "end_date": null,
+    "is_current": true,
+    "notes": "",
+    "created_at": "2026-09-19T05:48:27.011Z",
+    "updated_at": "2026-09-19T05:48:27.011Z"
+  }
+},
+{
+  "model": "family.relationship",
+  "pk": 27,
+  "fields": {
+    "person1": 21,
+    "person2": 23,
+    "relationship_type": "PARENT",
+    "start_date": null,
+    "end_date": null,
+    "is_current": true,
+    "notes": "",
+    "created_at": "2026-09-19T05:48:27.016Z",
+    "updated_at": "2026-09-19T05:48:27.016Z"
+  }
+},
+{
+  "model": "family.relationship",
+  "pk": 28,
+  "fields": {
+    "person1": 22,
+    "person2": 23,
+    "relationship_type": "PARENT",
+    "start_date": null,
+    "end_date": null,
+    "is_current": true,
+    "notes": "",
+    "created_at": "2026-09-19T05:48:27.020Z",
+    "updated_at": "2026-09-19T05:48:27.020Z"
+  }
+},
+{
+  "model": "family.relationship",
+  "pk": 29,
+  "fields": {
+    "person1": 23,
+    "person2": 24,
+    "relationship_type": "SPOUSE",
+    "start_date": null,
+    "end_date": null,
+    "is_current": true,
+    "notes": "",
+    "created_at": "2026-09-19T05:48:27.024Z",
+    "updated_at": "2026-09-19T05:48:27.024Z"
+  }
+},
+{
+  "model": "family.relationship",
+  "pk": 30,
+  "fields": {
+    "person1": 23,
+    "person2": 25,
+    "relationship_type": "PARENT",
+    "start_date": null,
+    "end_date": null,
+    "is_current": true,
+    "notes": "",
+    "created_at": "2026-09-19T05:48:27.028Z",
+    "updated_at": "2026-09-19T05:48:27.028Z"
+  }
+},
+{
+  "model": "family.relationship",
+  "pk": 31,
+  "fields": {
+    "person1": 24,
+    "person2": 25,
+    "relationship_type": "PARENT",
+    "start_date": null,
+    "end_date": null,
+    "is_current": true,
+    "notes": "",
+    "created_at": "2026-09-19T05:48:27.033Z",
+    "updated_at": "2026-09-19T05:48:27.033Z"
+  }
+},
+{
+  "model": "family.relationship",
+  "pk": 32,
+  "fields": {
+    "person1": 25,
+    "person2": 26,
+    "relationship_type": "SPOUSE",
+    "start_date": null,
+    "end_date": null,
+    "is_current": true,
+    "notes": "",
+    "created_at": "2026-09-19T05:48:27.037Z",
+    "updated_at": "2026-09-19T05:48:27.037Z"
+  }
+},
+{
+  "model": "family.relationship",
+  "pk": 33,
+  "fields": {
+    "person1": 25,
+    "person2": 27,
+    "relationship_type": "PARENT",
+    "start_date": null,
+    "end_date": null,
+    "is_current": true,
+    "notes": "",
+    "created_at": "2026-09-19T05:48:27.041Z",
+    "updated_at": "2026-09-19T05:48:27.041Z"
+  }
+},
+{
+  "model": "family.relationship",
+  "pk": 34,
+  "fields": {
+    "person1": 26,
+    "person2": 27,
+    "relationship_type": "PARENT",
+    "start_date": null,
+    "end_date": null,
+    "is_current": true,
+    "notes": "",
+    "created_at": "2026-09-19T05:48:27.046Z",
+    "updated_at": "2026-09-19T05:48:27.046Z"
+  }
+},
+{
+  "model": "family.relationship",
+  "pk": 35,
+  "fields": {
+    "person1": 17,
+    "person2": 28,
+    "relationship_type": "SPOUSE",
+    "start_date": null,
+    "end_date": null,
+    "is_current": true,
+    "notes": "",
+    "created_at": "2026-09-19T05:48:27.050Z",
+    "updated_at": "2026-09-19T05:48:27.050Z"
+  }
+},
+{
+  "model": "family.relationship",
+  "pk": 36,
+  "fields": {
+    "person1": 17,
+    "person2": 29,
+    "relationship_type": "PARENT",
+    "start_date": null,
+    "end_date": null,
+    "is_current": true,
+    "notes": "",
+    "created_at": "2026-09-19T05:48:27.053Z",
+    "updated_at": "2026-09-19T05:48:27.053Z"
+  }
+},
+{
+  "model": "family.relationship",
+  "pk": 37,
+  "fields": {
+    "person1": 28,
+    "person2": 29,
+    "relationship_type": "PARENT",
+    "start_date": null,
+    "end_date": null,
+    "is_current": true,
+    "notes": "",
+    "created_at": "2026-09-19T05:48:27.057Z",
+    "updated_at": "2026-09-19T05:48:27.057Z"
+  }
+},
+{
+  "model": "family.relationship",
+  "pk": 38,
+  "fields": {
+    "person1": 17,
+    "person2": 30,
+    "relationship_type": "PARENT",
+    "start_date": null,
+    "end_date": null,
+    "is_current": true,
+    "notes": "",
+    "created_at": "2026-09-19T05:48:27.062Z",
+    "updated_at": "2026-09-19T05:48:27.062Z"
+  }
+},
+{
+  "model": "family.relationship",
+  "pk": 39,
+  "fields": {
+    "person1": 28,
+    "person2": 30,
+    "relationship_type": "PARENT",
+    "start_date": null,
+    "end_date": null,
+    "is_current": true,
+    "notes": "",
+    "created_at": "2026-09-19T05:48:27.066Z",
+    "updated_at": "2026-09-19T05:48:27.066Z"
+  }
+},
+{
+  "model": "family.relationship",
+  "pk": 40,
+  "fields": {
+    "person1": 18,
+    "person2": 31,
+    "relationship_type": "SPOUSE",
+    "start_date": null,
+    "end_date": null,
+    "is_current": true,
+    "notes": "",
+    "created_at": "2026-09-19T05:48:27.070Z",
+    "updated_at": "2026-09-19T05:48:27.070Z"
+  }
+},
+{
+  "model": "admin.logentry",
+  "pk": 1,
+  "fields": {
+    "action_time": "2025-05-30T23:57:01.536Z",
+    "user": [
+      "kouekam"
+    ],
+    "content_type": [
+      "users",
+      "user"
+    ],
+    "object_id": "4",
+    "object_repr": "kouekamkamgouluc@gmail.com",
+    "action_flag": 1,
+    "change_message": "[{\"added\": {}}]"
+  }
+},
+{
+  "model": "admin.logentry",
+  "pk": 2,
+  "fields": {
+    "action_time": "2025-05-31T00:12:01.790Z",
+    "user": [
+      "kouekam"
+    ],
+    "content_type": [
+      "users",
+      "user"
+    ],
+    "object_id": "4",
+    "object_repr": "kamgou",
+    "action_flag": 2,
+    "change_message": "[{\"changed\": {\"fields\": [\"First name\", \"Last name\", \"Date of birth\", \"Last login\"]}}]"
+  }
+}
+]

@@ -5,6 +5,8 @@ class User {
   final String? firstName;
   final String? lastName;
   final String? profilePicture;
+  final String? primaryHeritageKey;
+  final bool isStaff;
 
   User({
     required this.id,
@@ -13,6 +15,8 @@ class User {
     this.firstName,
     this.lastName,
     this.profilePicture,
+    this.primaryHeritageKey,
+    this.isStaff = false,
   });
 
   String get displayName {
@@ -28,6 +32,8 @@ class User {
       firstName: json['first_name'] ?? json['firstName'],
       lastName: json['last_name'] ?? json['lastName'],
       profilePicture: json['profile_picture'] ?? json['avatar'],
+      primaryHeritageKey: json['primary_heritage_key'],
+      isStaff: json['is_staff'] ?? false,
     );
   }
 
@@ -39,6 +45,8 @@ class User {
       'first_name': firstName,
       'last_name': lastName,
       'profile_picture': profilePicture,
+      'primary_heritage_key': primaryHeritageKey,
+      'is_staff': isStaff,
     };
   }
 }

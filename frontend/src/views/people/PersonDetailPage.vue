@@ -5,59 +5,59 @@
       class="border-b shadow-lg transition-colors"
       :class="isLight ? 'bg-gradient-to-r from-white via-[#FAF6ED] to-white border-[#C5A059]/40 text-stone-900' : 'bg-[#121316] border-[#C5A059]/40 text-white'"
     >
-      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div class="max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
         <!-- Breadcrumbs Navigation Bar -->
-        <nav aria-label="Breadcrumb" class="flex items-center gap-2 text-xs font-black mb-6 flex-wrap">
+        <nav aria-label="Breadcrumb" class="flex items-center gap-1.5 text-[11px] sm:text-xs font-black mb-3 sm:mb-6 flex-wrap">
           <router-link
             to="/tree"
-            class="inline-flex items-center gap-1.5 transition-colors uppercase tracking-wider"
+            class="inline-flex items-center gap-1 transition-colors uppercase tracking-wider"
             :class="isLight ? 'text-stone-600 hover:text-stone-900' : 'text-stone-400 hover:text-stone-100'"
           >
             <span>🌳</span>
-            <span>Family Tree</span>
+            <span>Tree</span>
           </router-link>
           <span class="opacity-40 font-bold" :class="isLight ? 'text-stone-400' : 'text-stone-600'">/</span>
           <router-link
             to="/people"
-            class="inline-flex items-center gap-1.5 transition-colors uppercase tracking-wider"
+            class="inline-flex items-center gap-1 transition-colors uppercase tracking-wider"
             :class="isLight ? 'text-stone-600 hover:text-stone-900' : 'text-stone-400 hover:text-stone-100'"
           >
             <span>👥</span>
-            <span>Family Members</span>
+            <span>Members</span>
           </router-link>
           <span class="opacity-40 font-bold" :class="isLight ? 'text-stone-400' : 'text-stone-600'">/</span>
           <span
-            class="font-black uppercase tracking-wider truncate max-w-[200px] sm:max-w-none"
+            class="font-black uppercase tracking-wider truncate max-w-[160px] sm:max-w-none"
             :class="isLight ? 'text-[#855B14]' : 'text-[#D4AF37]'"
           >
             {{ person.firstName }} {{ person.lastName }}
           </span>
         </nav>
 
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
-          <div class="flex items-center gap-5">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6">
+          <div class="flex items-start sm:items-center gap-3 sm:gap-5">
             <!-- Large Avatar with Royal Gold Border -->
-            <div class="relative flex-shrink-0">
+            <div class="relative shrink-0">
               <img
                 v-if="person.photo && person.photo !== '/avatars/default-avatar.svg'"
                 :src="person.photo"
                 :alt="`${person.firstName} ${person.lastName}`"
-                class="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl object-cover border-4 border-[#C5A059] shadow-2xl"
+                class="w-14 h-14 sm:w-24 sm:h-24 rounded-2xl sm:rounded-3xl object-cover border-2 sm:border-4 border-[#C5A059] shadow-xl"
               />
               <div
                 v-else
-                class="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl flex items-center justify-center text-4xl sm:text-5xl shadow-2xl border-4 border-[#C5A059]"
+                class="w-14 h-14 sm:w-24 sm:h-24 rounded-2xl sm:rounded-3xl flex items-center justify-center text-2xl sm:text-5xl shadow-xl border-2 sm:border-4 border-[#C5A059]"
                 :class="isLight ? 'bg-amber-50 text-[#855B14]' : 'bg-[#1A1C22] text-[#F3E5AB]'"
               >
                 {{ person.gender === 'Female' ? '👩' : '👨' }}
               </div>
             </div>
 
-            <div>
+            <div class="min-w-0">
               <!-- Badges Row -->
-              <div class="flex items-center gap-2 flex-wrap">
+              <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                 <span
-                  class="px-3 py-1 rounded-full text-xs font-black"
+                  class="px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-black"
                   :class="person.deathDate ? (isLight ? 'bg-stone-200 text-stone-800' : 'bg-stone-700 text-stone-200') : 'bg-gradient-to-r from-[#B8860B] to-[#C5A059] text-black'"
                 >
                   {{ person.deathDate ? '🕊️ Ancestor' : '🌱 Living' }}
@@ -65,7 +65,7 @@
 
                 <span
                   v-if="person.traditionalName"
-                  class="px-3 py-1 rounded-full text-xs font-black border"
+                  class="px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-black border"
                   :class="isLight ? 'bg-amber-100/70 text-[#5B3D0B] border-[#C5A059]/50' : 'bg-[#252834] text-[#F3E5AB] border-[#C5A059]/50'"
                 >
                   👑 {{ person.traditionalName }}
@@ -73,7 +73,7 @@
 
                 <span
                   v-if="person.clanTotem"
-                  class="px-3 py-1 rounded-full text-xs font-bold border"
+                  class="px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold border"
                   :class="isLight ? 'bg-amber-50 text-[#674B19] border-[#C5A059]/40' : 'bg-[#1C1E25] text-[#F3E5AB] border-[#C5A059]/40'"
                 >
                   Totem: {{ person.clanTotem }}
@@ -81,7 +81,7 @@
 
                 <span
                   v-if="person.village || person.birthPlace"
-                  class="px-3 py-1 rounded-full text-xs font-bold border"
+                  class="px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold border"
                   :class="isLight ? 'bg-amber-50 text-[#674B19] border-[#C5A059]/40' : 'bg-[#1C1E25] text-[#F3E5AB] border-[#C5A059]/40'"
                 >
                   📍 {{ person.village || person.birthPlace }}
@@ -89,26 +89,26 @@
               </div>
 
               <h1
-                class="text-3xl sm:text-4xl font-black font-serif uppercase tracking-wide mt-1.5"
+                class="text-xl sm:text-4xl font-black font-serif uppercase tracking-wide mt-1 sm:mt-1.5 truncate"
                 :class="isLight ? 'text-stone-900' : 'text-transparent bg-clip-text bg-gradient-to-r from-[#F3E5AB] via-[#D4AF37] to-[#C5A059]'"
               >
                 {{ person.firstName }} {{ person.lastName }}
               </h1>
 
-              <p class="text-sm font-medium mt-1" :class="isLight ? 'text-stone-600' : 'text-[#FDFBF7]/80'">
+              <p class="text-xs sm:text-sm font-medium mt-0.5 sm:mt-1" :class="isLight ? 'text-stone-600' : 'text-[#FDFBF7]/80'">
                 <span v-if="person.birthDate">Born {{ person.birthDate }}</span>
                 <span v-else>Birth date unknown</span>
                 <span v-if="person.deathDate"> • Passed {{ person.deathDate }}</span>
-                <span v-if="person.generationTier" class="ml-2 font-bold text-[#C5A059]">• Gen {{ person.generationTier }}</span>
+                <span v-if="person.generationTier" class="ml-1 sm:ml-2 font-bold text-[#C5A059]">• Gen {{ person.generationTier }}</span>
               </p>
             </div>
           </div>
 
           <!-- Action Buttons -->
-          <div class="flex flex-wrap items-center gap-2.5">
+          <div class="flex flex-wrap items-center gap-1.5 sm:gap-2.5">
             <router-link
               :to="{ path: '/tree', query: { root: person.id } }"
-              class="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-[#B8860B] via-[#D4AF37] to-[#C5A059] hover:brightness-105 text-black font-black text-xs shadow-lg shadow-black/20 transition-all transform active:scale-95"
+              class="inline-flex items-center gap-1 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2.5 rounded-xl sm:rounded-2xl bg-gradient-to-r from-[#B8860B] via-[#D4AF37] to-[#C5A059] hover:brightness-105 text-black font-black text-xs shadow-md transition-all active:scale-95"
             >
               <span>🌳</span>
               <span>View in Tree</span>
@@ -117,7 +117,7 @@
             <button
               type="button"
               @click="openAddRelative('child')"
-              class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-2xl font-black text-xs border transition-all transform active:scale-95 cursor-pointer shadow-sm"
+              class="inline-flex items-center gap-1 sm:gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2.5 rounded-xl sm:rounded-2xl font-black text-xs border transition-all active:scale-95 cursor-pointer shadow-sm"
               :class="isLight ? 'bg-white hover:bg-stone-50 text-stone-900 border-[#C5A059]' : 'bg-[#1A1C22] hover:bg-[#252832] text-[#F3E5AB] border-[#C5A059]'"
             >
               <span>✨</span>
@@ -127,17 +127,17 @@
             <button
               type="button"
               @click="showShareModal = true"
-              class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-2xl font-black text-xs border transition-all transform active:scale-95 cursor-pointer shadow-sm bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-500"
-              title="Share family branch via WhatsApp"
+              class="inline-flex items-center gap-1 sm:gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2.5 rounded-xl sm:rounded-2xl font-black text-xs border transition-all active:scale-95 cursor-pointer shadow-sm bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-500"
+              title="Share branch via WhatsApp"
             >
               <span>📲</span>
-              <span>Share Branch</span>
+              <span>Share</span>
             </button>
 
             <button
               type="button"
               @click="editPerson"
-              class="p-2.5 rounded-2xl font-bold text-xs transition-all border cursor-pointer"
+              class="p-2 sm:p-2.5 rounded-xl sm:rounded-2xl font-bold text-xs transition-all border cursor-pointer"
               :class="isLight ? 'bg-stone-100 hover:bg-stone-200 text-stone-700 border-stone-300' : 'bg-white/10 hover:bg-white/20 text-[#C5A059] border-[#C5A059]/40'"
               title="Edit details"
             >
@@ -149,44 +149,44 @@
     </div>
 
     <!-- Main Content Container -->
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 -mt-4">
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 -mt-2 sm:-mt-4">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         <!-- Family Connections & Oral Vault (2 cols) -->
-        <div class="lg:col-span-2 space-y-6">
+        <div class="lg:col-span-2 space-y-4 sm:space-y-6">
           <!-- Family Connections Card -->
           <div
-            class="rounded-3xl shadow-sm border p-6 transition-colors"
+            class="rounded-2xl sm:rounded-3xl shadow-sm border p-3.5 sm:p-6 transition-colors"
             :class="isLight ? 'bg-white border-[#C5A059]/40 text-stone-900 shadow-amber-950/5' : 'bg-[#16181F] border-[#C5A059]/40 text-stone-100 shadow-black/80'"
           >
-            <div class="flex items-center justify-between mb-6">
+            <div class="flex items-center justify-between mb-3 sm:mb-6">
               <div>
                 <h2
-                  class="text-xl font-black flex items-center gap-2 font-serif uppercase tracking-wide"
+                  class="text-base sm:text-xl font-black flex items-center gap-2 font-serif uppercase tracking-wide"
                   :class="isLight ? 'text-stone-900' : 'text-[#F3E5AB]'"
                 >
                   <span>👨‍👩‍👧‍👦</span>
                   <span>Family Connections</span>
                 </h2>
-                <p class="text-xs font-semibold mt-0.5" :class="isLight ? 'text-stone-500' : 'text-stone-400'">Parents, partners, and children</p>
+                <p class="text-[11px] sm:text-xs font-semibold mt-0.5" :class="isLight ? 'text-stone-500' : 'text-stone-400'">Parents, partners, and children</p>
               </div>
             </div>
 
             <!-- Parents Grid -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-4 mb-3 sm:mb-6">
               <!-- Papa / Father -->
               <div
-                class="p-4 rounded-2xl border-2 flex flex-col justify-between"
+                class="p-3 sm:p-4 rounded-xl sm:rounded-2xl border-2 flex flex-col justify-between"
                 :class="isLight ? 'bg-[#FDFBF7] border-[#C5A059]/30 text-stone-900' : 'bg-[#1F2128] border-[#C5A059]/30 text-stone-100'"
               >
-                <div class="flex items-center justify-between mb-2">
-                  <span class="text-xs font-black uppercase tracking-wider" :class="isLight ? 'text-[#4A3510]' : 'text-[#F3E5AB]'">👨 Papa / Father</span>
-                  <span v-if="person.father" class="text-xs font-bold px-2 py-0.5 rounded-full border" :class="isLight ? 'text-[#674B19] bg-[#EFE2C2] border-[#C5A059]/40' : 'text-[#F3E5AB] bg-[#C5A059]/20 border-[#C5A059]/50'">Linked</span>
+                <div class="flex items-center justify-between mb-1.5 sm:mb-2">
+                  <span class="text-[11px] sm:text-xs font-black uppercase tracking-wider" :class="isLight ? 'text-[#4A3510]' : 'text-[#F3E5AB]'">👨 Papa / Father</span>
+                  <span v-if="person.father" class="text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full border" :class="isLight ? 'text-[#674B19] bg-[#EFE2C2] border-[#C5A059]/40' : 'text-[#F3E5AB] bg-[#C5A059]/20 border-[#C5A059]/50'">Linked</span>
                 </div>
 
                 <div v-if="person.father" class="flex items-center justify-between">
                   <router-link
                     :to="`/people/${person.father.id}`"
-                    class="text-base font-black hover:underline"
+                    class="text-sm sm:text-base font-black hover:underline"
                     :class="isLight ? 'text-stone-900 hover:text-[#996515]' : 'text-white hover:text-[#D4AF37]'"
                   >
                     {{ person.father.name }}
@@ -200,10 +200,10 @@
                   </router-link>
                 </div>
                 <div v-else class="flex items-center justify-between">
-                  <span class="text-sm text-stone-400 italic">No father recorded</span>
+                  <span class="text-xs sm:text-sm text-stone-400 italic">No father recorded</span>
                   <button
                     @click="openAddRelative('father')"
-                    class="text-xs font-black text-black bg-gradient-to-r from-[#B8860B] to-[#C5A059] hover:brightness-105 px-3 py-1.5 rounded-xl transition-all cursor-pointer"
+                    class="text-[11px] sm:text-xs font-black text-black bg-gradient-to-r from-[#B8860B] to-[#C5A059] hover:brightness-105 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl transition-all cursor-pointer"
                   >
                     + Add Papa
                   </button>
@@ -212,18 +212,18 @@
 
               <!-- Mama / Mother -->
               <div
-                class="p-4 rounded-2xl border-2 flex flex-col justify-between"
+                class="p-3 sm:p-4 rounded-xl sm:rounded-2xl border-2 flex flex-col justify-between"
                 :class="isLight ? 'bg-[#FDFBF7] border-[#C5A059]/30 text-stone-900' : 'bg-[#1F2128] border-[#C5A059]/30 text-stone-100'"
               >
-                <div class="flex items-center justify-between mb-2">
-                  <span class="text-xs font-black uppercase tracking-wider" :class="isLight ? 'text-[#4A3510]' : 'text-[#F3E5AB]'">👩 Mama / Mother</span>
-                  <span v-if="person.mother" class="text-xs font-bold px-2 py-0.5 rounded-full border" :class="isLight ? 'text-[#674B19] bg-[#EFE2C2] border-[#C5A059]/40' : 'text-[#F3E5AB] bg-[#C5A059]/20 border-[#C5A059]/50'">Linked</span>
+                <div class="flex items-center justify-between mb-1.5 sm:mb-2">
+                  <span class="text-[11px] sm:text-xs font-black uppercase tracking-wider" :class="isLight ? 'text-[#4A3510]' : 'text-[#F3E5AB]'">👩 Mama / Mother</span>
+                  <span v-if="person.mother" class="text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full border" :class="isLight ? 'text-[#674B19] bg-[#EFE2C2] border-[#C5A059]/40' : 'text-[#F3E5AB] bg-[#C5A059]/20 border-[#C5A059]/50'">Linked</span>
                 </div>
 
                 <div v-if="person.mother" class="flex items-center justify-between">
                   <router-link
                     :to="`/people/${person.mother.id}`"
-                    class="text-base font-black hover:underline"
+                    class="text-sm sm:text-base font-black hover:underline"
                     :class="isLight ? 'text-stone-900 hover:text-[#996515]' : 'text-white hover:text-[#D4AF37]'"
                   >
                     {{ person.mother.name }}
@@ -237,10 +237,10 @@
                   </router-link>
                 </div>
                 <div v-else class="flex items-center justify-between">
-                  <span class="text-sm text-stone-400 italic">No mother recorded</span>
+                  <span class="text-xs sm:text-sm text-stone-400 italic">No mother recorded</span>
                   <button
                     @click="openAddRelative('mother')"
-                    class="text-xs font-black text-black bg-gradient-to-r from-[#B8860B] to-[#C5A059] hover:brightness-105 px-3 py-1.5 rounded-xl transition-all cursor-pointer"
+                    class="text-[11px] sm:text-xs font-black text-black bg-gradient-to-r from-[#B8860B] to-[#C5A059] hover:brightness-105 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl transition-all cursor-pointer"
                   >
                     + Add Mama
                   </button>
@@ -250,15 +250,15 @@
 
             <!-- Partner / Spouse -->
             <div
-              class="p-4 rounded-2xl border-2 mb-6"
+              class="p-3 sm:p-4 rounded-xl sm:rounded-2xl border-2 mb-3 sm:mb-6"
               :class="isLight ? 'bg-[#FDFBF7] border-[#C5A059]/30 text-stone-900' : 'bg-[#1F2128] border-[#C5A059]/30 text-stone-100'"
             >
-              <div class="flex items-center justify-between mb-2">
-                <span class="text-xs font-black uppercase tracking-wider" :class="isLight ? 'text-[#4A3510]' : 'text-[#F3E5AB]'">💍 Partner / Spouse</span>
+              <div class="flex items-center justify-between mb-1.5 sm:mb-2">
+                <span class="text-[11px] sm:text-xs font-black uppercase tracking-wider" :class="isLight ? 'text-[#4A3510]' : 'text-[#F3E5AB]'">💍 Partner / Spouse</span>
                 <button
                   v-if="!person.spouse"
                   @click="openAddRelative('spouse')"
-                  class="text-xs font-black text-black bg-gradient-to-r from-[#B8860B] to-[#C5A059] hover:brightness-105 px-3 py-1.5 rounded-xl transition-all cursor-pointer"
+                  class="text-[11px] sm:text-xs font-black text-black bg-gradient-to-r from-[#B8860B] to-[#C5A059] hover:brightness-105 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl transition-all cursor-pointer"
                 >
                   + Add Partner
                 </button>
@@ -267,7 +267,7 @@
               <div v-if="person.spouse" class="flex items-center justify-between">
                 <router-link
                   :to="`/people/${person.spouse.id}`"
-                  class="text-base font-black hover:underline"
+                  class="text-sm sm:text-base font-black hover:underline"
                   :class="isLight ? 'text-stone-900 hover:text-[#996515]' : 'text-white hover:text-[#D4AF37]'"
                 >
                   {{ person.spouse.name }}
@@ -280,18 +280,18 @@
                   View →
                 </router-link>
               </div>
-              <p v-else class="text-sm text-stone-400 italic">No partner recorded yet</p>
+              <p v-else class="text-xs sm:text-sm text-stone-400 italic">No partner recorded yet</p>
             </div>
 
             <!-- Siblings (Brothers & Sisters) -->
             <div
-              class="p-4 rounded-2xl border-2 mb-6"
+              class="p-3 sm:p-4 rounded-xl sm:rounded-2xl border-2 mb-3 sm:mb-6"
               :class="isLight ? 'bg-[#FDFBF7] border-[#C5A059]/30 text-stone-900' : 'bg-[#1F2128] border-[#C5A059]/30 text-stone-100'"
             >
-              <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center justify-between mb-2 sm:mb-3">
                 <div>
-                  <span class="text-xs font-black uppercase tracking-wider" :class="isLight ? 'text-[#4A3510]' : 'text-[#F3E5AB]'">👥 Siblings (Brothers & Sisters)</span>
-                  <span class="ml-2 text-xs font-black text-black bg-gradient-to-r from-[#B8860B] to-[#C5A059] px-2 py-0.5 rounded-full">
+                  <span class="text-[11px] sm:text-xs font-black uppercase tracking-wider" :class="isLight ? 'text-[#4A3510]' : 'text-[#F3E5AB]'">👥 Siblings</span>
+                  <span class="ml-2 text-[10px] sm:text-xs font-black text-black bg-gradient-to-r from-[#B8860B] to-[#C5A059] px-2 py-0.5 rounded-full">
                     {{ person.siblings?.length || 0 }}
                   </span>
                 </div>
@@ -333,36 +333,36 @@
 
             <!-- Children List -->
             <div
-              class="p-4 rounded-2xl border-2"
+              class="p-3 sm:p-4 rounded-xl sm:rounded-2xl border-2"
               :class="isLight ? 'bg-[#FDFBF7] border-[#C5A059]/30 text-stone-900' : 'bg-[#1F2128] border-[#C5A059]/30 text-stone-100'"
             >
-              <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center justify-between mb-2 sm:mb-3">
                 <div>
-                  <span class="text-xs font-black uppercase tracking-wider" :class="isLight ? 'text-[#4A3510]' : 'text-[#F3E5AB]'">👶 Children</span>
-                  <span class="ml-2 text-xs font-black text-black bg-gradient-to-r from-[#B8860B] to-[#C5A059] px-2 py-0.5 rounded-full">
+                  <span class="text-[11px] sm:text-xs font-black uppercase tracking-wider" :class="isLight ? 'text-[#4A3510]' : 'text-[#F3E5AB]'">👶 Children</span>
+                  <span class="ml-2 text-[10px] sm:text-xs font-black text-black bg-gradient-to-r from-[#B8860B] to-[#C5A059] px-2 py-0.5 rounded-full">
                     {{ person.children?.length || 0 }}
                   </span>
                 </div>
                 <button
                   @click="openAddRelative('child')"
-                  class="text-xs font-black text-black bg-gradient-to-r from-[#B8860B] to-[#C5A059] hover:brightness-105 px-3 py-1.5 rounded-xl transition-all cursor-pointer"
+                  class="text-[11px] sm:text-xs font-black text-black bg-gradient-to-r from-[#B8860B] to-[#C5A059] hover:brightness-105 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl transition-all cursor-pointer"
                 >
                   + Add Child
                 </button>
               </div>
 
-              <div v-if="person.children && person.children.length > 0" class="space-y-2">
+              <div v-if="person.children && person.children.length > 0" class="space-y-1.5 sm:space-y-2">
                 <div
                   v-for="child in person.children"
                   :key="child.id"
-                  class="p-3 rounded-xl border flex items-center justify-between transition-colors"
+                  class="p-2 sm:p-3 rounded-lg sm:rounded-xl border flex items-center justify-between transition-colors"
                   :class="isLight ? 'bg-white border-[#C5A059]/30 hover:bg-[#FAF7F0] text-stone-900' : 'bg-[#16181F] border-[#C5A059]/30 hover:bg-[#20232E] text-stone-100'"
                 >
-                  <div class="flex items-center gap-3">
-                    <span class="text-xl">👶</span>
+                  <div class="flex items-center gap-2 sm:gap-3">
+                    <span class="text-base sm:text-xl">👶</span>
                     <router-link
                       :to="`/people/${child.id}`"
-                      class="text-sm font-black transition-colors"
+                      class="text-xs sm:text-sm font-black transition-colors"
                       :class="isLight ? 'text-stone-900 hover:text-[#996515]' : 'text-stone-100 hover:text-[#D4AF37]'"
                     >
                       {{ child.name }}
@@ -377,32 +377,32 @@
                   </router-link>
                 </div>
               </div>
-              <p v-else class="text-sm text-stone-400 italic">No children recorded yet</p>
+              <p v-else class="text-xs sm:text-sm text-stone-400 italic">No children recorded yet</p>
             </div>
           </div>
 
           <!-- Oral History & Elder Audio Vault -->
           <div
-            class="rounded-3xl shadow-sm border p-6 transition-colors"
+            class="rounded-2xl sm:rounded-3xl shadow-sm border p-3.5 sm:p-6 transition-colors"
             :class="isLight ? 'bg-white border-[#C5A059]/40 text-stone-900 shadow-amber-950/5' : 'bg-[#16181F] border-[#C5A059]/40 text-stone-100 shadow-black/80'"
           >
-            <div class="flex items-center justify-between mb-4">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 sm:gap-4 mb-3 sm:mb-4">
               <div>
                 <h2
-                  class="text-xl font-black flex items-center gap-2 font-serif uppercase tracking-wide"
+                  class="text-base sm:text-xl font-black flex items-center gap-2 font-serif uppercase tracking-wide"
                   :class="isLight ? 'text-stone-900' : 'text-[#F3E5AB]'"
                 >
                   <span>🎙️</span>
-                  <span>Oral History & Voice Memories</span>
+                  <span>Oral History & Voice</span>
                 </h2>
-                <p class="text-xs font-semibold mt-0.5" :class="isLight ? 'text-stone-500' : 'text-stone-400'">
+                <p class="text-[11px] sm:text-xs font-semibold mt-0.5" :class="isLight ? 'text-stone-500' : 'text-stone-400'">
                   Preserve elders' voices, oral lineage, songs, and historical recollections
                 </p>
               </div>
 
               <button
                 @click="showAudioModal = true"
-                class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-black text-black bg-gradient-to-r from-[#B8860B] to-[#C5A059] hover:brightness-105 shadow-md transition-all cursor-pointer"
+                class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-lg sm:rounded-xl text-xs font-black text-black bg-gradient-to-r from-[#B8860B] to-[#C5A059] hover:brightness-105 shadow-md transition-all cursor-pointer"
               >
                 <span>🎙️</span>
                 <span>+ Record Voice</span>

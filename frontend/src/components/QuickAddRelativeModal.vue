@@ -8,38 +8,38 @@
 
       <!-- Modal panel -->
       <div
-        class="inline-block align-bottom rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border-2"
+        class="inline-block align-bottom rounded-2xl sm:rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all my-2 sm:my-8 align-middle max-w-full sm:max-w-lg w-full border-2 max-h-[92vh] overflow-y-auto"
         :class="isLight ? 'bg-white text-stone-900 border-[#C5A059]' : 'bg-[#16181F] text-stone-100 border-[#C5A059]'"
       >
         <!-- Kkevo Royal Header -->
         <div
-          class="px-6 py-4 flex items-center justify-between border-b"
+          class="px-3.5 py-2.5 sm:px-6 sm:py-4 flex items-center justify-between border-b"
           :class="isLight ? 'bg-gradient-to-r from-white via-amber-50/60 to-white text-stone-900 border-[#C5A059]/40' : 'bg-[#121316] text-white border-[#C5A059]/40'"
         >
-          <div class="flex items-center space-x-3">
+          <div class="flex items-center space-x-2.5 sm:space-x-3">
             <div
-              class="w-11 h-11 rounded-xl border border-[#C5A059] flex items-center justify-center p-1 shadow-inner flex-shrink-0"
+              class="w-8 h-8 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl border border-[#C5A059] flex items-center justify-center p-0.5 sm:p-1 shadow-inner shrink-0"
               :class="isLight ? 'bg-amber-50' : 'bg-[#0B0C0E]'"
             >
               <img src="/logo.png" alt="Kkevo Logo" class="w-full h-full object-contain" />
             </div>
             <div>
               <h3
-                class="text-lg font-black leading-tight font-serif uppercase tracking-wide"
+                class="text-sm sm:text-lg font-black leading-tight font-serif uppercase tracking-wide truncate"
                 :class="isLight ? 'text-stone-900' : 'text-transparent bg-clip-text bg-gradient-to-r from-[#F3E5AB] via-[#D4AF37] to-[#C5A059]'"
                 id="modal-title"
               >
                 {{ targetPerson ? 'Add to Kkevo Family' : 'Add Family Member' }}
               </h3>
-              <p class="text-xs font-semibold" :class="isLight ? 'text-[#855B14]' : 'text-[#C5A059]'">
-                <span v-if="targetPerson">Connected to <span class="px-2 py-0.5 rounded-md font-bold" :class="isLight ? 'bg-amber-100/70 text-[#634208] border border-[#C5A059]/40' : 'bg-[#1D1F25] text-[#F3E5AB] border border-[#C5A059]/40'">{{ targetPersonName }}</span></span>
+              <p class="text-[10px] sm:text-xs font-semibold" :class="isLight ? 'text-[#855B14]' : 'text-[#C5A059]'">
+                <span v-if="targetPerson">Connected to <span class="px-1.5 py-0.5 rounded font-bold" :class="isLight ? 'bg-amber-100/70 text-[#634208] border border-[#C5A059]/40' : 'bg-[#1D1F25] text-[#F3E5AB] border border-[#C5A059]/40'">{{ targetPersonName }}</span></span>
                 <span v-else>Record their heritage details</span>
               </p>
             </div>
           </div>
           <button
             @click="$emit('close')"
-            class="w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer"
+            class="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer text-xs sm:text-sm shrink-0"
             :class="isLight ? 'bg-stone-100 hover:bg-stone-200 text-stone-700' : 'bg-white/10 hover:bg-white/20 text-[#C5A059]'"
           >
             ✕
@@ -47,22 +47,22 @@
         </div>
 
         <!-- Form Body -->
-        <form @submit.prevent="handleSubmit" class="p-6 space-y-4">
-          <!-- Big 4 Relationship Tiles (only if targetPerson is present) -->
+        <form @submit.prevent="handleSubmit" class="p-3.5 sm:p-6 space-y-2.5 sm:space-y-4">
+          <!-- 4 Relationship Tiles (only if targetPerson is present) -->
           <div v-if="targetPerson">
             <label
-              class="block text-xs font-black uppercase tracking-wider mb-2"
+              class="block text-[11px] sm:text-xs font-black uppercase tracking-wider mb-1 sm:mb-2"
               :class="isLight ? 'text-[#634208]' : 'text-[#F3E5AB]'"
             >
               Who are you adding to {{ targetPersonName }}?
             </label>
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div class="grid grid-cols-4 gap-1.5 sm:gap-2">
               <button
                 type="button"
                 v-for="rel in relationships"
                 :key="rel.id"
                 @click="selectRelationship(rel.id)"
-                class="py-3 px-2 rounded-2xl border-2 text-center transition-all flex flex-col items-center gap-1 shadow-sm cursor-pointer"
+                class="py-1.5 sm:py-3 px-1 sm:px-2 rounded-xl sm:rounded-2xl border-2 text-center transition-all flex flex-col items-center gap-0.5 shadow-sm cursor-pointer"
                 :class="[
                   selectedRelation === rel.id
                     ? isLight
@@ -73,34 +73,34 @@
                       : 'border-[#C5A059]/30 bg-[#1C1E25] text-stone-300 hover:bg-[#252832]'
                 ]"
               >
-                <span class="text-2xl">{{ rel.icon }}</span>
-                <span class="text-xs font-black leading-tight">{{ rel.label }}</span>
-                <span class="text-[10px] font-normal" :class="isLight ? 'text-stone-500' : 'text-stone-400'">{{ rel.sub }}</span>
+                <span class="text-lg sm:text-2xl">{{ rel.icon }}</span>
+                <span class="text-[11px] sm:text-xs font-black leading-tight">{{ rel.label }}</span>
+                <span class="text-[9px] sm:text-[10px] font-normal truncate max-w-full" :class="isLight ? 'text-stone-500' : 'text-stone-400'">{{ rel.sub }}</span>
               </button>
             </div>
           </div>
 
           <!-- Name fields -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 pt-0.5 sm:pt-1">
             <div>
-              <label class="block text-xs font-bold mb-1" :class="isLight ? 'text-stone-800' : 'text-stone-200'">First Name *</label>
+              <label class="block text-[11px] sm:text-xs font-bold mb-0.5 sm:mb-1" :class="isLight ? 'text-stone-800' : 'text-stone-200'">First Name *</label>
               <input
                 type="text"
                 v-model="form.firstName"
                 required
                 placeholder="e.g. Papa Jean, Marie, Lucas"
-                class="w-full px-3.5 py-2.5 text-base border-2 rounded-xl focus:ring-2 focus:ring-[#C5A059] focus:border-[#C5A059] transition-colors"
+                class="w-full px-3 py-1.5 sm:px-3.5 sm:py-2.5 text-xs sm:text-base border-2 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-[#C5A059] focus:border-[#C5A059] transition-colors"
                 :class="isLight ? 'bg-white border-stone-200 text-stone-900 placeholder-stone-400' : 'bg-[#1F2128] border-[#C5A059]/40 text-white placeholder-stone-500'"
               />
             </div>
             <div>
-              <label class="block text-xs font-bold mb-1" :class="isLight ? 'text-stone-800' : 'text-stone-200'">Family / Last Name *</label>
+              <label class="block text-[11px] sm:text-xs font-bold mb-0.5 sm:mb-1" :class="isLight ? 'text-stone-800' : 'text-stone-200'">Family / Last Name *</label>
               <input
                 type="text"
                 v-model="form.lastName"
                 required
                 placeholder="e.g. Kkevo, Henderson"
-                class="w-full px-3.5 py-2.5 text-base border-2 rounded-xl focus:ring-2 focus:ring-[#C5A059] focus:border-[#C5A059] transition-colors"
+                class="w-full px-3 py-1.5 sm:px-3.5 sm:py-2.5 text-xs sm:text-base border-2 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-[#C5A059] focus:border-[#C5A059] transition-colors"
                 :class="isLight ? 'bg-white border-stone-200 text-stone-900 placeholder-stone-400' : 'bg-[#1F2128] border-[#C5A059]/40 text-white placeholder-stone-500'"
               />
             </div>
@@ -108,58 +108,58 @@
 
           <!-- Village / Hometown / Origin -->
           <div>
-            <label class="block text-xs font-bold mb-1" :class="isLight ? 'text-stone-800' : 'text-stone-200'">
-              🏡 Village / Hometown / City of Origin
+            <label class="block text-[11px] sm:text-xs font-bold mb-0.5 sm:mb-1" :class="isLight ? 'text-stone-800' : 'text-stone-200'">
+              🏡 Village / Hometown / Origin
             </label>
             <input
               type="text"
               v-model="form.birthPlace"
               placeholder="e.g. Bafoussam, Douala, Yaoundé, London"
-              class="w-full px-3.5 py-2.5 text-sm border-2 rounded-xl focus:ring-2 focus:ring-[#C5A059] focus:border-[#C5A059] transition-colors"
+              class="w-full px-3 py-1.5 sm:px-3.5 sm:py-2.5 text-xs sm:text-sm border-2 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-[#C5A059] focus:border-[#C5A059] transition-colors"
               :class="isLight ? 'bg-white border-stone-200 text-stone-900 placeholder-stone-400' : 'bg-[#1F2128] border-[#C5A059]/40 text-white placeholder-stone-500'"
             />
           </div>
 
           <!-- Birthday & Status -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 items-center">
             <div>
-              <label class="block text-xs font-bold mb-1" :class="isLight ? 'text-stone-800' : 'text-stone-200'">Date or Year of Birth</label>
+              <label class="block text-[11px] sm:text-xs font-bold mb-0.5 sm:mb-1" :class="isLight ? 'text-stone-800' : 'text-stone-200'">Birth Date / Year</label>
               <input
                 type="date"
                 v-model="form.birthDate"
-                class="w-full px-3.5 py-2.5 text-sm border-2 rounded-xl focus:ring-2 focus:ring-[#C5A059] focus:border-[#C5A059] transition-colors"
+                class="w-full px-3 py-1.5 sm:px-3.5 sm:py-2.5 text-xs sm:text-sm border-2 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-[#C5A059] focus:border-[#C5A059] transition-colors"
                 :class="isLight ? 'bg-white border-stone-200 text-stone-900' : 'bg-[#1F2128] border-[#C5A059]/40 text-white'"
               />
             </div>
             <div>
-              <label class="block text-xs font-bold mb-1" :class="isLight ? 'text-stone-800' : 'text-stone-200'">Status</label>
+              <label class="block text-[11px] sm:text-xs font-bold mb-0.5 sm:mb-1" :class="isLight ? 'text-stone-800' : 'text-stone-200'">Status</label>
               <div
-                class="flex items-center space-x-3 p-2 border-2 rounded-xl"
+                class="flex items-center space-x-3 p-1.5 sm:p-2 border-2 rounded-lg sm:rounded-xl"
                 :class="isLight ? 'bg-stone-50 border-stone-200' : 'bg-[#1F2128] border-[#C5A059]/40'"
               >
-                <label class="inline-flex items-center text-xs font-bold cursor-pointer" :class="isLight ? 'text-stone-800' : 'text-stone-200'">
+                <label class="inline-flex items-center text-[11px] sm:text-xs font-bold cursor-pointer" :class="isLight ? 'text-stone-800' : 'text-stone-200'">
                   <input type="radio" :value="true" v-model="form.isLiving" class="text-[#C5A059] focus:ring-[#C5A059]" />
-                  <span class="ml-1.5">🌱 Living</span>
+                  <span class="ml-1">🌱 Living</span>
                 </label>
-                <label class="inline-flex items-center text-xs font-bold cursor-pointer" :class="isLight ? 'text-stone-800' : 'text-stone-200'">
+                <label class="inline-flex items-center text-[11px] sm:text-xs font-bold cursor-pointer" :class="isLight ? 'text-stone-800' : 'text-stone-200'">
                   <input type="radio" :value="false" v-model="form.isLiving" class="text-[#C5A059] focus:ring-[#C5A059]" />
-                  <span class="ml-1.5">🕊️ Ancestor</span>
+                  <span class="ml-1">🕊️ Ancestor</span>
                 </label>
               </div>
             </div>
           </div>
 
           <!-- Error Alert -->
-          <div v-if="errorMessage" class="p-3 bg-red-50 text-red-700 rounded-xl text-xs font-bold border border-red-200">
+          <div v-if="errorMessage" class="p-2.5 bg-red-50 text-red-700 rounded-lg sm:rounded-xl text-xs font-bold border border-red-200">
             ⚠️ {{ errorMessage }}
           </div>
 
-          <!-- Big Friendly Action Buttons -->
-          <div class="mt-5 pt-4 border-t flex justify-end space-x-3" :class="isLight ? 'border-stone-200' : 'border-[#C5A059]/30'">
+          <!-- Action Buttons -->
+          <div class="mt-3 sm:mt-5 pt-2.5 sm:pt-4 border-t flex justify-end space-x-2 sm:space-x-3" :class="isLight ? 'border-stone-200' : 'border-[#C5A059]/30'">
             <button
               type="button"
               @click="$emit('close')"
-              class="px-4 py-2.5 border-2 rounded-xl text-sm font-bold transition-colors cursor-pointer"
+              class="px-3 py-1.5 sm:px-4 sm:py-2.5 border-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition-colors cursor-pointer"
               :class="isLight ? 'border-stone-300 text-stone-700 hover:bg-stone-100' : 'border-[#C5A059]/40 text-stone-300 hover:bg-white/5'"
             >
               Cancel
@@ -167,12 +167,12 @@
             <button
               type="submit"
               :disabled="saving"
-              class="px-6 py-2.5 rounded-xl text-sm font-black text-black bg-gradient-to-r from-[#B8860B] via-[#D4AF37] to-[#C5A059] hover:brightness-105 shadow-md shadow-amber-950/20 flex items-center gap-2 cursor-pointer transition-all"
+              class="px-4 py-1.5 sm:px-6 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-black text-black bg-gradient-to-r from-[#B8860B] via-[#D4AF37] to-[#C5A059] hover:brightness-105 shadow-md flex items-center gap-1.5 sm:gap-2 cursor-pointer transition-all"
               :class="{ 'opacity-50 cursor-not-allowed': saving }"
             >
               <span v-if="saving" class="animate-spin">⏳</span>
               <span v-else>✨</span>
-              <span>{{ saving ? 'Saving to Database...' : 'Save & Connect' }}</span>
+              <span>{{ saving ? 'Saving...' : 'Save & Connect' }}</span>
             </button>
           </div>
         </form>

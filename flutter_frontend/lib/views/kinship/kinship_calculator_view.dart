@@ -31,6 +31,27 @@ class _KinshipCalculatorViewState extends State<KinshipCalculatorView> {
     super.initState();
     _personAId = widget.initialPersonA?.id;
     _personBId = widget.initialPersonB?.id;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final tp = Provider.of<TreeProvider>(context, listen: false);
+      if (tp.people.isEmpty && !tp.isLoading) {
+        tp.loadData();
+      }
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant KinshipCalculatorView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialPersonA != null && widget.initialPersonA?.id != oldWidget.initialPersonA?.id) {
+      setState(() {
+        _personAId = widget.initialPersonA!.id;
+      });
+    }
+    if (widget.initialPersonB != null && widget.initialPersonB?.id != oldWidget.initialPersonB?.id) {
+      setState(() {
+        _personBId = widget.initialPersonB!.id;
+      });
+    }
   }
 
   void _swap() {
@@ -46,6 +67,7 @@ class _KinshipCalculatorViewState extends State<KinshipCalculatorView> {
     final treeProvider = Provider.of<TreeProvider>(context);
     final people = treeProvider.people;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isMobile = MediaQuery.of(context).size.shortestSide < 600;
 
     // Set initial defaults if unselected
     if (_personAId == null && people.isNotEmpty) {
@@ -56,10 +78,12 @@ class _KinshipCalculatorViewState extends State<KinshipCalculatorView> {
     }
 
     KinshipResult? result;
-    if (_personAId != null && _personBId != null) {
+    if (_personAId != null && _personBId != null && people.isNotEmpty) {
+      final validA = people.any((p) => p.id == _personAId) ? _personAId! : people.first.id;
+      final validB = people.any((p) => p.id == _personBId) ? _personBId! : (people.length > 1 ? people[1].id : people.first.id);
       result = KinshipSolver.calculateKinship(
-        personAId: _personAId!,
-        personBId: _personBId!,
+        personAId: validA,
+        personBId: validB,
         people: people,
         relationships: treeProvider.relationships,
       );
@@ -67,7 +91,7 @@ class _KinshipCalculatorViewState extends State<KinshipCalculatorView> {
 
     return Scaffold(
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(isMobile ? 16 : 24),
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 880),
@@ -77,14 +101,18 @@ class _KinshipCalculatorViewState extends State<KinshipCalculatorView> {
                 // Title
                 Row(
                   children: [
-                    const Icon(Icons.hub_outlined, color: RoyalTheme.brightGold, size: 28),
-                    const SizedBox(width: 12),
-                    Text(
-                      'Imperial Kinship Solver',
-                      style: GoogleFonts.cinzel(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? RoyalTheme.lightGold : const Color(0xFF1C1917),
+                    const Icon(Icons.hub_outlined, color: RoyalTheme.brightGold, size: 24),
+                    const SizedBox(width: 10),
+                    Flexible(
+                      child: Text(
+                        'Imperial Kinship Solver',
+                        style: GoogleFonts.cinzel(
+                          fontSize: isMobile ? 18 : 20,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? RoyalTheme.lightGold : const Color(0xFF1C1917),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
@@ -93,67 +121,94 @@ class _KinshipCalculatorViewState extends State<KinshipCalculatorView> {
                 Text(
                   'Solve biological, spousal, and ancestral kinship paths between any two dynasty members.',
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 12.5,
                     color: isDark ? Colors.grey[400] : Colors.grey[600],
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 18),
                 // Selector Card
                 RoyalCard(
-                  padding: const EdgeInsets.all(20),
+                  padding: EdgeInsets.all(isMobile ? 12 : 16),
                   child: Column(
                     children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildPersonDropdown(
-                              label: 'Origin Member (Person A)',
-                              selectedId: _personAId,
-                              people: people,
-                              onChanged: (id) => setState(() => _personAId = id),
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            child: IconButton(
-                              icon: const Icon(Icons.swap_horiz_rounded, color: RoyalTheme.brightGold, size: 28),
-                              tooltip: 'Swap Perspective',
+                      if (isMobile) ...[
+                        _buildPersonDropdown(
+                          label: 'Origin Member (Person A)',
+                          selectedId: _personAId,
+                          people: people,
+                          onChanged: (id) => setState(() => _personAId = id),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 6),
+                          child: Center(
+                            child: OutlinedButton.icon(
+                              icon: const Icon(Icons.swap_vert_rounded, color: RoyalTheme.brightGold, size: 20),
+                              label: const Text('Invert Perspective', style: TextStyle(color: RoyalTheme.brightGold, fontSize: 12, fontWeight: FontWeight.bold)),
+                              style: OutlinedButton.styleFrom(
+                                side: BorderSide(color: RoyalTheme.brightGold.withValues(alpha: 0.4)),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                              ),
                               onPressed: _swap,
                             ),
                           ),
-                          Expanded(
-                            child: _buildPersonDropdown(
-                              label: 'Target Relative (Person B)',
-                              selectedId: _personBId,
-                              people: people,
-                              onChanged: (id) => setState(() => _personBId = id),
+                        ),
+                        _buildPersonDropdown(
+                          label: 'Target Relative (Person B)',
+                          selectedId: _personBId,
+                          people: people,
+                          onChanged: (id) => setState(() => _personBId = id),
+                        ),
+                      ] else ...[
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildPersonDropdown(
+                                label: 'Origin Member (Person A)',
+                                selectedId: _personAId,
+                                people: people,
+                                onChanged: (id) => setState(() => _personAId = id),
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                              child: IconButton(
+                                icon: const Icon(Icons.swap_horiz_rounded, color: RoyalTheme.brightGold, size: 24),
+                                tooltip: 'Swap Perspective',
+                                onPressed: _swap,
+                              ),
+                            ),
+                            Expanded(
+                              child: _buildPersonDropdown(
+                                label: 'Target Relative (Person B)',
+                                selectedId: _personBId,
+                                people: people,
+                                onChanged: (id) => setState(() => _personBId = id),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                      const SizedBox(height: 14),
                       // Quick Presets
-                      Row(
+                      Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 8,
+                        runSpacing: 6,
                         children: [
                           const Text(
                             'Quick Demo Presets: ',
-                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey),
+                            style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Colors.grey),
                           ),
-                          const SizedBox(width: 8),
-                          Wrap(
-                            spacing: 8,
-                            children: [
-                              _buildPresetChip('First Pair', people.isNotEmpty ? people.first.id : null, people.length > 1 ? people[1].id : null),
-                              if (people.length >= 4)
-                                _buildPresetChip('Generational Jump', people.first.id, people.last.id),
-                            ],
-                          ),
+                          _buildPresetChip('First Pair', people.isNotEmpty ? people.first.id : null, people.length > 1 ? people[1].id : null),
+                          if (people.length >= 4)
+                            _buildPresetChip('Generational Jump', people.first.id, people.last.id),
                         ],
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 28),
+                const SizedBox(height: 24),
                 // Kinship Result Card
                 if (result != null) _buildResultSection(result, isDark),
               ],
@@ -170,6 +225,10 @@ class _KinshipCalculatorViewState extends State<KinshipCalculatorView> {
     required List<Person> people,
     required Function(int?) onChanged,
   }) {
+    final validSelectedId = people.any((p) => p.id == selectedId)
+        ? selectedId
+        : (people.isNotEmpty ? people.first.id : null);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -187,7 +246,7 @@ class _KinshipCalculatorViewState extends State<KinshipCalculatorView> {
           child: DropdownButtonHideUnderline(
             child: DropdownButton<int>(
               isExpanded: true,
-              value: selectedId,
+              value: validSelectedId,
               items: people.map((p) {
                 return DropdownMenuItem<int>(
                   value: p.id,
@@ -197,8 +256,8 @@ class _KinshipCalculatorViewState extends State<KinshipCalculatorView> {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          p.fullName,
-                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                          '${p.fullName} (${p.traditionalName ?? "Gen ${p.generationTier}"})',
+                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -218,7 +277,7 @@ class _KinshipCalculatorViewState extends State<KinshipCalculatorView> {
     if (p1 == null || p2 == null) return const SizedBox.shrink();
     return ActionChip(
       label: Text(label, style: const TextStyle(fontSize: 11)),
-      backgroundColor: RoyalTheme.primaryGold.withOpacity(0.15),
+      backgroundColor: RoyalTheme.primaryGold.withValues(alpha: 0.15),
       side: const BorderSide(color: RoyalTheme.borderDark),
       onPressed: () {
         setState(() {
@@ -237,13 +296,15 @@ class _KinshipCalculatorViewState extends State<KinshipCalculatorView> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Honorific Banner
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                 decoration: BoxDecoration(
-                  color: RoyalTheme.primaryGold.withOpacity(0.2),
+                  color: RoyalTheme.primaryGold.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: RoyalTheme.brightGold),
                 ),
@@ -252,13 +313,15 @@ class _KinshipCalculatorViewState extends State<KinshipCalculatorView> {
                   children: [
                     const Icon(Icons.stars, color: RoyalTheme.brightGold, size: 16),
                     const SizedBox(width: 8),
-                    Text(
-                      res.culturalHonorific.toUpperCase(),
-                      style: GoogleFonts.cinzel(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: RoyalTheme.brightGold,
-                        letterSpacing: 1.0,
+                    Flexible(
+                      child: Text(
+                        res.culturalHonorific.toUpperCase(),
+                        style: GoogleFonts.cinzel(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.bold,
+                          color: RoyalTheme.brightGold,
+                          letterSpacing: 0.8,
+                        ),
                       ),
                     ),
                   ],
@@ -267,7 +330,7 @@ class _KinshipCalculatorViewState extends State<KinshipCalculatorView> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.amber.withOpacity(0.12),
+                  color: Colors.amber.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -276,7 +339,7 @@ class _KinshipCalculatorViewState extends State<KinshipCalculatorView> {
                       : (res.generationDifference > 0
                           ? '+${res.generationDifference} Gen Above'
                           : '${res.generationDifference} Gen Below'),
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.amber),
+                  style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Colors.amber),
                 ),
               ),
             ],
@@ -352,7 +415,7 @@ class _KinshipCalculatorViewState extends State<KinshipCalculatorView> {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: (isOrigin || isTarget)
-            ? RoyalTheme.primaryGold.withOpacity(0.15)
+            ? RoyalTheme.primaryGold.withValues(alpha: 0.15)
             : RoyalTheme.surfaceDark,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(

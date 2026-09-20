@@ -263,33 +263,34 @@
 
       <!-- 2B. Mobile Header (< md screens) -->
       <header
-        class="md:hidden flex items-center justify-between px-4 py-3 border-b sticky top-0 z-30 transition-colors shadow-sm"
+        class="md:hidden flex items-center justify-between px-3 py-2 border-b sticky top-0 z-30 transition-colors shadow-sm h-13"
         :class="isLight ? 'bg-white border-[#C5A059]/30 text-stone-900' : 'bg-[#121316] border-[#C5A059]/40 text-stone-100'"
       >
-        <div class="flex items-center gap-2.5">
+        <div class="flex items-center gap-2">
           <button
             @click="mobileDrawerOpen = true"
-            class="p-2 rounded-xl border border-[#C5A059]/40 text-base transition-all cursor-pointer"
+            class="w-8 h-8 rounded-lg border border-[#C5A059]/40 flex items-center justify-center text-sm transition-all cursor-pointer"
             :class="isLight ? 'bg-amber-50/80 text-stone-800' : 'bg-[#1C1E24] text-[#F3E5AB]'"
             title="Open Lineage Menu"
           >
             ☰
           </button>
-          <div class="w-8 h-8 rounded-lg overflow-hidden border border-[#C5A059] p-0.5 flex items-center justify-center"
+          <div class="w-7 h-7 rounded-lg overflow-hidden border border-[#C5A059] p-0.5 flex items-center justify-center shrink-0"
             :class="isLight ? 'bg-amber-50' : 'bg-black'">
             <img src="/logo.png" alt="Logo" class="w-full h-full object-contain" />
           </div>
-          <span class="text-sm font-black font-serif uppercase tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-[#B8860B] via-[#D4AF37] to-[#C5A059]">
+          <span class="text-xs font-black font-serif uppercase tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-[#B8860B] via-[#D4AF37] to-[#C5A059] truncate max-w-[150px] xs:max-w-none">
             Kkevo Family
           </span>
         </div>
 
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-1.5">
           <!-- Mobile Theme Button -->
           <button
             @click="themeStore.toggleTheme"
-            class="w-9 h-9 rounded-xl border flex items-center justify-center text-sm transition-all cursor-pointer"
+            class="w-8 h-8 rounded-lg border flex items-center justify-center text-xs transition-all cursor-pointer"
             :class="isLight ? 'bg-amber-50/80 border-[#C5A059]/50 text-stone-800' : 'bg-[#1A1C22] border-[#C5A059]/50 text-[#F3E5AB]'"
+            :title="isLight ? 'Switch to Dark Mode' : 'Switch to Light Mode'"
           >
             <span v-if="isLight">🌙</span>
             <span v-else>☀️</span>
@@ -297,8 +298,9 @@
           <!-- Settings Icon -->
           <router-link
             to="/settings"
-            class="w-9 h-9 rounded-xl border flex items-center justify-center text-sm transition-all"
+            class="w-8 h-8 rounded-lg border flex items-center justify-center text-xs transition-all"
             :class="isLight ? 'bg-amber-50/80 border-[#C5A059]/50 text-stone-800' : 'bg-[#1A1C22] border-[#C5A059]/50 text-[#F3E5AB]'"
+            title="Settings"
           >
             ⚙️
           </router-link>
@@ -404,7 +406,7 @@
       </div>
 
       <!-- 2D. Main Application Canvas (Remaining Screen Area) -->
-      <main class="flex-1 min-w-0 flex flex-col pb-20 md:pb-0 overflow-x-hidden">
+      <main class="flex-1 min-w-0 flex flex-col pb-16 md:pb-0 overflow-x-hidden">
         <router-view v-slot="{ Component }">
           <transition name="fade" mode="out-in">
             <component :is="Component" />
@@ -414,7 +416,7 @@
 
       <!-- 2E. Mobile Bottom App Bar (Sticky on Mobile Phones) -->
       <nav
-        class="md:hidden fixed bottom-0 left-0 right-0 z-30 border-t flex justify-around items-center py-2 px-1 shadow-2xl backdrop-blur-md transition-colors"
+        class="md:hidden fixed bottom-0 left-0 right-0 z-30 border-t flex justify-around items-center py-1 px-1 pb-[max(0.35rem,env(safe-area-inset-bottom))] shadow-2xl backdrop-blur-md transition-colors"
         :class="[
           isLight
             ? 'bg-white/95 border-[#C5A059]/40 text-stone-900'
@@ -425,7 +427,7 @@
           v-for="item in mobileBottomItems"
           :key="item.name"
           :to="item.to"
-          class="flex flex-col items-center py-1 px-3 rounded-xl transition-all"
+          class="flex flex-col items-center py-1 px-2.5 rounded-xl transition-all"
           :class="[
             $route.path.startsWith(item.to)
               ? isLight
@@ -436,8 +438,8 @@
                 : 'text-stone-400 hover:text-white'
           ]"
         >
-          <span class="text-xl leading-none">{{ item.icon }}</span>
-          <span class="text-[10px] font-bold mt-1 tracking-tight">{{ item.label }}</span>
+          <span class="text-lg leading-none">{{ item.icon }}</span>
+          <span class="text-[9px] font-bold mt-0.5 tracking-tight">{{ item.label }}</span>
         </router-link>
       </nav>
     </div>

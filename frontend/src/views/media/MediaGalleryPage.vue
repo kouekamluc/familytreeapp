@@ -1,14 +1,14 @@
 <template>
-  <div class="app-page-shell py-8 px-4 sm:px-6 lg:px-8 font-sans transition-colors duration-300">
+  <div class="app-page-shell py-4 sm:py-8 px-3 sm:px-6 lg:px-8 font-sans transition-colors duration-300">
     <div class="max-w-7xl mx-auto">
       <!-- Royal Media Vault Banner -->
       <div
-        class="mb-8 p-6 rounded-2xl border shadow-xl flex flex-col md:flex-row md:items-center md:justify-between gap-4 transition-colors"
+        class="mb-4 sm:mb-8 p-3.5 sm:p-6 rounded-xl sm:rounded-2xl border shadow-xl flex flex-col md:flex-row md:items-center md:justify-between gap-3 sm:gap-4 transition-colors"
         :class="isLight ? 'bg-gradient-to-r from-white via-[#FAF6ED] to-white border-[#C5A059]/40 text-stone-900 shadow-amber-900/5' : 'bg-gradient-to-r from-[#171922] via-[#1C1F2B] to-[#171922] border-[#C5A059]/40 text-white shadow-black/80'"
       >
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-3 sm:gap-4">
           <div
-            class="w-14 h-14 rounded-2xl border-2 border-[#C5A059] p-1 flex items-center justify-center shadow-lg"
+            class="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl border-2 border-[#C5A059] p-0.5 sm:p-1 flex items-center justify-center shadow-lg shrink-0"
             :class="isLight ? 'bg-amber-50' : 'bg-[#0B0C0E]'"
           >
             <img src="/logo.png" alt="Kkevo Crest" class="w-full h-full object-contain" />
@@ -16,48 +16,48 @@
           <div>
             <div class="flex items-center gap-2">
               <h1
-                class="text-2xl sm:text-3xl font-serif font-black tracking-wider uppercase"
+                class="text-xl sm:text-3xl font-serif font-black tracking-wider uppercase truncate"
                 :class="isLight ? 'text-stone-900' : 'text-transparent bg-clip-text bg-gradient-to-r from-[#F3E5AB] via-[#D4AF37] to-[#C5A059]'"
               >
-                Photos & Stories Vault
+                Photos & Stories
               </h1>
               <span
-                class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border"
+                class="px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-wider border"
                 :class="isLight ? 'bg-amber-100 text-[#634208] border-[#C5A059]/50' : 'bg-[#C5A059]/20 text-[#F3E5AB] border-[#C5A059]/50'"
               >
                 Heritage
               </span>
             </div>
-            <p class="text-xs mt-1" :class="isLight ? 'text-stone-600' : 'text-stone-400'">
+            <p class="text-[11px] sm:text-xs mt-0.5" :class="isLight ? 'text-stone-600' : 'text-stone-400'">
               Safeguarding historical portraits, oral traditions, ceremonies, and family archives
             </p>
           </div>
         </div>
 
         <!-- Action Controls -->
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2 sm:gap-3">
           <router-link
             to="/media/upload"
-            class="px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider text-black bg-gradient-to-r from-[#B8860B] via-[#D4AF37] to-[#C5A059] hover:brightness-110 shadow-lg shadow-[#C5A059]/30 transition-all flex items-center gap-2 active:scale-95"
+            class="flex-1 sm:flex-initial px-3.5 py-2 sm:px-5 sm:py-2.5 rounded-lg sm:rounded-xl font-black text-xs uppercase tracking-wider text-black bg-gradient-to-r from-[#B8860B] via-[#D4AF37] to-[#C5A059] hover:brightness-110 shadow-md transition-all flex items-center justify-center gap-1.5 active:scale-95"
           >
             <span>📸</span>
-            <span>Upload Memory</span>
+            <span>Upload</span>
           </router-link>
 
           <router-link
             to="/tree"
-            class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm"
+            class="px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg sm:rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1 shadow-sm"
             :class="isLight ? 'bg-white hover:bg-stone-100 text-stone-800 border border-[#C5A059]/50' : 'bg-[#1A1C24] hover:bg-[#222530] text-[#F3E5AB] border border-[#C5A059]/50'"
           >
             <span>🌳</span>
-            <span>View Tree</span>
+            <span>Tree</span>
           </router-link>
         </div>
       </div>
 
       <!-- Filters & Search Bar -->
       <div
-        class="mb-8 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 p-4 rounded-2xl border shadow-lg transition-colors"
+        class="mb-4 sm:mb-8 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2.5 sm:gap-4 p-2.5 sm:p-4 rounded-xl sm:rounded-2xl border shadow-lg transition-colors"
         :class="isLight ? 'bg-white border-[#C5A059]/30 shadow-amber-900/5' : 'bg-[#16181F] border-[#C5A059]/30 shadow-black/60'"
       >
         <!-- Search -->
@@ -66,19 +66,19 @@
             v-model="searchQuery"
             type="text"
             placeholder="Search stories, people, ceremonies..."
-            class="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm transition-colors focus:outline-none focus:ring-1 focus:ring-[#D4AF37]"
+            class="w-full pl-8 sm:pl-10 pr-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm transition-colors focus:outline-none focus:ring-1 focus:ring-[#D4AF37]"
             :class="isLight ? 'bg-[#FDFBF7] border border-stone-300 text-stone-900 placeholder-stone-400' : 'bg-[#1F2128] border border-[#C5A059]/40 text-stone-100 placeholder-stone-500'"
           />
-          <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm" :class="isLight ? 'text-stone-400' : 'text-stone-500'">🔍</span>
+          <span class="absolute left-2.5 sm:left-3.5 top-1/2 -translate-y-1/2 text-xs sm:text-sm" :class="isLight ? 'text-stone-400' : 'text-stone-500'">🔍</span>
         </div>
 
         <!-- Filter Pills -->
-        <div class="flex flex-wrap gap-2">
+        <div class="flex flex-wrap gap-1.5 sm:gap-2">
           <button
             v-for="tab in filterTabs"
             :key="tab.type"
             @click="filterType = tab.type"
-            class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
+            class="px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all cursor-pointer"
             :class="[
               filterType === tab.type
                 ? isLight
@@ -94,18 +94,18 @@
         </div>
       </div>
 
-      <!-- Gallery Grid -->
-      <div v-if="filteredMedia.length" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      <!-- Gallery Grid (2-column on mobile, up to 4-col on desktop) -->
+      <div v-if="filteredMedia.length" class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-6">
         <div
           v-for="item in filteredMedia"
           :key="item.id"
-          class="rounded-2xl border shadow-xl overflow-hidden cursor-pointer transition-all hover:-translate-y-1 flex flex-col group"
+          class="rounded-xl sm:rounded-2xl border shadow-md sm:shadow-xl overflow-hidden cursor-pointer transition-all hover:-translate-y-1 flex flex-col group"
           :class="isLight ? 'bg-white border-[#C5A059]/35 hover:border-[#C5A059] shadow-amber-900/5' : 'bg-[#16181F] border-[#C5A059]/30 hover:border-[#D4AF37] shadow-black/80'"
           @click="goToDetail(item.id)"
         >
           <!-- Image or Media Thumbnail -->
           <div
-            class="relative h-48 overflow-hidden flex items-center justify-center border-b"
+            class="relative h-28 sm:h-48 overflow-hidden flex items-center justify-center border-b"
             :class="isLight ? 'bg-[#FAF6ED] border-[#C5A059]/20' : 'bg-[#0B0C0E] border-[#C5A059]/20'"
           >
             <img
@@ -114,38 +114,38 @@
               class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               @error="handleImageError($event)"
             />
-            <div class="absolute top-3 right-3 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-black/70 text-[#F3E5AB] border border-[#C5A059]/60 backdrop-blur-sm">
+            <div class="absolute top-1.5 sm:top-3 right-1.5 sm:right-3 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[8px] sm:text-[10px] font-black uppercase tracking-wider bg-black/70 text-[#F3E5AB] border border-[#C5A059]/60 backdrop-blur-sm">
               {{ item.typeLabel }}
             </div>
-            <div class="absolute bottom-2 left-3 text-[11px] font-bold text-stone-300 bg-black/60 px-2 py-0.5 rounded backdrop-blur-sm">
+            <div class="absolute bottom-1 sm:bottom-2 left-1.5 sm:left-3 text-[9px] sm:text-[11px] font-bold text-stone-300 bg-black/60 px-1.5 sm:px-2 py-0.5 rounded backdrop-blur-sm truncate max-w-[85%]">
               {{ item.date || 'Historical' }}
             </div>
           </div>
 
           <!-- Content Details -->
-          <div class="p-4 flex-1 flex flex-col justify-between">
+          <div class="p-2 sm:p-4 flex-1 flex flex-col justify-between">
             <div>
               <h3
-                class="font-serif font-bold text-base transition-colors truncate"
+                class="font-serif font-bold text-xs sm:text-base transition-colors truncate"
                 :class="isLight ? 'text-stone-900 group-hover:text-[#996515]' : 'text-[#F3E5AB] group-hover:text-white'"
               >
                 {{ item.title }}
               </h3>
-              <p class="text-xs mt-1 line-clamp-2 leading-relaxed" :class="isLight ? 'text-stone-600' : 'text-stone-400'">
+              <p class="text-[10px] sm:text-xs mt-0.5 sm:mt-1 line-clamp-1 sm:line-clamp-2 leading-tight sm:leading-relaxed" :class="isLight ? 'text-stone-600' : 'text-stone-400'">
                 {{ item.description }}
               </p>
             </div>
 
             <div
-              class="mt-4 pt-3 border-t flex items-center justify-between text-xs"
+              class="mt-2 sm:mt-4 pt-1.5 sm:pt-3 border-t flex items-center justify-between text-[10px] sm:text-xs"
               :class="isLight ? 'border-stone-100 text-stone-500' : 'border-[#C5A059]/20 text-stone-400'"
             >
-              <span class="flex items-center gap-1">
-                <span>📍</span>
-                <span>{{ item.location || 'Ancestral Homeland' }}</span>
+              <span class="flex items-center gap-1 truncate max-w-[70%]">
+                <span class="text-xs">📍</span>
+                <span class="truncate">{{ item.location || 'Homeland' }}</span>
               </span>
-              <span class="font-bold group-hover:underline" :class="isLight ? 'text-[#855B14]' : 'text-[#D4AF37]'">
-                View &rarr;
+              <span class="font-bold shrink-0 group-hover:underline" :class="isLight ? 'text-[#855B14]' : 'text-[#D4AF37]'">
+                &rarr;
               </span>
             </div>
           </div>
@@ -155,7 +155,7 @@
       <!-- Empty State -->
       <div
         v-else
-        class="text-center py-20 rounded-2xl border p-8 max-w-xl mx-auto transition-colors"
+        class="text-center py-12 sm:py-20 rounded-2xl border p-6 sm:p-8 max-w-xl mx-auto transition-colors"
         :class="isLight ? 'bg-white border-[#C5A059]/30 text-stone-900 shadow-amber-900/5' : 'bg-[#16181F] border-[#C5A059]/30 text-stone-100'"
       >
         <div class="w-16 h-16 mx-auto rounded-full bg-[#D4AF37]/10 border border-[#D4AF37]/40 flex items-center justify-center text-3xl mb-4">

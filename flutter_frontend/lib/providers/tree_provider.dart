@@ -5,6 +5,7 @@ import '../models/relationship.dart';
 import '../services/api_service.dart';
 
 enum TreeOrientation { vertical, horizontal }
+enum TreeScope { extendedDynasty, immediateFamily }
 
 class TreeProvider extends ChangeNotifier {
   final ApiService _apiService;
@@ -16,6 +17,9 @@ class TreeProvider extends ChangeNotifier {
   Person? _selectedPerson;
 
   TreeOrientation _orientation = TreeOrientation.vertical;
+  TreeScope _treeScope = TreeScope.extendedDynasty;
+  int? _focusPersonId;
+
   int? _generationFilter;
   String _searchQuery = '';
   String _peopleFilterTab = 'all'; // 'all', 'living', 'ancestors'
@@ -30,16 +34,40 @@ class TreeProvider extends ChangeNotifier {
   List<Relationship> get relationships => _relationships;
   Person? get selectedPerson => _selectedPerson;
   TreeOrientation get orientation => _orientation;
+  TreeScope get treeScope => _treeScope;
+  int? get focusPersonId => _focusPersonId;
   int? get generationFilter => _generationFilter;
   String get searchQuery => _searchQuery;
   String get peopleFilterTab => _peopleFilterTab;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
-  // --- FILTERS & SELECTION ---
+  Person? get focusPerson {
+    if (_focusPersonId != null) {
+      final match = _people.where((p) => p.id == _focusPersonId).toList();
+      if (match.isNotEmpty) return match.first;
+    }
+    if (_selectedPerson != null) return _selectedPerson;
+    final living = _people.where((p) => p.isLiving).toList();
+    if (living.isNotEmpty) return living.first;
+    return _people.isNotEmpty ? _people.first : null;
+  }
+
+  void setTreeScope(TreeScope scope) {
+    _treeScope = scope;
+    notifyListeners();
+  }
+
+  void setFocusPersonId(int? id) {
+    _focusPersonId = id;
+    notifyListeners();
+  }
 
   void selectPerson(Person? person) {
     _selectedPerson = person;
+    if (person != null) {
+      _focusPersonId = person.id;
+    }
     notifyListeners();
   }
 
@@ -135,9 +163,43 @@ class TreeProvider extends ChangeNotifier {
     return _people.where((p) => siblingIds.contains(p.id)).toList();
   }
 
+  /// Returns people to render in the Tree View based on treeScope and generation filter
+  List<Person> get activeTreePeople {
+    List<Person> baseList;
+    if (_treeScope == TreeScope.extendedDynasty) {
+      baseList = _people;
+    } else {
+      final focus = focusPerson;
+      if (focus == null) {
+        baseList = _people;
+      } else {
+        final immediateIds = <int>{focus.id};
+        for (final s in getSpousesOf(focus.id)) {
+          immediateIds.add(s.id);
+        }
+        for (final c in getChildrenOf(focus.id)) {
+          immediateIds.add(c.id);
+        }
+        for (final p in getParentsOf(focus.id)) {
+          immediateIds.add(p.id);
+        }
+        for (final s in getSiblingsOf(focus.id)) {
+          immediateIds.add(s.id);
+        }
+        final scoped = _people.where((p) => immediateIds.contains(p.id)).toList();
+        baseList = scoped.isNotEmpty ? scoped : _people;
+      }
+    }
+
+    if (_generationFilter != null) {
+      return baseList.where((p) => p.generationTier == _generationFilter).toList();
+    }
+    return baseList;
+  }
+
   // --- DATA SYNC ---
 
-  Future<void> loadData() async {
+  Future<void> loadData({int? targetTreeId, int? targetPersonId}) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -145,7 +207,15 @@ class TreeProvider extends ChangeNotifier {
     try {
       final treesList = await _apiService.getTrees();
       _trees = treesList;
-      if (_trees.isNotEmpty && _selectedTree == null) {
+
+      if (targetTreeId != null) {
+        final matched = _trees.where((t) => t.id == targetTreeId).toList();
+        if (matched.isNotEmpty) {
+          _selectedTree = matched.first;
+        } else if (_trees.isNotEmpty && _selectedTree == null) {
+          _selectedTree = _trees.first;
+        }
+      } else if (_trees.isNotEmpty && _selectedTree == null) {
         _selectedTree = _trees.first;
       }
 
@@ -155,13 +225,17 @@ class TreeProvider extends ChangeNotifier {
       _people = peopleList;
       _relationships = relsList;
 
-      if (_selectedPerson != null) {
+      if (targetPersonId != null) {
+        final invitedPerson = _people.where((p) => p.id == targetPersonId).toList();
+        if (invitedPerson.isNotEmpty) {
+          _selectedPerson = invitedPerson.first;
+          _focusPersonId = targetPersonId;
+        }
+      } else if (_selectedPerson != null) {
         _selectedPerson = _people.firstWhere(
           (p) => p.id == _selectedPerson!.id,
           orElse: () => _people.isNotEmpty ? _people.first : _selectedPerson!,
         );
-      } else if (_people.isNotEmpty) {
-        _selectedPerson = _people.first;
       }
     } catch (e) {
       _errorMessage = 'Failed to load ancestry data: $e';
@@ -169,6 +243,14 @@ class TreeProvider extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  void selectTree(FamilyTree tree) {
+    if (_selectedTree?.id == tree.id) return;
+    _selectedTree = tree;
+    _selectedPerson = null;
+    _focusPersonId = null;
+    loadData(targetTreeId: tree.id);
   }
 
   Future<bool> addPerson(Map<String, dynamic> data) async {
@@ -239,4 +321,96 @@ class TreeProvider extends ChangeNotifier {
     }
     return false;
   }
+
+  Future<bool> deleteRelationship(int id) async {
+    try {
+      final success = await _apiService.deleteRelationship(id);
+      if (success) {
+        _relationships.removeWhere((r) => r.id == id);
+        notifyListeners();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      debugPrint('Error deleting relationship: $e');
+      return false;
+    }
+  }
+
+  void clearData() {
+    _trees = [];
+    _selectedTree = null;
+    _people = [];
+    _relationships = [];
+    _selectedPerson = null;
+    notifyListeners();
+  }
+
+  Future<Person?> createRelative({
+    required int sourcePersonId,
+    required String role, // 'parent', 'child', 'spouse'
+    required Map<String, dynamic> personData,
+  }) async {
+    try {
+      if (_selectedTree != null) {
+        personData['family_tree'] = _selectedTree!.id;
+      }
+      final newPerson = await _apiService.createPerson(personData);
+      if (newPerson != null) {
+        _people.add(newPerson);
+
+        int p1Id;
+        int p2Id;
+        String relType;
+
+        if (role == 'parent' || role == 'father' || role == 'mother') {
+          p1Id = newPerson.id;
+          p2Id = sourcePersonId;
+          relType = 'PARENT';
+        } else if (role == 'child') {
+          p1Id = sourcePersonId;
+          p2Id = newPerson.id;
+          relType = 'PARENT';
+        } else {
+          p1Id = sourcePersonId;
+          p2Id = newPerson.id;
+          relType = 'SPOUSE';
+        }
+
+        await addRelationship(p1Id, p2Id, relType);
+        notifyListeners();
+        return newPerson;
+      }
+    } catch (e) {
+      debugPrint('Error creating relative: $e');
+    }
+    return null;
+  }
+
+  Future<bool> linkExistingRelative({
+    required int sourcePersonId,
+    required int targetPersonId,
+    required String role,
+  }) async {
+    int p1Id;
+    int p2Id;
+    String relType;
+
+    if (role == 'parent' || role == 'father' || role == 'mother') {
+      p1Id = targetPersonId;
+      p2Id = sourcePersonId;
+      relType = 'PARENT';
+    } else if (role == 'child') {
+      p1Id = sourcePersonId;
+      p2Id = targetPersonId;
+      relType = 'PARENT';
+    } else {
+      p1Id = sourcePersonId;
+      p2Id = targetPersonId;
+      relType = 'SPOUSE';
+    }
+
+    return await addRelationship(p1Id, p2Id, relType);
+  }
 }
+

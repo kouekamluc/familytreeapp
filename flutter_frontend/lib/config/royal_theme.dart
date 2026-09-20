@@ -52,6 +52,56 @@ class RoyalTheme {
           letterSpacing: 1.2,
         ),
       ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: brightGold,
+          foregroundColor: Colors.black,
+          elevation: 4,
+          shadowColor: brightGold.withValues(alpha: 0.35),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          textStyle: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.3,
+          ),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: lightGold,
+          side: const BorderSide(color: borderDark, width: 1.5),
+          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          textStyle: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: brightGold,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          textStyle: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: cardDark,
+        selectedColor: brightGold,
+        secondarySelectedColor: brightGold,
+        labelStyle: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600),
+        secondaryLabelStyle: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.black),
+        side: const BorderSide(color: borderDark, width: 1),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
       textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme).copyWith(
         displayLarge: GoogleFonts.cinzel(
           color: lightGold,
@@ -107,6 +157,56 @@ class RoyalTheme {
           fontWeight: FontWeight.bold,
           letterSpacing: 1.2,
         ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFFB8860B),
+          foregroundColor: Colors.white,
+          elevation: 3,
+          shadowColor: const Color(0xFFB8860B).withValues(alpha: 0.3),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          textStyle: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.3,
+          ),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: darkGold,
+          side: const BorderSide(color: borderLight, width: 1.5),
+          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          textStyle: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: darkGold,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          textStyle: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: const Color(0xFFFAF6ED),
+        selectedColor: darkGold,
+        secondarySelectedColor: darkGold,
+        labelStyle: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: const Color(0xFF5B3D0B)),
+        secondaryLabelStyle: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.white),
+        side: const BorderSide(color: borderLight, width: 1),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       textTheme: GoogleFonts.interTextTheme(ThemeData.light().textTheme).copyWith(
         displayLarge: GoogleFonts.cinzel(

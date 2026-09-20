@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../config/royal_theme.dart';
 import '../models/person.dart';
+import '../utils/portrait_helper.dart';
 
 class MonogramMedallion extends StatelessWidget {
   final Person person;
@@ -52,13 +53,13 @@ class MonogramMedallion extends StatelessWidget {
           boxShadow: [
             if (isSelected)
               BoxShadow(
-                color: RoyalTheme.brightGold.withOpacity(0.5),
+                color: RoyalTheme.brightGold.withValues(alpha: 0.5),
                 blurRadius: 16,
                 spreadRadius: 2,
               )
             else if (person.isAncestor)
               BoxShadow(
-                color: RoyalTheme.primaryGold.withOpacity(0.25),
+                color: RoyalTheme.primaryGold.withValues(alpha: 0.25),
                 blurRadius: 10,
               ),
           ],
@@ -68,11 +69,20 @@ class MonogramMedallion extends StatelessWidget {
               ? Image.network(
                   person.profilePicture!,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => _buildInitials(),
+                  errorBuilder: (_, __, ___) => _buildRealisticPortrait(),
                 )
-              : _buildInitials(),
+              : _buildRealisticPortrait(),
         ),
       ),
+    );
+  }
+
+  Widget _buildRealisticPortrait() {
+    final assetPath = PortraitHelper.getPortraitAsset(person);
+    return Image.asset(
+      assetPath,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => _buildInitials(),
     );
   }
 

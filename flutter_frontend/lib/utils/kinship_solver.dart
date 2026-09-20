@@ -80,29 +80,46 @@ class KinshipSolver {
     final aName = personA.fullName;
     final bName = personB.fullName;
 
-    // 1. Spouses
+    // 1. Spouses (Alliance Coutumière)
     final spousesOfA = spouseMap[personAId] ?? [];
     if (spousesOfA.contains(personBId)) {
       return KinshipResult(
-        title: 'Spousal Union',
-        relationship: bGender == 'F' ? 'Wife' : 'Husband',
-        summary: '$bName is the spouse of $aName',
-        description: 'Connected in holy matrimony and lineage partnership.',
-        culturalHonorific: 'Alliance Sacrée & Rameau Familial',
+        title: 'Alliance Coutumière & Mariage',
+        relationship: bGender == 'F' ? 'Épouse / Partenaire' : 'Époux / Partenaire',
+        summary: '$bName est ${bGender == 'F' ? "l'épouse" : "l'époux"} de $aName',
+        description: 'Alliance sacrée scellée par la tradition coutumière et la dot unissant les concessions.',
+        culturalHonorific: bGender == 'F' ? 'Épouse de la Concession (Alliance Sacrée)' : 'Époux & Protecteur de l\'Alliance',
         generationDifference: 0,
         path: [personA, personB],
       );
     }
 
+    // 1b. Co-Wives (Co-Épouses dans la polygamie coutumière)
+    final sharedSpouses = spousesOfA.where((s) => (spouseMap[personBId] ?? []).contains(s)).toList();
+    if (sharedSpouses.isNotEmpty && personAId != personBId) {
+      final commonSpouse = peopleMap[sharedSpouses.first];
+      final spouseName = commonSpouse?.fullName ?? 'l\'Époux';
+      return KinshipResult(
+        title: 'Co-Épouse (Polygamie Coutumière)',
+        relationship: 'Co-Épouse de Concession',
+        summary: '$bName et $aName sont co-épouses unies à $spouseName',
+        description: 'Mères et épouses alliées au sein de la grande chefferie et concession.',
+        culturalHonorific: 'Co-Épouse / Mère de Concession Partagée',
+        generationDifference: 0,
+        path: [personA, if (commonSpouse != null) commonSpouse, personB],
+      );
+    }
+
     // 2. Direct Parent / Child
     final parentsOfA = parentMap[personAId] ?? [];
+    final parentsOfB = parentMap[personBId] ?? [];
     if (parentsOfA.contains(personBId)) {
       return KinshipResult(
-        title: bGender == 'M' ? 'Father' : 'Mother',
-        relationship: bGender == 'M' ? 'Father (Papa)' : 'Mother (Mama)',
-        summary: '$bName is the ${bGender == 'M' ? 'father' : 'mother'} of $aName',
-        description: 'Direct biological elder (1 generation above).',
-        culturalHonorific: bGender == 'M' ? 'Papa / Pilier de la Lignée' : 'Maman / Source Sacrée',
+        title: bGender == 'M' ? 'Père (Papa)' : 'Mère (Mama)',
+        relationship: bGender == 'M' ? 'Père (Papa)' : 'Mère (Mama)',
+        summary: '$bName est le ${bGender == 'M' ? 'père' : 'la mère'} de $aName',
+        description: 'Ascendant biologique direct et autorité de la lignée.',
+        culturalHonorific: bGender == 'M' ? 'Papa / Pilier de la Chefferie' : 'Mama / Source Sacrée de Vie',
         generationDifference: 1,
         path: [personA, personB],
       );
@@ -111,30 +128,85 @@ class KinshipSolver {
     final childrenOfA = childrenMap[personAId] ?? [];
     if (childrenOfA.contains(personBId)) {
       return KinshipResult(
-        title: bGender == 'M' ? 'Son' : 'Daughter',
-        relationship: bGender == 'M' ? 'Son' : 'Daughter',
-        summary: '$bName is the ${bGender == 'M' ? 'son' : 'daughter'} of $aName',
-        description: 'Direct biological descendant (1 generation below).',
-        culturalHonorific: 'Enfant de la Dynastie',
+        title: bGender == 'M' ? 'Fils' : 'Fille',
+        relationship: bGender == 'M' ? 'Fils (Enfant de la Lignée)' : 'Fille (Enfant de la Lignée)',
+        summary: '$bName est le ${bGender == 'M' ? 'fils' : 'la fille'} de $aName',
+        description: 'Descendant direct et héritier des traditions ancestrales.',
+        culturalHonorific: bGender == 'M' ? 'Fils / Prince de la Lignée' : 'Fille / Princesse de la Lignée',
         generationDifference: -1,
         path: [personA, personB],
       );
     }
 
-    // 3. Siblings (Full or Half)
-    final parentsOfB = parentMap[personBId] ?? [];
+    // 2b. Co-Mother (Petite Maman) & Customary Child (Enfant de Concession)
+    for (final pId in parentsOfA) {
+      final pSpouses = spouseMap[pId] ?? [];
+      if (pSpouses.contains(personBId) && !parentsOfA.contains(personBId)) {
+        final parent = peopleMap[pId];
+        return KinshipResult(
+          title: bGender == 'F' ? 'Petite Maman (Co-Mère)' : 'Beau-Père Coutumier',
+          relationship: bGender == 'F' ? 'Petite Maman (Deuxième Mère)' : 'Beau-Père de Concession',
+          summary: '$bName est l\'épouse du père de $aName (${parent?.fullName ?? ''})',
+          description: 'Mère coutumière et gardienne respectée au sein de la concession familiale.',
+          culturalHonorific: 'Petite Maman / Co-Mère de Concession',
+          generationDifference: 1,
+          path: [personA, if (parent != null) parent, personB],
+        );
+      }
+    }
+
+    for (final pId in parentsOfB) {
+      final pSpouses = spouseMap[pId] ?? [];
+      if (pSpouses.contains(personAId) && !parentsOfB.contains(personAId)) {
+        final parent = peopleMap[pId];
+        return KinshipResult(
+          title: 'Enfant de la Concession',
+          relationship: bGender == 'M' ? 'Fils Coutumier' : 'Fille Coutumière',
+          summary: '$bName est l\'enfant de la concession conjugale (${parent?.fullName ?? ''})',
+          description: 'Enfant élevé dans la chefferie au sein du cercle familial coutumier.',
+          culturalHonorific: 'Enfant de la Concession (Fils/Fille Coutumier)',
+          generationDifference: -1,
+          path: [personA, if (parent != null) parent, personB],
+        );
+      }
+    }
+
+    // 3. Siblings (Germains, Consanguins, Utérins)
     final sharedParents = parentsOfA.where((pId) => parentsOfB.contains(pId)).toList();
     if (sharedParents.isNotEmpty) {
-      final isFull = sharedParents.length >= 2;
-      final sharedNames = sharedParents.map((id) => peopleMap[id]?.firstName ?? 'Elder').join(' & ');
+      final sharedMales = sharedParents.where((id) => peopleMap[id]?.isMale == true).toList();
+      final sharedFemales = sharedParents.where((id) => peopleMap[id]?.isFemale == true).toList();
+
+      String siblingType;
+      String culturalHonorific;
+      String desc;
+
+      if (sharedMales.isNotEmpty && sharedFemales.isNotEmpty) {
+        siblingType = bGender == 'F' ? 'Sœur Germaine' : 'Frère Germain';
+        culturalHonorific = 'Frère/Sœur Germain(e) — Même Père, Même Mère';
+        final fName = peopleMap[sharedMales.first]?.firstName ?? 'Père';
+        final mName = peopleMap[sharedFemales.first]?.firstName ?? 'Mère';
+        desc = 'Partageant à la fois le sang du père ($fName) et le ventre de la mère ($mName).';
+      } else if (sharedMales.isNotEmpty) {
+        siblingType = bGender == 'F' ? 'Sœur Consanguine' : 'Frère Consanguin';
+        culturalHonorific = 'Frère/Sœur Consanguin(e) — Même Père, Concessions Différentes';
+        final fName = peopleMap[sharedMales.first]?.firstName ?? 'Père';
+        desc = 'Issus du même père ($fName), nés de concessions ou foyers différents.';
+      } else {
+        siblingType = bGender == 'F' ? 'Sœur Utérine' : 'Frère Utérin';
+        culturalHonorific = 'Frère/Sœur Utérin(e) — Même Ventre (Lien Sacré Maa)';
+        final mName = peopleMap[sharedFemales.first]?.firstName ?? 'Mère';
+        desc = 'Issus du même ventre maternel ($mName), lien sacré et indissoluble de la tradition Grassfields.';
+      }
+
       return KinshipResult(
-        title: bGender == 'F' ? 'Sister' : 'Brother',
-        relationship: bGender == 'F' ? 'Sister (Sœur)' : 'Brother (Frère)',
-        summary: '$bName and $aName are ${bGender == 'F' ? 'sisters' : 'brothers'} sharing parents',
-        description: '$isFull sibling sharing the royal bloodline of $sharedNames.',
-        culturalHonorific: 'Frère / Sœur de Sang (Même Arbre)',
+        title: siblingType,
+        relationship: siblingType,
+        summary: '$bName est le/la $siblingType de $aName',
+        description: desc,
+        culturalHonorific: culturalHonorific,
         generationDifference: 0,
-        path: [personA, if (sharedParents.isNotEmpty && peopleMap[sharedParents.first] != null) peopleMap[sharedParents.first]!, personB],
+        path: [personA, peopleMap[sharedParents.first]!, personB],
       );
     }
 
@@ -143,14 +215,14 @@ class KinshipSolver {
       final grandParents = parentMap[parentId] ?? [];
       if (grandParents.contains(personBId)) {
         final parent = peopleMap[parentId];
-        final side = (parent != null && parent.isFemale) ? 'Maternal' : 'Paternal';
-        final title = bGender == 'M' ? '$side Grandfather' : '$side Grandmother';
+        final side = (parent != null && parent.isFemale) ? 'Maternel(le)' : 'Paternel(le)';
+        final title = bGender == 'M' ? 'Grand-Père $side' : 'Grand-Mère $side';
         return KinshipResult(
           title: title,
           relationship: title,
-          summary: '$bName is the $title of $aName',
-          description: 'Grandparent 2 generations above through ${parent?.firstName ?? 'parent'}.',
-          culturalHonorific: bGender == 'M' ? 'Grand-Père / Patriarche Ancien' : 'Grand-Mère / Reine-Mère',
+          summary: '$bName est le/la $title de $aName',
+          description: 'Ancêtre direct à 2 générations au-dessus via ${parent?.fullName ?? 'parent'}.',
+          culturalHonorific: bGender == 'M' ? 'Grand-Père / Patriarche Ancien' : 'Grand-Mère / Reine-Mère Sacrée',
           generationDifference: 2,
           path: [personA, if (parent != null) parent, personB],
         );
@@ -161,13 +233,13 @@ class KinshipSolver {
       final grandParents = parentMap[parentId] ?? [];
       if (grandParents.contains(personAId)) {
         final parent = peopleMap[parentId];
-        final title = bGender == 'M' ? 'Grandson' : 'Granddaughter';
+        final title = bGender == 'M' ? 'Petit-Fils' : 'Petite-Fille';
         return KinshipResult(
           title: title,
           relationship: title,
-          summary: '$bName is the $title of $aName',
-          description: 'Grandchild 2 generations below through ${parent?.firstName ?? 'child'}.',
-          culturalHonorific: 'Petit-Fils / Petite-Fille de la Lignée',
+          summary: '$bName est le/la $title de $aName',
+          description: 'Descendant à 2 générations en dessous via ${parent?.fullName ?? 'enfant'}.',
+          culturalHonorific: 'Petit-Fils / Petite-Fille de la Concession',
           generationDifference: -2,
           path: [personA, if (parent != null) parent, personB],
         );
@@ -180,13 +252,13 @@ class KinshipSolver {
       for (final gpId in grandParents) {
         final greatGPs = parentMap[gpId] ?? [];
         if (greatGPs.contains(personBId)) {
-          final title = bGender == 'M' ? 'Great-Grandfather' : 'Great-Grandmother';
+          final title = bGender == 'M' ? 'Arrière-Grand-Père' : 'Arrière-Grand-Mère';
           return KinshipResult(
             title: title,
             relationship: title,
-            summary: '$bName is the $title of $aName',
-            description: 'Venerated ancestral root 3 generations above.',
-            culturalHonorific: 'Arrière-Grand-Parent / Ancêtre Vénéré',
+            summary: '$bName est le/la $title de $aName',
+            description: 'Racine ancestrale vénérée 3 générations au-dessus.',
+            culturalHonorific: 'Arrière-Grand-Parent / Ancêtre Fondateur',
             generationDifference: 3,
             path: [
               personA,
@@ -204,13 +276,13 @@ class KinshipSolver {
       for (final gpId in grandParents) {
         final greatGPs = parentMap[gpId] ?? [];
         if (greatGPs.contains(personAId)) {
-          final title = bGender == 'M' ? 'Great-Grandson' : 'Great-Granddaughter';
+          final title = bGender == 'M' ? 'Arrière-Petit-Fils' : 'Arrière-Petite-Fille';
           return KinshipResult(
             title: title,
             relationship: title,
-            summary: '$bName is the $title of $aName',
-            description: 'Descendant 3 generations below.',
-            culturalHonorific: 'Arrière-Petit-Enfant de la Lignée',
+            summary: '$bName est le/la $title de $aName',
+            description: 'Descendant 3 générations en dessous.',
+            culturalHonorific: 'Arrière-Petit-Enfant de la Dynastie',
             generationDifference: -3,
             path: [
               personA,
@@ -223,20 +295,47 @@ class KinshipSolver {
       }
     }
 
-    // 6. Aunt / Uncle & Niece / Nephew
+    // 6. Aunt / Uncle & Niece / Nephew (Grassfields Customary Honorifics)
     for (final parentId in parentsOfA) {
       final parentsOfMyParent = parentMap[parentId] ?? [];
       final auntsUncles = parentsOfB.where((pId) => parentsOfMyParent.contains(pId)).toList();
       if (auntsUncles.isNotEmpty && personBId != parentId) {
         final parent = peopleMap[parentId];
-        final side = (parent != null && parent.isFemale) ? 'Maternal' : 'Paternal';
-        final title = bGender == 'M' ? '$side Uncle' : '$side Aunt';
+        final isMaternal = (parent != null && parent.isFemale);
+        final pName = parent?.firstName ?? '';
+
+        String title;
+        String culturalHonorific;
+        String desc;
+
+        if (isMaternal) {
+          if (bGender == 'M') {
+            title = 'Oncle Maternel (Wamba / Menfo)';
+            culturalHonorific = 'Wamba — Source de Bénédiction Ancestrale & Protecteur Coutumier';
+            desc = 'Frère de la mère ($pName), détenteur des droits sacrés de bénédiction (Kouh-gan).';
+          } else {
+            title = 'Tante Maternelle (Petite Maman)';
+            culturalHonorific = 'Petite Maman / Douceur du Foyer Maternel';
+            desc = 'Sœur de la mère ($pName), deuxième mère nourricière.';
+          }
+        } else {
+          if (bGender == 'M') {
+            title = 'Oncle Paternel (Petit Papa)';
+            culturalHonorific = 'Petit Papa / Pilier de la Chefferie Paternelle';
+            desc = 'Frère du père ($pName), co-père respecté de la concession.';
+          } else {
+            title = 'Tante Paternelle (Mafo Coutumière)';
+            culturalHonorific = 'Mafo / Dignitaire de la Lignée Paternelle';
+            desc = 'Sœur du père ($pName), femme-père et reine de la lignée.';
+          }
+        }
+
         return KinshipResult(
           title: title,
           relationship: title,
-          summary: '$bName is the $title of $aName',
-          description: 'Sibling of $aName\'s ${parent != null && parent.isFemale ? 'mother' : 'father'} (${parent?.firstName ?? ''}).',
-          culturalHonorific: bGender == 'M' ? 'Oncle / Frère de mon Père' : 'Tante / Sœur de la Maison',
+          summary: '$bName est le/la $title de $aName',
+          description: desc,
+          culturalHonorific: culturalHonorific,
           generationDifference: 1,
           path: [personA, if (parent != null) parent, personB],
         );
@@ -248,34 +347,104 @@ class KinshipSolver {
       final sharedWithA = parentsOfA.where((pId) => parentsOfBParent.contains(pId)).toList();
       if (sharedWithA.isNotEmpty && personAId != parentId) {
         final parent = peopleMap[parentId];
-        final title = bGender == 'M' ? 'Nephew' : 'Niece';
+        final isAunt = personA.isFemale;
+        String title;
+        String culturalHonorific;
+        String desc;
+
+        if (isAunt) {
+          title = bGender == 'M' ? 'Neveu Utérin (Wô-Maa)' : 'Nièce Utérine (Wô-Maa)';
+          culturalHonorific = 'Neveu/Nièce Utérin(e) — Enfant Sacré de ma Sœur';
+          desc = 'Enfant de la sœur (${parent?.firstName ?? ''}), lien de maternité sacrée.';
+        } else {
+          title = bGender == 'M' ? 'Neveu (Enfant du Frère)' : 'Nièce (Enfant du Frère)';
+          culturalHonorific = 'Descendant de la Concession Fraternelle';
+          desc = 'Enfant du frère (${parent?.firstName ?? ''}), perpétuant le rameau paternel.';
+        }
+
         return KinshipResult(
           title: title,
           relationship: title,
-          summary: '$bName is the $title of $aName',
-          description: 'Child of $aName\'s sibling (${parent?.firstName ?? ''}).',
-          culturalHonorific: 'Neveu / Nièce du Rameau',
+          summary: '$bName est le/la $title de $aName',
+          description: desc,
+          culturalHonorific: culturalHonorific,
           generationDifference: -1,
           path: [personA, if (parent != null) parent, personB],
         );
       }
     }
 
-    // 7. First Cousins
+    // 7. Customary In-Laws (Beaux-Parents & Gendres/Belles-Filles)
+    for (final spId in spousesOfA) {
+      final spParents = parentMap[spId] ?? [];
+      if (spParents.contains(personBId)) {
+        final sp = peopleMap[spId];
+        final title = bGender == 'M' ? 'Beau-Père Coutumier' : 'Belle-Mère Coutumière';
+        return KinshipResult(
+          title: title,
+          relationship: title,
+          summary: '$bName est le/la $title de $aName',
+          description: 'Parent de l\'époux/épouse (${sp?.fullName ?? ''}) — Alliance d\'honneur et de dot.',
+          culturalHonorific: bGender == 'M' ? 'Beau-Père / Grand Allié de la Dot' : 'Belle-Mère / Reine de l\'Alliance',
+          generationDifference: 1,
+          path: [personA, if (sp != null) sp, personB],
+        );
+      }
+    }
+
+    for (final cId in childrenOfA) {
+      final cSpouses = spouseMap[cId] ?? [];
+      if (cSpouses.contains(personBId)) {
+        final c = peopleMap[cId];
+        final title = bGender == 'M' ? 'Gendre (Beau-Fils)' : 'Belle-Fille (Épouse du Foyer)';
+        return KinshipResult(
+          title: title,
+          relationship: title,
+          summary: '$bName est le/la $title de $aName',
+          description: 'Conjoint(e) de l\'enfant (${c?.fullName ?? ''}) accueilli(e) dans la famille par dot et alliance.',
+          culturalHonorific: bGender == 'M' ? 'Gendre / Donateur de la Dot' : 'Belle-Fille / Fleur de la Concession',
+          generationDifference: -1,
+          path: [personA, if (c != null) c, personB],
+        );
+      }
+    }
+
+    // 8. In-Laws (Beau-Frère / Belle-Sœur via fratrie)
+    for (final pId in parentsOfA) {
+      final sibs = childrenMap[pId] ?? [];
+      for (final sId in sibs) {
+        if (sId != personAId && (spouseMap[sId] ?? []).contains(personBId)) {
+          final title = bGender == 'M' ? 'Beau-Frère' : 'Belle-Sœur';
+          return KinshipResult(
+            title: title,
+            relationship: title,
+            summary: '$bName est le/la $title de $aName',
+            description: 'Conjoint(e) du frère/de la sœur (${peopleMap[sId]?.firstName ?? ''}).',
+            culturalHonorific: 'Allié(e) Précieux(se) par Alliance Coutumière',
+            generationDifference: 0,
+            path: [personA, if (peopleMap[sId] != null) peopleMap[sId]!, personB],
+          );
+        }
+      }
+    }
+
+    // 9. First Cousins (Cousins Germains par Alliance et Lignée)
     for (final parentA in parentsOfA) {
       final gParentsA = parentMap[parentA] ?? [];
       for (final parentB in parentsOfB) {
         final gParentsB = parentMap[parentB] ?? [];
         final commonGPs = gParentsA.where((gp) => gParentsB.contains(gp)).toList();
         if (commonGPs.isNotEmpty && parentA != parentB) {
-          final title = bGender == 'F' ? 'First Cousin (Cousine)' : 'First Cousin (Cousin)';
-          final commonNames = commonGPs.map((id) => peopleMap[id]?.firstName ?? 'Grandparent').join(' & ');
+          final title = bGender == 'F' ? 'Cousine Germaine' : 'Cousin Germain';
+          final commonNames = commonGPs.map((id) => peopleMap[id]?.firstName ?? 'Ancêtre').join(' & ');
+          final pAName = peopleMap[parentA]?.firstName ?? '';
+          final pBName = peopleMap[parentB]?.firstName ?? '';
           return KinshipResult(
-            title: 'First Cousins',
+            title: 'Cousins Germains',
             relationship: title,
-            summary: '$aName and $bName are First Cousins',
-            description: 'Share grandparents $commonNames through siblings ${peopleMap[parentA]?.firstName ?? ''} and ${peopleMap[parentB]?.firstName ?? ''}.',
-            culturalHonorific: 'Cousin(e) Germain(e) du Même Sang',
+            summary: '$aName et $bName sont cousins germains',
+            description: 'Partagent les grands-parents $commonNames via les fratries de $pAName et $pBName.',
+            culturalHonorific: 'Cousin(e) Germain(e) de la Grande Concession',
             generationDifference: 0,
             path: [
               personA,
@@ -289,27 +458,7 @@ class KinshipSolver {
       }
     }
 
-    // 8. In-Laws (spouse of sibling)
-    final firstParentOfA = parentsOfA.isNotEmpty ? parentsOfA.first : null;
-    if (firstParentOfA != null) {
-      final siblingsOfA = childrenMap[firstParentOfA] ?? [];
-      for (final siblingId in siblingsOfA) {
-        if (siblingId != personAId && (spouseMap[siblingId] ?? []).contains(personBId)) {
-          final title = bGender == 'M' ? 'Brother-in-law' : 'Sister-in-law';
-          return KinshipResult(
-            title: title,
-            relationship: title,
-            summary: '$bName is the $title of $aName',
-            description: 'Married to $aName\'s sibling (${peopleMap[siblingId]?.firstName ?? ''}).',
-            culturalHonorific: 'Allié(e) par Mariage',
-            generationDifference: 0,
-            path: [personA, if (peopleMap[siblingId] != null) peopleMap[siblingId]!, personB],
-          );
-        }
-      }
-    }
-
-    // 9. General BFS Shortest Path
+    // 10. General BFS Shortest Path
     final queue = <Map<String, dynamic>>[
       {'id': personAId, 'path': <Person>[personA]}
     ];

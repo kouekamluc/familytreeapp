@@ -5,8 +5,9 @@
       class="border-b shadow-md sticky top-0 z-20 transition-colors duration-300"
       :class="isLight ? 'bg-white border-[#C5A059]/40 text-stone-900' : 'bg-[#141519] border-[#C5A059]/40 text-white'"
     >
-      <div class="w-full px-4 sm:px-6 lg:px-8 py-2.5">
-        <div class="flex flex-col md:flex-row justify-between items-center gap-3">
+      <!-- Desktop & Tablet Header (md and up) -->
+      <div class="hidden md:block w-full px-4 sm:px-6 lg:px-8 py-2.5">
+        <div class="flex justify-between items-center gap-3">
           <div class="flex items-center space-x-3">
             <div
               class="w-10 h-10 rounded-xl border border-[#C5A059] flex items-center justify-center p-1 shadow-md"
@@ -28,17 +29,17 @@
           </div>
 
           <!-- Bottom Nav Controls pushed to right side -->
-          <div class="flex items-center flex-wrap gap-2.5 ml-auto justify-end">
+          <div class="flex items-center flex-wrap gap-2 ml-auto justify-end">
             <!-- Root Person Selector -->
             <div
-              class="flex items-center space-x-1.5 border rounded-xl px-3 py-2 shadow-inner"
+              class="flex items-center space-x-1.5 border rounded-xl px-2.5 py-1.5 shadow-inner"
               :class="isLight ? 'bg-amber-50/70 border-[#C5A059]' : 'bg-[#1C1E24] border-[#C5A059]/60'"
             >
               <span class="text-xs font-bold" :class="isLight ? 'text-[#855B14]' : 'text-[#C5A059]'">Root:</span>
               <select
                 v-model="rootPersonId"
                 @change="renderPedigreeTree"
-                class="bg-transparent text-xs font-black focus:outline-none cursor-pointer max-w-[150px] truncate"
+                class="bg-transparent text-xs font-black focus:outline-none cursor-pointer max-w-[140px] truncate"
                 :class="isLight ? 'text-stone-900' : 'text-[#F3E5AB]'"
               >
                 <option v-for="p in people" :key="p.id" :value="p.id" class="bg-white text-black dark:bg-[#1C1E24] dark:text-white">
@@ -54,7 +55,7 @@
             >
               <button
                 @click="setViewMode('clan')"
-                class="px-2.5 py-1.5 rounded-lg transition-all cursor-pointer"
+                class="px-2 py-1 rounded-lg transition-all cursor-pointer"
                 :class="viewMode === 'clan' ? 'bg-gradient-to-r from-[#B8860B] to-[#C5A059] text-black font-black shadow' : isLight ? 'text-stone-600 hover:text-black' : 'text-[#C5A059] hover:text-white'"
                 title="View full family clan tree"
               >
@@ -62,7 +63,7 @@
               </button>
               <button
                 @click="setViewMode('descendants')"
-                class="px-2.5 py-1.5 rounded-lg transition-all cursor-pointer"
+                class="px-2 py-1 rounded-lg transition-all cursor-pointer"
                 :class="viewMode === 'descendants' ? 'bg-gradient-to-r from-[#B8860B] to-[#C5A059] text-black font-black shadow' : isLight ? 'text-stone-600 hover:text-black' : 'text-[#C5A059] hover:text-white'"
                 title="View descendants"
               >
@@ -70,7 +71,7 @@
               </button>
               <button
                 @click="setViewMode('pedigree')"
-                class="px-2.5 py-1.5 rounded-lg transition-all cursor-pointer"
+                class="px-2 py-1 rounded-lg transition-all cursor-pointer"
                 :class="viewMode === 'pedigree' ? 'bg-gradient-to-r from-[#B8860B] to-[#C5A059] text-black font-black shadow' : isLight ? 'text-stone-600 hover:text-black' : 'text-[#C5A059] hover:text-white'"
                 title="Trace ancestors"
               >
@@ -78,74 +79,74 @@
               </button>
             </div>
 
-            <!-- Orientation Switcher: Vertical (Top-Down) vs Horizontal (Left-Right) -->
+            <!-- Orientation Switcher -->
             <div
               class="inline-flex rounded-xl border p-0.5 text-xs font-bold shadow-sm"
               :class="isLight ? 'bg-stone-100 border-[#C5A059]/50' : 'bg-[#121316] border-[#C5A059]/60'"
             >
               <button
                 @click="setLayoutOrientation('vertical')"
-                class="px-2.5 py-1.5 rounded-lg transition-all cursor-pointer"
+                class="px-2 py-1 rounded-lg transition-all cursor-pointer"
                 :class="layoutOrientation === 'vertical' ? 'bg-gradient-to-r from-[#B8860B] to-[#C5A059] text-black font-black shadow' : isLight ? 'text-stone-600 hover:text-black' : 'text-[#C5A059] hover:text-white'"
                 title="Top-to-Bottom Dynasty Tree"
               >
-                ↕️ Top-Down
+                ↕️ Top
               </button>
               <button
                 @click="setLayoutOrientation('horizontal')"
-                class="px-2.5 py-1.5 rounded-lg transition-all cursor-pointer"
+                class="px-2 py-1 rounded-lg transition-all cursor-pointer"
                 :class="layoutOrientation === 'horizontal' ? 'bg-gradient-to-r from-[#B8860B] to-[#C5A059] text-black font-black shadow' : isLight ? 'text-stone-600 hover:text-black' : 'text-[#C5A059] hover:text-white'"
                 title="Left-to-Right Pedigree Chart"
               >
-                ↔️ Left-Right
+                ↔️ Side
               </button>
             </div>
 
             <!-- Generation Depth Filter -->
             <div
-              class="flex items-center space-x-1.5 border rounded-xl px-2.5 py-2 shadow-inner"
+              class="flex items-center space-x-1 border rounded-xl px-2 py-1 shadow-inner"
               :class="isLight ? 'bg-amber-50/70 border-[#C5A059]' : 'bg-[#1C1E24] border-[#C5A059]/60'"
             >
-              <span class="text-xs font-bold" :class="isLight ? 'text-[#855B14]' : 'text-[#C5A059]'">Gen:</span>
+              <span class="text-[11px] font-bold" :class="isLight ? 'text-[#855B14]' : 'text-[#C5A059]'">Gen:</span>
               <select
                 v-model="generationFilter"
                 @change="renderPedigreeTree"
                 class="bg-transparent text-xs font-black focus:outline-none cursor-pointer"
                 :class="isLight ? 'text-stone-900' : 'text-[#F3E5AB]'"
               >
-                <option value="all" class="bg-white text-black dark:bg-[#1C1E24] dark:text-white">All Clan (Full)</option>
-                <option value="3" class="bg-white text-black dark:bg-[#1C1E24] dark:text-white">3 Generations</option>
-                <option value="2" class="bg-white text-black dark:bg-[#1C1E24] dark:text-white">2 Generations</option>
+                <option value="all" class="bg-white text-black dark:bg-[#1C1E24] dark:text-white">All Clan</option>
+                <option value="3" class="bg-white text-black dark:bg-[#1C1E24] dark:text-white">3 Gens</option>
+                <option value="2" class="bg-white text-black dark:bg-[#1C1E24] dark:text-white">2 Gens</option>
               </select>
             </div>
 
             <!-- Branch Labels Clean / Off Toggle -->
             <button
               @click="toggleBranchLabels"
-              class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black border transition-all cursor-pointer shadow-sm"
+              class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-black border transition-all cursor-pointer shadow-sm"
               :class="isLight ? 'bg-white hover:bg-stone-50 text-stone-900 border-[#C5A059]' : 'bg-[#1A1C22] hover:bg-[#252832] text-[#F3E5AB] border-[#C5A059]'"
-              title="Toggle branch relationship labels: Clean / Off"
+              title="Toggle branch labels"
             >
               <span>🏷️</span>
-              <span>{{ branchLabelMode === 'clean' ? 'Labels: On' : 'Labels: Off' }}</span>
+              <span>{{ branchLabelMode === 'clean' ? 'Labels On' : 'Labels Off' }}</span>
             </button>
 
-            <!-- Export Lineage Poster -->
+            <!-- Export Poster -->
             <button
               @click="exportLineagePoster"
-              class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black border transition-all cursor-pointer shadow-sm"
+              class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-black border transition-all cursor-pointer shadow-sm"
               :class="isLight ? 'bg-white hover:bg-stone-50 text-stone-900 border-[#C5A059]' : 'bg-[#1A1C22] hover:bg-[#252832] text-[#F3E5AB] border-[#C5A059]'"
-              title="Export high-resolution printable family reunion lineage poster"
+              title="Export lineage poster"
             >
               <span>📷</span>
               <span>Poster</span>
             </button>
 
-            <!-- Share Tree via WhatsApp -->
+            <!-- WhatsApp Share -->
             <button
               @click="showTreeShareModal = true"
-              class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black text-white bg-emerald-600 hover:bg-emerald-700 shadow-md transition-all cursor-pointer"
-              title="Share family tree branch via WhatsApp"
+              class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-black text-white bg-emerald-600 hover:bg-emerald-700 shadow-md transition-all cursor-pointer"
+              title="Share tree branch via WhatsApp"
             >
               <span>📲</span>
               <span>Share</span>
@@ -154,12 +155,143 @@
             <!-- Global Add Person Button -->
             <button
               @click="openGlobalAddPerson"
-              class="inline-flex items-center px-3.5 py-2 rounded-xl text-xs font-black text-black bg-gradient-to-r from-[#F3E5AB] via-[#D4AF37] to-[#C5A059] hover:brightness-105 shadow-md shadow-black/40 transition-all cursor-pointer"
+              class="inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-black text-black bg-gradient-to-r from-[#F3E5AB] via-[#D4AF37] to-[#C5A059] hover:brightness-105 shadow-md transition-all cursor-pointer"
             >
-              <span class="text-base mr-1 leading-none">✨</span>
+              <span class="text-sm mr-1 leading-none">✨</span>
               <span>+ Relative</span>
             </button>
           </div>
+        </div>
+      </div>
+
+      <!-- Mobile Compact Header (< md screens) -->
+      <div class="md:hidden px-2.5 py-1.5 space-y-1.5">
+        <!-- Top row: Root Selector + Quick Add + Expand Controls -->
+        <div class="flex items-center justify-between gap-1.5">
+          <!-- Root Selector -->
+          <div
+            class="flex items-center space-x-1 border rounded-lg px-2 py-1 shadow-inner flex-1 min-w-0"
+            :class="isLight ? 'bg-amber-50/70 border-[#C5A059]/60' : 'bg-[#1C1E24] border-[#C5A059]/50'"
+          >
+            <span class="text-[10px] font-bold shrink-0" :class="isLight ? 'text-[#855B14]' : 'text-[#C5A059]'">Root:</span>
+            <select
+              v-model="rootPersonId"
+              @change="renderPedigreeTree"
+              class="bg-transparent text-[11px] font-black focus:outline-none cursor-pointer w-full truncate"
+              :class="isLight ? 'text-stone-900' : 'text-[#F3E5AB]'"
+            >
+              <option v-for="p in people" :key="p.id" :value="p.id" class="bg-white text-black dark:bg-[#1C1E24] dark:text-white">
+                {{ p.first_name || p.firstName }} {{ p.last_name || p.lastName }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Add Relative Button -->
+          <button
+            @click="openGlobalAddPerson"
+            class="inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-black text-black bg-gradient-to-r from-[#F3E5AB] via-[#D4AF37] to-[#C5A059] shadow-sm shrink-0 active:scale-95"
+          >
+            <span>+ Relative</span>
+          </button>
+
+          <!-- Toggle Extra Controls Panel -->
+          <button
+            @click="showMobileControls = !showMobileControls"
+            class="w-7 h-7 rounded-lg border flex items-center justify-center text-xs shrink-0 transition-all"
+            :class="[
+              showMobileControls
+                ? 'bg-[#C5A059] text-black border-[#C5A059]'
+                : isLight
+                  ? 'bg-stone-50 border-[#C5A059]/50 text-stone-700'
+                  : 'bg-[#1C1E24] border-[#C5A059]/40 text-[#F3E5AB]'
+            ]"
+            title="Tree Controls"
+          >
+            ⚙️
+          </button>
+        </div>
+
+        <!-- Horizontal Scrollable Quick Chips (Always visible or toggled) -->
+        <div class="flex items-center gap-1 overflow-x-auto pb-0.5 no-scrollbar text-[11px]">
+          <!-- View Modes -->
+          <button
+            @click="setViewMode('clan')"
+            class="px-2 py-0.5 rounded-md font-bold whitespace-nowrap shrink-0 transition-all"
+            :class="viewMode === 'clan' ? 'bg-gradient-to-r from-[#B8860B] to-[#C5A059] text-black font-black' : isLight ? 'bg-stone-100 text-stone-700' : 'bg-[#1A1C22] text-[#C5A059] border border-[#C5A059]/30'"
+          >
+            🌳 Clan
+          </button>
+          <button
+            @click="setViewMode('descendants')"
+            class="px-2 py-0.5 rounded-md font-bold whitespace-nowrap shrink-0 transition-all"
+            :class="viewMode === 'descendants' ? 'bg-gradient-to-r from-[#B8860B] to-[#C5A059] text-black font-black' : isLight ? 'bg-stone-100 text-stone-700' : 'bg-[#1A1C22] text-[#C5A059] border border-[#C5A059]/30'"
+          >
+            🌱 Desc
+          </button>
+          <button
+            @click="setViewMode('pedigree')"
+            class="px-2 py-0.5 rounded-md font-bold whitespace-nowrap shrink-0 transition-all"
+            :class="viewMode === 'pedigree' ? 'bg-gradient-to-r from-[#B8860B] to-[#C5A059] text-black font-black' : isLight ? 'bg-stone-100 text-stone-700' : 'bg-[#1A1C22] text-[#C5A059] border border-[#C5A059]/30'"
+          >
+            📜 Anc
+          </button>
+
+          <!-- Orientation -->
+          <button
+            @click="setLayoutOrientation(layoutOrientation === 'vertical' ? 'horizontal' : 'vertical')"
+            class="px-2 py-0.5 rounded-md font-bold whitespace-nowrap shrink-0 border"
+            :class="isLight ? 'bg-white border-stone-200 text-stone-700' : 'bg-[#1A1C22] border-[#C5A059]/30 text-[#F3E5AB]'"
+          >
+            {{ layoutOrientation === 'vertical' ? '↕ Top' : '↔ Side' }}
+          </button>
+
+          <!-- Poster -->
+          <button
+            @click="exportLineagePoster"
+            class="px-2 py-0.5 rounded-md font-bold whitespace-nowrap shrink-0 border"
+            :class="isLight ? 'bg-white border-stone-200 text-stone-700' : 'bg-[#1A1C22] border-[#C5A059]/30 text-[#F3E5AB]'"
+            title="Lineage Poster"
+          >
+            📷 Poster
+          </button>
+
+          <!-- Share -->
+          <button
+            @click="showTreeShareModal = true"
+            class="px-2 py-0.5 rounded-md font-bold whitespace-nowrap shrink-0 bg-emerald-600 text-white"
+          >
+            📲 Share
+          </button>
+        </div>
+
+        <!-- Collapsible Mobile Advanced Controls Panel -->
+        <div
+          v-if="showMobileControls"
+          class="pt-1.5 border-t flex items-center justify-between gap-1 text-[10px]"
+          :class="isLight ? 'border-[#C5A059]/20' : 'border-[#C5A059]/20'"
+        >
+          <!-- Gen Depth -->
+          <div class="flex items-center gap-1">
+            <span class="font-bold text-[#C5A059]">Gens:</span>
+            <button
+              v-for="g in ['all', '3', '2']"
+              :key="g"
+              @click="generationFilter = g; renderPedigreeTree()"
+              class="px-1.5 py-0.5 rounded font-bold"
+              :class="generationFilter === g ? 'bg-[#C5A059] text-black font-black' : isLight ? 'bg-stone-100 text-stone-600' : 'bg-[#1C1E25] text-stone-300'"
+            >
+              {{ g === 'all' ? 'All' : `${g}G` }}
+            </button>
+          </div>
+
+          <!-- Labels -->
+          <button
+            @click="toggleBranchLabels"
+            class="px-2 py-0.5 rounded font-bold border"
+            :class="isLight ? 'bg-stone-50 border-stone-200 text-stone-700' : 'bg-[#1C1E25] border-[#C5A059]/30 text-[#F3E5AB]'"
+          >
+            🏷️ {{ branchLabelMode === 'clean' ? 'Labels: On' : 'Labels: Off' }}
+          </button>
         </div>
       </div>
     </header>
@@ -167,32 +299,32 @@
     <!-- Main Tree Container -->
     <main class="flex-1 relative overflow-hidden transition-colors duration-300" :class="isLight ? 'bg-[#FAF7F0]' : 'bg-[#0B0C0E]'">
       <div v-if="loading" class="absolute inset-0 flex items-center justify-center bg-[#121316]/60 backdrop-blur-xs z-10">
-        <div class="flex flex-col items-center bg-[#141519] border border-[#C5A059] p-6 rounded-2xl shadow-2xl">
-          <div class="w-10 h-10 border-4 border-[#C5A059] border-t-transparent rounded-full animate-spin"></div>
-          <span class="mt-3 text-sm font-black text-[#F3E5AB]">Tracing Kkevo Family Roots...</span>
+        <div class="flex flex-col items-center bg-[#141519] border border-[#C5A059] p-5 rounded-2xl shadow-2xl">
+          <div class="w-8 h-8 border-3 border-[#C5A059] border-t-transparent rounded-full animate-spin"></div>
+          <span class="mt-2 text-xs font-black text-[#F3E5AB]">Tracing Kkevo Family Roots...</span>
         </div>
       </div>
 
-      <div v-if="!loading && people.length === 0" class="flex flex-col items-center justify-center h-[calc(100vh-10rem)] p-8 text-center">
-        <div class="w-24 h-24 rounded-3xl bg-[#141519] border-2 border-[#C5A059] flex items-center justify-center p-2 mb-4 shadow-xl">
+      <div v-if="!loading && people.length === 0" class="flex flex-col items-center justify-center h-[calc(100vh-10rem)] p-6 text-center">
+        <div class="w-20 h-20 rounded-3xl bg-[#141519] border-2 border-[#C5A059] flex items-center justify-center p-2 mb-3 shadow-xl">
           <img src="/logo.png" alt="Kkevo Crest" class="w-full h-full object-contain" />
         </div>
-        <h3 class="text-2xl font-black" :class="isLight ? 'text-[#121316]' : 'text-stone-100'">Kkevo Family Tree is Ready to Grow</h3>
-        <p class="text-sm mt-2 max-w-sm font-medium" :class="isLight ? 'text-stone-600' : 'text-stone-400'">Add yourself, your parents, or your elders to begin charting your heritage.</p>
-        <button @click="openGlobalAddPerson" class="mt-5 px-6 py-3 bg-gradient-to-r from-[#B8860B] via-[#D4AF37] to-[#C5A059] text-black text-sm font-black rounded-2xl shadow-lg shadow-[#C5A059]/30">
+        <h3 class="text-xl font-black" :class="isLight ? 'text-[#121316]' : 'text-stone-100'">Kkevo Family Tree is Ready to Grow</h3>
+        <p class="text-xs mt-1.5 max-w-sm font-medium" :class="isLight ? 'text-stone-600' : 'text-stone-400'">Add yourself, your parents, or your elders to begin charting your heritage.</p>
+        <button @click="openGlobalAddPerson" class="mt-4 px-5 py-2.5 bg-gradient-to-r from-[#B8860B] via-[#D4AF37] to-[#C5A059] text-black text-xs font-black rounded-xl shadow-lg shadow-[#C5A059]/30">
           ✨ Add First Family Member
         </button>
       </div>
 
       <!-- Floating Elder-Friendly Zoom Controls -->
       <div
-        class="absolute bottom-20 sm:bottom-6 left-4 sm:left-6 z-20 flex flex-col gap-2 p-2 rounded-2xl shadow-2xl border transition-colors"
+        class="absolute bottom-16 sm:bottom-6 left-3 sm:left-6 z-20 flex flex-col gap-1.5 p-1.5 sm:p-2 rounded-xl sm:rounded-2xl shadow-2xl border transition-colors"
         :class="isLight ? 'bg-white/95 border-[#C5A059]/60 shadow-amber-950/10' : 'bg-[#141519]/95 border-[#C5A059]/60 shadow-black/80'"
       >
         <button
           @click="zoomIn"
           title="Zoom In (Larger)"
-          class="w-11 h-11 flex items-center justify-center rounded-xl text-2xl font-black transition-colors border cursor-pointer"
+          class="w-8 h-8 sm:w-11 sm:h-11 flex items-center justify-center rounded-lg sm:rounded-xl text-lg sm:text-2xl font-black transition-colors border cursor-pointer"
           :class="isLight ? 'bg-amber-50 hover:bg-amber-100 text-[#634208] border-[#C5A059]/40' : 'bg-[#20232B] hover:bg-[#2A2E38] text-[#F3E5AB] border-[#C5A059]/30'"
         >
           +
@@ -200,7 +332,7 @@
         <button
           @click="resetZoom"
           title="Reset View"
-          class="w-11 h-11 flex items-center justify-center rounded-xl text-xl transition-colors border cursor-pointer"
+          class="w-8 h-8 sm:w-11 sm:h-11 flex items-center justify-center rounded-lg sm:rounded-xl text-sm sm:text-xl transition-colors border cursor-pointer"
           :class="isLight ? 'bg-amber-50 hover:bg-amber-100 text-[#634208] border-[#C5A059]/40' : 'bg-[#20232B] hover:bg-[#2A2E38] text-[#D4AF37] border-[#C5A059]/30'"
         >
           🏠
@@ -208,7 +340,7 @@
         <button
           @click="zoomOut"
           title="Zoom Out (Smaller)"
-          class="w-11 h-11 flex items-center justify-center rounded-xl text-2xl font-black transition-colors border cursor-pointer"
+          class="w-8 h-8 sm:w-11 sm:h-11 flex items-center justify-center rounded-lg sm:rounded-xl text-lg sm:text-2xl font-black transition-colors border cursor-pointer"
           :class="isLight ? 'bg-amber-50 hover:bg-amber-100 text-[#634208] border-[#C5A059]/40' : 'bg-[#20232B] hover:bg-[#2A2E38] text-[#F3E5AB] border-[#C5A059]/30'"
         >
           −
@@ -216,39 +348,42 @@
       </div>
 
       <!-- D3 Interactive Tree Container -->
-      <div ref="treeContainer" class="w-full h-[calc(100vh-8rem)] select-none"></div>
+      <div ref="treeContainer" class="w-full h-[calc(100vh-6.5rem)] sm:h-[calc(100vh-8rem)] select-none"></div>
     </main>
 
     <!-- Node Action Bottom Sheet / Card (Kkevo Royal Adaptive Theme) -->
     <div
       v-if="selectedNode"
-      class="fixed bottom-20 sm:bottom-6 left-4 sm:left-auto right-4 sm:right-6 z-40 rounded-3xl shadow-2xl border-2 p-4 sm:p-5 max-w-md max-h-[80vh] overflow-y-auto animate-in fade-in slide-in-from-bottom duration-200"
+      class="fixed bottom-14 sm:bottom-6 left-0 right-0 sm:left-auto sm:right-6 z-40 rounded-t-3xl sm:rounded-3xl shadow-2xl border-t-2 sm:border-2 p-3 sm:p-5 max-w-full sm:max-w-md max-h-[72vh] sm:max-h-[80vh] overflow-y-auto animate-in fade-in slide-in-from-bottom duration-200"
       :class="isLight ? 'bg-white border-[#C5A059] text-stone-900 shadow-amber-950/20' : 'bg-[#14161C] border-[#C5A059] text-white shadow-black/90'"
     >
-      <div class="flex justify-between items-start pb-3 border-b" :class="isLight ? 'border-[#C5A059]/30' : 'border-[#C5A059]/30'">
-        <div class="flex items-center space-x-3">
+      <!-- Mobile Drag Indicator -->
+      <div class="w-10 h-1 rounded-full mx-auto mb-2 bg-stone-300 dark:bg-stone-600 sm:hidden"></div>
+
+      <div class="flex justify-between items-start pb-2.5 border-b" :class="isLight ? 'border-[#C5A059]/30' : 'border-[#C5A059]/30'">
+        <div class="flex items-center space-x-2.5">
           <div
-            class="w-12 h-12 rounded-2xl flex items-center justify-center text-xl font-black overflow-hidden border-2 border-[#C5A059] shadow-inner"
+            class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center text-lg sm:text-xl font-black overflow-hidden border-2 border-[#C5A059] shadow-inner shrink-0"
             :class="isLight ? 'bg-amber-50 text-[#855B14]' : 'bg-[#0D0E11] text-[#D4AF37]'"
           >
             <img v-if="selectedNode.avatar || selectedNode.profile_picture" :src="selectedNode.avatar || selectedNode.profile_picture" class="w-full h-full object-cover" />
             <span v-else>{{ selectedNode.gender === 'F' ? '👩' : '👨' }}</span>
           </div>
-          <div>
-            <h4 class="text-lg font-black leading-tight" :class="isLight ? 'text-stone-900' : 'text-transparent bg-clip-text bg-gradient-to-r from-[#F3E5AB] to-[#D4AF37]'">
+          <div class="min-w-0">
+            <h4 class="text-base sm:text-lg font-black leading-tight truncate" :class="isLight ? 'text-stone-900' : 'text-transparent bg-clip-text bg-gradient-to-r from-[#F3E5AB] to-[#D4AF37]'">
               {{ selectedNode.first_name || selectedNode.firstName }} {{ selectedNode.last_name || selectedNode.lastName }}
             </h4>
-            <p class="text-xs font-semibold mt-0.5" :class="isLight ? 'text-[#855B14]' : 'text-[#C5A059]'">
+            <p class="text-[11px] sm:text-xs font-semibold mt-0.5 truncate" :class="isLight ? 'text-[#855B14]' : 'text-[#C5A059]'">
               {{ formatBirth(selectedNode) }}
             </p>
             <div v-if="selectedNode.traditional_name || selectedNode.clan_totem || selectedNode.village_of_origin" class="flex flex-wrap gap-1 mt-1">
-              <span v-if="selectedNode.traditional_name" class="px-1.5 py-0.5 rounded text-[10px] font-black border" :class="isLight ? 'bg-amber-100 text-[#5B3D0B] border-[#C5A059]/40' : 'bg-[#252834] text-[#F3E5AB] border-[#C5A059]/40'">
+              <span v-if="selectedNode.traditional_name" class="px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-black border" :class="isLight ? 'bg-amber-100 text-[#5B3D0B] border-[#C5A059]/40' : 'bg-[#252834] text-[#F3E5AB] border-[#C5A059]/40'">
                 👑 {{ selectedNode.traditional_name }}
               </span>
-              <span v-if="selectedNode.clan_totem" class="px-1.5 py-0.5 rounded text-[10px] font-bold border" :class="isLight ? 'bg-amber-50 text-[#674B19] border-[#C5A059]/40' : 'bg-[#1C1E25] text-[#F3E5AB] border-[#C5A059]/40'">
+              <span v-if="selectedNode.clan_totem" class="px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-bold border" :class="isLight ? 'bg-amber-50 text-[#674B19] border-[#C5A059]/40' : 'bg-[#1C1E25] text-[#F3E5AB] border-[#C5A059]/40'">
                 {{ selectedNode.clan_totem }}
               </span>
-              <span v-if="selectedNode.village_of_origin" class="px-1.5 py-0.5 rounded text-[10px] font-bold border" :class="isLight ? 'bg-amber-50 text-[#674B19] border-[#C5A059]/40' : 'bg-[#1C1E25] text-[#F3E5AB] border-[#C5A059]/40'">
+              <span v-if="selectedNode.village_of_origin" class="px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-bold border" :class="isLight ? 'bg-amber-50 text-[#674B19] border-[#C5A059]/40' : 'bg-[#1C1E25] text-[#F3E5AB] border-[#C5A059]/40'">
                 📍 {{ selectedNode.village_of_origin }}
               </span>
             </div>
@@ -256,7 +391,7 @@
         </div>
         <button
           @click="selectedNode = null"
-          class="w-8 h-8 rounded-full flex items-center justify-center font-bold transition-colors cursor-pointer"
+          class="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold transition-colors cursor-pointer shrink-0 text-xs sm:text-sm"
           :class="isLight ? 'bg-stone-100 hover:bg-stone-200 text-stone-700' : 'bg-white/10 hover:bg-white/20 text-[#C5A059]'"
         >
           ✕
@@ -264,16 +399,16 @@
       </div>
 
       <!-- Immediate Kinship Circle (Parents, Spouses, Siblings, Children) -->
-      <div class="py-3 border-b space-y-2" :class="isLight ? 'border-[#C5A059]/20' : 'border-[#C5A059]/20'">
-        <div class="text-[11px] font-black uppercase tracking-wider flex items-center justify-between" :class="isLight ? 'text-[#855B14]' : 'text-[#C5A059]'">
+      <div class="py-2 sm:py-3 border-b space-y-1.5 sm:space-y-2" :class="isLight ? 'border-[#C5A059]/20' : 'border-[#C5A059]/20'">
+        <div class="text-[10px] sm:text-[11px] font-black uppercase tracking-wider flex items-center justify-between" :class="isLight ? 'text-[#855B14]' : 'text-[#C5A059]'">
           <span>Family Circle</span>
-          <span class="text-[10px] lowercase font-normal opacity-80">tap kin to inspect</span>
+          <span class="text-[9px] sm:text-[10px] lowercase font-normal opacity-80">tap kin to inspect</span>
         </div>
 
-        <div class="grid grid-cols-2 gap-2 text-xs">
+        <div class="grid grid-cols-2 gap-1.5 sm:gap-2 text-xs">
           <!-- Parents -->
-          <div class="p-2 rounded-xl border" :class="isLight ? 'bg-amber-50/50 border-[#C5A059]/30' : 'bg-[#181A22] border-[#C5A059]/30'">
-            <div class="text-[10px] font-bold uppercase tracking-wider mb-1" :class="isLight ? 'text-stone-500' : 'text-stone-400'">
+          <div class="p-1.5 sm:p-2 rounded-xl border" :class="isLight ? 'bg-amber-50/50 border-[#C5A059]/30' : 'bg-[#181A22] border-[#C5A059]/30'">
+            <div class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider mb-0.5" :class="isLight ? 'text-stone-500' : 'text-stone-400'">
               👑 Parents ({{ selectedNodeFamily.parents.length }})
             </div>
             <div v-if="selectedNodeFamily.parents.length > 0" class="flex flex-wrap gap-1">
@@ -281,19 +416,19 @@
                 v-for="p in selectedNodeFamily.parents"
                 :key="p.id"
                 @click="selectedNode = p"
-                class="px-2 py-0.5 rounded-md font-bold text-xs truncate max-w-full hover:scale-105 transition-transform cursor-pointer"
+                class="px-1.5 py-0.5 rounded-md font-bold text-[11px] sm:text-xs truncate max-w-full hover:scale-105 transition-transform cursor-pointer"
                 :class="isLight ? 'bg-amber-100 text-[#634208]' : 'bg-[#252834] text-[#F3E5AB]'"
                 :title="p.first_name + ' ' + p.last_name"
               >
                 {{ p.first_name }}
               </button>
             </div>
-            <div v-else class="text-[10px] italic text-stone-400">None recorded</div>
+            <div v-else class="text-[9px] sm:text-[10px] italic text-stone-400">None recorded</div>
           </div>
 
           <!-- Partners / Spouses -->
-          <div class="p-2 rounded-xl border" :class="isLight ? 'bg-amber-50/50 border-[#C5A059]/30' : 'bg-[#181A22] border-[#C5A059]/30'">
-            <div class="text-[10px] font-bold uppercase tracking-wider mb-1" :class="isLight ? 'text-stone-500' : 'text-stone-400'">
+          <div class="p-1.5 sm:p-2 rounded-xl border" :class="isLight ? 'bg-amber-50/50 border-[#C5A059]/30' : 'bg-[#181A22] border-[#C5A059]/30'">
+            <div class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider mb-0.5" :class="isLight ? 'text-stone-500' : 'text-stone-400'">
               💍 Partner ({{ selectedNodeFamily.spouses.length }})
             </div>
             <div v-if="selectedNodeFamily.spouses.length > 0" class="flex flex-wrap gap-1">
@@ -301,19 +436,19 @@
                 v-for="sp in selectedNodeFamily.spouses"
                 :key="sp.id"
                 @click="selectedNode = sp"
-                class="px-2 py-0.5 rounded-md font-bold text-xs truncate max-w-full hover:scale-105 transition-transform cursor-pointer"
+                class="px-1.5 py-0.5 rounded-md font-bold text-[11px] sm:text-xs truncate max-w-full hover:scale-105 transition-transform cursor-pointer"
                 :class="isLight ? 'bg-amber-100 text-[#634208]' : 'bg-[#252834] text-[#F3E5AB]'"
                 :title="sp.first_name + ' ' + sp.last_name"
               >
                 {{ sp.first_name }}
               </button>
             </div>
-            <div v-else class="text-[10px] italic text-stone-400">None recorded</div>
+            <div v-else class="text-[9px] sm:text-[10px] italic text-stone-400">None recorded</div>
           </div>
 
           <!-- Siblings -->
-          <div class="p-2 rounded-xl border" :class="isLight ? 'bg-amber-50/50 border-[#C5A059]/30' : 'bg-[#181A22] border-[#C5A059]/30'">
-            <div class="text-[10px] font-bold uppercase tracking-wider mb-1" :class="isLight ? 'text-stone-500' : 'text-stone-400'">
+          <div class="p-1.5 sm:p-2 rounded-xl border" :class="isLight ? 'bg-amber-50/50 border-[#C5A059]/30' : 'bg-[#181A22] border-[#C5A059]/30'">
+            <div class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider mb-0.5" :class="isLight ? 'text-stone-500' : 'text-stone-400'">
               👥 Siblings ({{ selectedNodeFamily.siblings.length }})
             </div>
             <div v-if="selectedNodeFamily.siblings.length > 0" class="flex flex-wrap gap-1">
@@ -321,19 +456,19 @@
                 v-for="s in selectedNodeFamily.siblings"
                 :key="s.id"
                 @click="selectedNode = s"
-                class="px-2 py-0.5 rounded-md font-bold text-xs truncate max-w-full hover:scale-105 transition-transform cursor-pointer"
+                class="px-1.5 py-0.5 rounded-md font-bold text-[11px] sm:text-xs truncate max-w-full hover:scale-105 transition-transform cursor-pointer"
                 :class="isLight ? 'bg-amber-100 text-[#634208]' : 'bg-[#252834] text-[#F3E5AB]'"
                 :title="s.first_name + ' ' + s.last_name"
               >
                 {{ s.first_name }}
               </button>
             </div>
-            <div v-else class="text-[10px] italic text-stone-400">None recorded</div>
+            <div v-else class="text-[9px] sm:text-[10px] italic text-stone-400">None recorded</div>
           </div>
 
           <!-- Children -->
-          <div class="p-2 rounded-xl border" :class="isLight ? 'bg-amber-50/50 border-[#C5A059]/30' : 'bg-[#181A22] border-[#C5A059]/30'">
-            <div class="text-[10px] font-bold uppercase tracking-wider mb-1" :class="isLight ? 'text-stone-500' : 'text-stone-400'">
+          <div class="p-1.5 sm:p-2 rounded-xl border" :class="isLight ? 'bg-amber-50/50 border-[#C5A059]/30' : 'bg-[#181A22] border-[#C5A059]/30'">
+            <div class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider mb-0.5" :class="isLight ? 'text-stone-500' : 'text-stone-400'">
               👶 Children ({{ selectedNodeFamily.children.length }})
             </div>
             <div v-if="selectedNodeFamily.children.length > 0" class="flex flex-wrap gap-1">
@@ -341,80 +476,76 @@
                 v-for="c in selectedNodeFamily.children"
                 :key="c.id"
                 @click="selectedNode = c"
-                class="px-2 py-0.5 rounded-md font-bold text-xs truncate max-w-full hover:scale-105 transition-transform cursor-pointer"
+                class="px-1.5 py-0.5 rounded-md font-bold text-[11px] sm:text-xs truncate max-w-full hover:scale-105 transition-transform cursor-pointer"
                 :class="isLight ? 'bg-amber-100 text-[#634208]' : 'bg-[#252834] text-[#F3E5AB]'"
                 :title="c.first_name + ' ' + c.last_name"
               >
                 {{ c.first_name }}
               </button>
             </div>
-            <div v-else class="text-[10px] italic text-stone-400">None recorded</div>
+            <div v-else class="text-[9px] sm:text-[10px] italic text-stone-400">None recorded</div>
           </div>
         </div>
       </div>
 
-      <!-- Big Friendly 1-Click Relative Addition Tiles -->
-      <div class="py-3">
+      <!-- Compact 1-Click Relative Addition Tiles -->
+      <div class="py-2 sm:py-3">
         <span
-          class="text-xs font-black uppercase tracking-wider block mb-2"
+          class="text-[10px] sm:text-xs font-black uppercase tracking-wider block mb-1.5"
           :class="isLight ? 'text-[#855B14]' : 'text-[#C5A059]'"
         >
           Connect a relative:
         </span>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div class="grid grid-cols-4 gap-1.5 sm:gap-2">
           <button
             @click="openAddRelative(selectedNode, 'father')"
-            class="min-h-[48px] p-2.5 text-xs font-black rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-0.5 shadow-sm cursor-pointer hover:scale-102 active:scale-95"
+            class="min-h-[38px] sm:min-h-[48px] p-1.5 sm:p-2.5 text-[10px] sm:text-xs font-black rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-0.5 shadow-sm cursor-pointer hover:scale-102 active:scale-95"
             :class="isLight ? 'bg-stone-50 hover:bg-amber-50/60 border-[#C5A059]/40 text-stone-900' : 'bg-[#1F222A] hover:bg-[#282C36] border-[#C5A059]/50 text-[#F3E5AB]'"
           >
-            <span class="text-xl">👨</span>
+            <span class="text-base sm:text-xl leading-none">👨</span>
             <span>+ Papa</span>
-            <span class="text-[9px] font-normal" :class="isLight ? 'text-[#855B14]' : 'text-[#C5A059]'">Father</span>
           </button>
           <button
             @click="openAddRelative(selectedNode, 'mother')"
-            class="min-h-[48px] p-2.5 text-xs font-black rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-0.5 shadow-sm cursor-pointer hover:scale-102 active:scale-95"
+            class="min-h-[38px] sm:min-h-[48px] p-1.5 sm:p-2.5 text-[10px] sm:text-xs font-black rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-0.5 shadow-sm cursor-pointer hover:scale-102 active:scale-95"
             :class="isLight ? 'bg-stone-50 hover:bg-amber-50/60 border-[#C5A059]/40 text-stone-900' : 'bg-[#1F222A] hover:bg-[#282C36] border-[#C5A059]/50 text-[#F3E5AB]'"
           >
-            <span class="text-xl">👩</span>
+            <span class="text-base sm:text-xl leading-none">👩</span>
             <span>+ Mama</span>
-            <span class="text-[9px] font-normal" :class="isLight ? 'text-[#855B14]' : 'text-[#C5A059]'">Mother</span>
           </button>
           <button
             @click="openAddRelative(selectedNode, 'spouse')"
-            class="min-h-[48px] p-2.5 text-xs font-black rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-0.5 shadow-sm cursor-pointer hover:scale-102 active:scale-95"
+            class="min-h-[38px] sm:min-h-[48px] p-1.5 sm:p-2.5 text-[10px] sm:text-xs font-black rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-0.5 shadow-sm cursor-pointer hover:scale-102 active:scale-95"
             :class="isLight ? 'bg-stone-50 hover:bg-amber-50/60 border-[#C5A059]/40 text-stone-900' : 'bg-[#1F222A] hover:bg-[#282C36] border-[#C5A059]/50 text-[#F3E5AB]'"
           >
-            <span class="text-xl">💍</span>
-            <span>+ Partner</span>
-            <span class="text-[9px] font-normal" :class="isLight ? 'text-[#855B14]' : 'text-[#C5A059]'">Spouse</span>
+            <span class="text-base sm:text-xl leading-none">💍</span>
+            <span>+ Spouse</span>
           </button>
           <button
             @click="openAddRelative(selectedNode, 'child')"
-            class="min-h-[48px] p-2.5 text-xs font-black rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-0.5 shadow-sm cursor-pointer hover:scale-102 active:scale-95"
+            class="min-h-[38px] sm:min-h-[48px] p-1.5 sm:p-2.5 text-[10px] sm:text-xs font-black rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-0.5 shadow-sm cursor-pointer hover:scale-102 active:scale-95"
             :class="isLight ? 'bg-stone-50 hover:bg-amber-50/60 border-[#C5A059]/40 text-stone-900' : 'bg-[#1F222A] hover:bg-[#282C36] border-[#C5A059]/50 text-[#F3E5AB]'"
           >
-            <span class="text-xl">👶</span>
+            <span class="text-base sm:text-xl leading-none">👶</span>
             <span>+ Child</span>
-            <span class="text-[9px] font-normal" :class="isLight ? 'text-[#855B14]' : 'text-[#C5A059]'">Son/Daughter</span>
           </button>
         </div>
       </div>
 
-      <div class="pt-2.5 border-t flex items-center justify-between" :class="isLight ? 'border-[#C5A059]/30' : 'border-[#C5A059]/30'">
+      <div class="pt-2 border-t flex items-center justify-between" :class="isLight ? 'border-[#C5A059]/30' : 'border-[#C5A059]/30'">
         <button
           @click="setRootPerson(selectedNode.id)"
-          class="text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+          class="text-[11px] sm:text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer"
           :class="isLight ? 'text-[#855B14] hover:text-black' : 'text-[#C5A059] hover:text-[#F3E5AB]'"
         >
           <span>🎯</span> Focus Root
         </button>
         <router-link
           :to="`/people/${selectedNode.id}`"
-          class="text-xs bg-gradient-to-r from-[#B8860B] to-[#C5A059] hover:brightness-105 text-black px-3.5 py-1.5 rounded-xl font-black transition-all flex items-center gap-1.5"
+          class="text-[11px] sm:text-xs bg-gradient-to-r from-[#B8860B] to-[#C5A059] hover:brightness-105 text-black px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-lg sm:rounded-xl font-black transition-all flex items-center gap-1.5"
         >
           <span>🎙️</span>
-          <span>Story & Oral Vault →</span>
+          <span>Story Vault →</span>
         </router-link>
       </div>
     </div>
@@ -510,6 +641,7 @@ const generationFilter = ref('all') // 'all' | '3' | '2'
 const branchLabelMode = ref('clean') // 'clean' | 'off'
 const layoutOrientation = ref('vertical') // 'vertical' | 'horizontal'
 const showTreeShareModal = ref(false)
+const showMobileControls = ref(false)
 const treeContainer = ref(null)
 const selectedNode = ref(null)
 

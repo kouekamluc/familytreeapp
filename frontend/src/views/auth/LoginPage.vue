@@ -1,9 +1,15 @@
 <template>
   <div class="app-page-shell flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 font-sans">
-    <div class="max-w-md w-full space-y-8 app-card-panel border-2 border-[#C5A059] p-8 rounded-3xl shadow-2xl">
+    <div class="max-w-md w-full space-y-6 app-card-panel border-2 border-[#C5A059] p-8 rounded-3xl shadow-2xl relative overflow-hidden">
+      <!-- Top Decorative Gold Accent Line -->
+      <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#B8860B] via-[#FFD700] to-[#C5A059]"></div>
+
       <div class="text-center">
-        <div class="w-24 h-24 mx-auto rounded-2xl border-2 border-[#C5A059] flex items-center justify-center p-2 shadow-xl mb-4 bg-amber-50/20">
-          <img src="/logo.png" alt="Kkevo Family Crest" class="w-full h-full object-contain" />
+        <div class="w-24 h-24 mx-auto rounded-2xl border-2 border-[#C5A059] flex items-center justify-center p-2 shadow-xl mb-4 bg-amber-50/20 relative group">
+          <img src="/logo.png" alt="Kkevo Family Crest" class="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105" />
+          <div class="absolute -bottom-2 bg-gradient-to-r from-[#B8860B] to-[#C5A059] text-black text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider shadow">
+            Dynasty
+          </div>
         </div>
         <h2 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#B8860B] via-[#D4AF37] to-[#C5A059] font-serif uppercase tracking-wider">
           Kkevo Family
@@ -11,11 +17,138 @@
         <p class="mt-1 text-xs font-bold text-[#C5A059] uppercase tracking-widest">
           Royal Heritage & Family Roots
         </p>
-        <p class="mt-3 text-xs opacity-80">
-          Sign in to view and grow our family lineage
+        <p class="mt-2 text-xs opacity-80">
+          Sign in to unlock and explore the sacred lineage archive
         </p>
       </div>
-      <form class="mt-6 space-y-5" @submit.prevent="handleSubmit">
+
+      <!-- Login Method Switcher Tabs -->
+      <div class="flex p-1 bg-[#15171E] border border-[#C5A059]/40 rounded-2xl">
+        <button
+          type="button"
+          @click="activeTab = 'heritage_key'"
+          class="flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+          :class="activeTab === 'heritage_key' ? 'bg-gradient-to-r from-[#B8860B] via-[#D4AF37] to-[#C5A059] text-black shadow-md' : 'text-stone-300 hover:text-[#C5A059]'"
+        >
+          <span>🔑</span>
+          <span>Heritage Key</span>
+          <span v-if="activeTab === 'heritage_key'" class="w-1.5 h-1.5 rounded-full bg-black ml-1"></span>
+        </button>
+        <button
+          type="button"
+          @click="activeTab = 'credentials'"
+          class="flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+          :class="activeTab === 'credentials' ? 'bg-gradient-to-r from-[#B8860B] via-[#D4AF37] to-[#C5A059] text-black shadow-md' : 'text-stone-300 hover:text-[#C5A059]'"
+        >
+          <span>👤</span>
+          <span>Password</span>
+        </button>
+      </div>
+
+      <!-- TAB 1: SIGN IN WITH HERITAGE KEY -->
+      <form v-if="activeTab === 'heritage_key'" class="space-y-5" @submit.prevent="handleHeritageKeySubmit">
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <label for="heritage-key" class="block text-xs font-bold text-[#C5A059]">
+              Sacred Heritage Passkey
+            </label>
+            <button
+              type="button"
+              @click="pasteKeyFromClipboard"
+              class="text-[11px] text-[#D4AF37] hover:underline flex items-center gap-1 font-semibold"
+            >
+              <span>📋</span> Paste Key
+            </button>
+          </div>
+
+          <div class="relative">
+            <input
+              id="heritage-key"
+              v-model="heritageKeyInput"
+              type="text"
+              required
+              class="w-full px-3.5 py-3 app-input-theme border-2 border-[#C5A059]/60 rounded-xl text-sm font-mono tracking-wider uppercase placeholder-stone-500 focus:outline-none focus:ring-2 focus:ring-[#C5A059] focus:border-[#C5A059]"
+              :class="{ 'border-red-500': errors.heritageKey }"
+              placeholder="e.g. KKEVO-ROYAL-2026-ROOT"
+            />
+            <button
+              v-if="heritageKeyInput"
+              type="button"
+              @click="heritageKeyInput = ''"
+              class="absolute right-3 top-3 text-xs text-stone-400 hover:text-stone-200"
+            >
+              ✕
+            </button>
+          </div>
+          <p v-if="errors.heritageKey" class="text-xs text-red-400 mt-1">{{ errors.heritageKey }}</p>
+          <p class="text-[11px] opacity-70">
+            Enter your personal lineage key to authenticate securely without a password.
+          </p>
+        </div>
+
+        <!-- Quick 1-Click Preset Heritage Keys for Demo/Testing -->
+        <div class="pt-1">
+          <p class="text-[11px] font-bold text-[#C5A059] uppercase tracking-wider mb-2">
+            ✨ Quick Access Keys
+          </p>
+          <div class="flex flex-col gap-2">
+            <button
+              type="button"
+              @click="applyHeritageKey('KKEVO-ROYAL-2026-ROOT')"
+              class="w-full text-left py-2 px-3 rounded-xl text-xs border border-[#C5A059]/40 bg-[#1C1E24] hover:bg-[#282B37] transition-all flex items-center justify-between group"
+            >
+              <div class="flex items-center gap-2">
+                <span class="text-base">👑</span>
+                <div>
+                  <div class="font-bold text-[#F3E5AB]">Curator Royal Passkey</div>
+                  <div class="font-mono text-[10px] text-stone-400">KKEVO-ROYAL-2026-ROOT</div>
+                </div>
+              </div>
+              <span class="text-[10px] font-bold text-[#C5A059] group-hover:translate-x-0.5 transition-transform">Use ➔</span>
+            </button>
+
+            <button
+              type="button"
+              @click="applyHeritageKey('KKEVO-ELDER-7777')"
+              class="w-full text-left py-2 px-3 rounded-xl text-xs border border-[#C5A059]/40 bg-[#1C1E24] hover:bg-[#282B37] transition-all flex items-center justify-between group"
+            >
+              <div class="flex items-center gap-2">
+                <span class="text-base">🏛️</span>
+                <div>
+                  <div class="font-bold text-[#F3E5AB]">Elder Patriarch Key</div>
+                  <div class="font-mono text-[10px] text-stone-400">KKEVO-ELDER-7777</div>
+                </div>
+              </div>
+              <span class="text-[10px] font-bold text-[#C5A059] group-hover:translate-x-0.5 transition-transform">Use ➔</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Submit Button for Heritage Key -->
+        <div class="pt-2">
+          <button
+            type="submit"
+            :disabled="loading"
+            class="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-black text-black bg-gradient-to-r from-[#B8860B] via-[#FFD700] to-[#C5A059] hover:brightness-105 shadow-lg shadow-black/50 transition-all cursor-pointer"
+            :class="{ 'opacity-50 cursor-not-allowed': loading }"
+          >
+            <span v-if="!loading">🔑</span>
+            <span v-if="loading" class="animate-spin">⏳</span>
+            <span>{{ loading ? 'Unlocking Sacred Vault...' : 'Unlock Vault with Heritage Key' }}</span>
+          </button>
+        </div>
+
+        <!-- Error Alert -->
+        <div v-if="authError" class="rounded-xl bg-red-900/30 border border-red-500/50 p-3.5">
+          <div class="flex items-start gap-2.5">
+            <span class="text-red-400 text-base">⚠️</span>
+            <div class="text-xs text-red-300 font-medium leading-relaxed">{{ authError }}</div>
+          </div>
+        </div>
+      </form>
+
+      <!-- TAB 2: SIGN IN WITH USERNAME & PASSWORD -->
+      <form v-else class="space-y-5" @submit.prevent="handleSubmit">
         <div class="space-y-3">
           <div>
             <label for="username" class="block text-xs font-bold text-[#C5A059] mb-1">Username</label>
@@ -80,7 +213,7 @@
             {{ loading ? 'Signing in...' : 'Sign In to Kkevo Family' }}
           </button>
 
-          <!-- Quick 1-Click Demo Login for instant testing -->
+          <!-- Quick 1-Click Demo Login -->
           <button
             type="button"
             @click="handleDemoLogin"
@@ -92,20 +225,10 @@
           </button>
         </div>
 
-        <div v-if="authError" class="rounded-md bg-red-50 p-4">
-          <div class="flex">
-            <div class="flex-shrink-0">
-              <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                <path
-                  fill-rule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                  clip-rule="evenodd"
-                />
-              </svg>
-            </div>
-            <div class="ml-3">
-              <h3 class="text-sm font-medium text-red-800">{{ authError }}</h3>
-            </div>
+        <div v-if="authError" class="rounded-xl bg-red-900/30 border border-red-500/50 p-3.5">
+          <div class="flex items-start gap-2.5">
+            <span class="text-red-400 text-base">⚠️</span>
+            <div class="text-xs text-red-300 font-medium leading-relaxed">{{ authError }}</div>
           </div>
         </div>
       </form>
@@ -122,6 +245,9 @@ const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 
+const activeTab = ref('heritage_key')
+const heritageKeyInput = ref('KKEVO-ROYAL-2026-ROOT')
+
 const form = reactive({
   username: '',
   password: '',
@@ -130,11 +256,55 @@ const form = reactive({
 
 const errors = reactive({
   username: '',
-  password: ''
+  password: '',
+  heritageKey: ''
 })
 
 const loading = ref(false)
 const authError = ref('')
+
+const applyHeritageKey = (key) => {
+  heritageKeyInput.value = key
+  errors.heritageKey = ''
+  authError.value = ''
+}
+
+const pasteKeyFromClipboard = async () => {
+  try {
+    if (navigator.clipboard) {
+      const text = await navigator.clipboard.readText()
+      if (text) {
+        heritageKeyInput.value = text.trim().toUpperCase()
+      }
+    }
+  } catch (e) {
+    console.warn('Clipboard paste failed:', e)
+  }
+}
+
+const handleHeritageKeySubmit = async () => {
+  errors.heritageKey = ''
+  authError.value = ''
+
+  const cleanedKey = heritageKeyInput.value.trim()
+  if (!cleanedKey) {
+    errors.heritageKey = 'Please enter your Heritage Key'
+    return
+  }
+
+  loading.value = true
+  try {
+    const result = await authStore.loginWithHeritageKey(cleanedKey)
+    if (result && result.user) {
+      const redirectPath = route.query.redirect || '/dashboard'
+      router.push(redirectPath)
+    }
+  } catch (error) {
+    authError.value = error.response?.data?.error || error.message || 'Invalid Heritage Key. Please verify and try again.'
+  } finally {
+    loading.value = false
+  }
+}
 
 const validateForm = () => {
   let isValid = true
@@ -202,4 +372,4 @@ const handleDemoLogin = async () => {
     loading.value = false
   }
 }
-</script> 
+</script>

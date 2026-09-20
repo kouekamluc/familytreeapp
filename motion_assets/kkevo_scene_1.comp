@@ -1,0 +1,1437 @@
+Composition {
+	CurrentTime = 84,
+	RenderRange = { 0, 119 },
+	GlobalRange = { 0, 119 },
+	CurrentID = 65,
+	HiQ = true,
+	PlaybackUpdateMode = 0,
+	StereoMode = false,
+	Version = "DaVinci Resolve Studio 21.1.0.0014",
+	SavedOutputs = 0,
+	HeldTools = 0,
+	DisabledTools = 0,
+	LockedTools = 0,
+	AudioOffset = 0,
+	Resumable = true,
+	OutputClips = {
+	},
+	CustomData = {
+		TEMPLATE_ID = "Fusion Generator",
+		KKEVO = {
+			Design = "Gold / obsidian. Source: app royal theme and landing page. Editable procedural animation."
+		}
+	},
+	Tools = {
+		Obsidian_Background = Background {
+			Inputs = {
+				GlobalOut = Input { Value = 119, },
+				Width = Input { Value = 1920, },
+				Height = Input { Value = 1080, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+				TopLeftRed = Input { Value = 0.055, },
+				TopLeftGreen = Input { Value = 0.059, },
+				TopLeftBlue = Input { Value = 0.071, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 385, 16.197 } },
+		},
+		Inset_Frame_Mask = RectangleMask {
+			Inputs = {
+				Filter = Input { Value = FuID { "Fast Gaussian" }, },
+				BorderWidth = Input { Value = 0.0013, },
+				Solid = Input { Value = 0, },
+				MaskWidth = Input { Value = 1920, },
+				MaskHeight = Input { Value = 1080, },
+				PixelAspect = Input { Value = { 1, 1 }, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				ClippingMode = Input { Value = FuID { "None" }, },
+				Width = Input { Value = 0.9, },
+				Height = Input { Value = 0.82, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 46.9375, 14.7197 } },
+		},
+		Inset_Frame_Gold = Background {
+			Inputs = {
+				GlobalOut = Input { Value = 119, },
+				Width = Input { Value = 1920, },
+				Height = Input { Value = 1080, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+				TopLeftRed = Input { Value = 0.23, },
+				TopLeftGreen = Input { Value = 0.19, },
+				TopLeftBlue = Input { Value = 0.115, },
+				EffectMask = Input {
+					SourceOp = "Inset_Frame_Mask",
+					Source = "Mask",
+				}
+			},
+			ViewInfo = OperatorInfo { Pos = { 385, 16.197 } },
+		},
+		Inset_Frame_Reveal = Merge {
+			Inputs = {
+				Blend = Input { Expression = "((min(max((time-0)/18,0),1))*(min(max((time-0)/18,0),1))*(3-2*(min(max((time-0)/18,0),1))))", },
+				Background = Input {
+					SourceOp = "Obsidian_Background",
+					Source = "Output",
+				},
+				Foreground = Input {
+					SourceOp = "Inset_Frame_Gold",
+					Source = "Output",
+				},
+				PerformDepthMerge = Input { Value = 0, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 715, 16.197 } },
+		},
+		Upper_Rule_Mask = RectangleMask {
+			Inputs = {
+				Filter = Input { Value = FuID { "Fast Gaussian" }, },
+				MaskWidth = Input { Value = 1920, },
+				MaskHeight = Input { Value = 1080, },
+				PixelAspect = Input { Value = { 1, 1 }, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				ClippingMode = Input { Value = FuID { "None" }, },
+				Center = Input { Value = { 0.5, 0.83 }, },
+				Width = Input { Value = 0.12, },
+				Height = Input { Value = 0.0017, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 46.9375, 64.2197 } },
+		},
+		Upper_Rule_Gold = Background {
+			Inputs = {
+				GlobalOut = Input { Value = 119, },
+				Width = Input { Value = 1920, },
+				Height = Input { Value = 1080, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+				TopLeftRed = Input { Value = 0.773, },
+				TopLeftGreen = Input { Value = 0.627, },
+				TopLeftBlue = Input { Value = 0.349, },
+				EffectMask = Input {
+					SourceOp = "Upper_Rule_Mask",
+					Source = "Mask",
+				}
+			},
+			ViewInfo = OperatorInfo { Pos = { 385, 65.697 } },
+		},
+		Upper_Rule_Reveal = Merge {
+			Inputs = {
+				Blend = Input { Expression = "((min(max((time-4)/18,0),1))*(min(max((time-4)/18,0),1))*(3-2*(min(max((time-4)/18,0),1))))", },
+				Background = Input {
+					SourceOp = "Inset_Frame_Reveal",
+					Source = "Output",
+				},
+				Foreground = Input {
+					SourceOp = "Upper_Rule_Gold",
+					Source = "Output",
+				},
+				PerformDepthMerge = Input { Value = 0, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 715, 65.697 } },
+		},
+		Brand = TextPlus {
+			Inputs = {
+				GlobalOut = Input { Value = 119, },
+				Width = Input { Value = 1920, },
+				Height = Input { Value = 1080, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+				Wrap = Input { Value = 1, },
+				Center = Input {
+					Value = { 0.5, 0.89 },
+					Expression = "Point(0.5,0.89-0.025*(1-((min(max((time-2)/26,0),1))*(min(max((time-2)/26,0),1))*(3-2*(min(max((time-2)/26,0),1))))))",
+				},
+				LayoutRotation = Input { Value = 1, },
+				TransformRotation = Input { Value = 1, },
+				Red1 = Input { Value = 0.773, },
+				Green1 = Input { Value = 0.627, },
+				Blue1 = Input { Value = 0.349, },
+				Softness1 = Input { Value = 1, },
+				StyledText = Input { Value = "K K E V O   /   F A M I L Y", },
+				Font = Input { Value = "Inter", },
+				Style = Input { Value = "Regular", },
+				Size = Input { Value = 0.021, },
+				VerticalJustificationNew = Input { Value = 3, },
+				HorizontalJustificationNew = Input { Value = 3, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 385, 115.197 } },
+			Version = 1
+		},
+		Brand_Reveal = Merge {
+			Inputs = {
+				Blend = Input { Expression = "((min(max((time-2)/18,0),1))*(min(max((time-2)/18,0),1))*(3-2*(min(max((time-2)/18,0),1))))", },
+				Background = Input {
+					SourceOp = "Upper_Rule_Reveal",
+					Source = "Output",
+				},
+				Foreground = Input {
+					SourceOp = "Brand",
+					Source = "Output",
+				},
+				PerformDepthMerge = Input { Value = 0, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 715, 115.197 } },
+		},
+		Lineage_Title = TextPlus {
+			Inputs = {
+				GlobalOut = Input { Value = 119, },
+				Width = Input { Value = 1920, },
+				Height = Input { Value = 1080, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+				Wrap = Input { Value = 1, },
+				Center = Input {
+					Value = { 0.5, 0.745 },
+					Expression = "Point(0.5,0.745-0.025*(1-((min(max((time-4)/26,0),1))*(min(max((time-4)/26,0),1))*(3-2*(min(max((time-4)/26,0),1))))))",
+				},
+				LayoutRotation = Input { Value = 1, },
+				TransformRotation = Input { Value = 1, },
+				Red1 = Input { Value = 0.953, },
+				Green1 = Input { Value = 0.898, },
+				Blue1 = Input { Value = 0.792, },
+				Softness1 = Input { Value = 1, },
+				StyledText = Input { Value = "Every branch. One family.", },
+				Font = Input { Value = "Georgia", },
+				Style = Input { Value = "Regular", },
+				Size = Input { Value = 0.049, },
+				VerticalJustificationNew = Input { Value = 3, },
+				HorizontalJustificationNew = Input { Value = 3, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 385, 164.697 } },
+			Version = 1
+		},
+		Lineage_Title_Reveal = Merge {
+			Inputs = {
+				Blend = Input { Expression = "((min(max((time-4)/18,0),1))*(min(max((time-4)/18,0),1))*(3-2*(min(max((time-4)/18,0),1))))", },
+				Background = Input {
+					SourceOp = "Brand_Reveal",
+					Source = "Output",
+				},
+				Foreground = Input {
+					SourceOp = "Lineage_Title",
+					Source = "Output",
+				},
+				PerformDepthMerge = Input { Value = 0, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 715, 164.697 } },
+		},
+		Root_Stem_Mask = RectangleMask {
+			Inputs = {
+				Filter = Input { Value = FuID { "Fast Gaussian" }, },
+				MaskWidth = Input { Value = 1920, },
+				MaskHeight = Input { Value = 1080, },
+				PixelAspect = Input { Value = { 1, 1 }, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				ClippingMode = Input { Value = FuID { "None" }, },
+				Center = Input { Value = { 0.5, 0.54 }, },
+				Width = Input { Value = 0.0015, },
+				Height = Input {
+					Value = 0.1,
+					Expression = "0.1*((min(max((time-13)/24,0),1))*(min(max((time-13)/24,0),1))*(3-2*(min(max((time-13)/24,0),1))))",
+				}
+			},
+			ViewInfo = OperatorInfo { Pos = { 46.9375, 212.72 } },
+		},
+		Root_Stem_Gold = Background {
+			Inputs = {
+				GlobalOut = Input { Value = 119, },
+				Width = Input { Value = 1920, },
+				Height = Input { Value = 1080, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+				TopLeftRed = Input { Value = 0.773, },
+				TopLeftGreen = Input { Value = 0.627, },
+				TopLeftBlue = Input { Value = 0.349, },
+				EffectMask = Input {
+					SourceOp = "Root_Stem_Mask",
+					Source = "Mask",
+				}
+			},
+			ViewInfo = OperatorInfo { Pos = { 385, 214.197 } },
+		},
+		Root_Stem_Reveal = Merge {
+			Inputs = {
+				Blend = Input { Expression = "((min(max((time-13)/18,0),1))*(min(max((time-13)/18,0),1))*(3-2*(min(max((time-13)/18,0),1))))", },
+				Background = Input {
+					SourceOp = "Lineage_Title_Reveal",
+					Source = "Output",
+				},
+				Foreground = Input {
+					SourceOp = "Root_Stem_Gold",
+					Source = "Output",
+				},
+				PerformDepthMerge = Input { Value = 0, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 715, 214.197 } },
+		},
+		Family_Bridge_Mask = RectangleMask {
+			Inputs = {
+				Filter = Input { Value = FuID { "Fast Gaussian" }, },
+				MaskWidth = Input { Value = 1920, },
+				MaskHeight = Input { Value = 1080, },
+				PixelAspect = Input { Value = { 1, 1 }, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				ClippingMode = Input { Value = FuID { "None" }, },
+				Center = Input { Value = { 0.5, 0.49 }, },
+				Width = Input { Expression = "0.5*((min(max((time-23)/24,0),1))*(min(max((time-23)/24,0),1))*(3-2*(min(max((time-23)/24,0),1))))", },
+				Height = Input { Value = 0.0018, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 46.9375, 262.22 } },
+		},
+		Family_Bridge_Gold = Background {
+			Inputs = {
+				GlobalOut = Input { Value = 119, },
+				Width = Input { Value = 1920, },
+				Height = Input { Value = 1080, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+				TopLeftRed = Input { Value = 0.773, },
+				TopLeftGreen = Input { Value = 0.627, },
+				TopLeftBlue = Input { Value = 0.349, },
+				EffectMask = Input {
+					SourceOp = "Family_Bridge_Mask",
+					Source = "Mask",
+				}
+			},
+			ViewInfo = OperatorInfo { Pos = { 385, 263.697 } },
+		},
+		Family_Bridge_Reveal = Merge {
+			Inputs = {
+				Blend = Input { Expression = "((min(max((time-23)/18,0),1))*(min(max((time-23)/18,0),1))*(3-2*(min(max((time-23)/18,0),1))))", },
+				Background = Input {
+					SourceOp = "Root_Stem_Reveal",
+					Source = "Output",
+				},
+				Foreground = Input {
+					SourceOp = "Family_Bridge_Gold",
+					Source = "Output",
+				},
+				PerformDepthMerge = Input { Value = 0, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 715, 263.697 } },
+		},
+		Left_Branch_Mask = RectangleMask {
+			Inputs = {
+				Filter = Input { Value = FuID { "Fast Gaussian" }, },
+				MaskWidth = Input { Value = 1920, },
+				MaskHeight = Input { Value = 1080, },
+				PixelAspect = Input { Value = { 1, 1 }, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				ClippingMode = Input { Value = FuID { "None" }, },
+				Center = Input { Value = { 0.25, 0.44 }, },
+				Width = Input { Value = 0.0015, },
+				Height = Input {
+					Value = 0.1,
+					Expression = "0.1*((min(max((time-32)/24,0),1))*(min(max((time-32)/24,0),1))*(3-2*(min(max((time-32)/24,0),1))))",
+				}
+			},
+			ViewInfo = OperatorInfo { Pos = { 46.9375, 311.72 } },
+		},
+		Left_Branch_Gold = Background {
+			Inputs = {
+				GlobalOut = Input { Value = 119, },
+				Width = Input { Value = 1920, },
+				Height = Input { Value = 1080, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+				TopLeftRed = Input { Value = 0.773, },
+				TopLeftGreen = Input { Value = 0.627, },
+				TopLeftBlue = Input { Value = 0.349, },
+				EffectMask = Input {
+					SourceOp = "Left_Branch_Mask",
+					Source = "Mask",
+				}
+			},
+			ViewInfo = OperatorInfo { Pos = { 385, 313.197 } },
+		},
+		Left_Branch_Reveal = Merge {
+			Inputs = {
+				Blend = Input { Expression = "((min(max((time-32)/18,0),1))*(min(max((time-32)/18,0),1))*(3-2*(min(max((time-32)/18,0),1))))", },
+				Background = Input {
+					SourceOp = "Family_Bridge_Reveal",
+					Source = "Output",
+				},
+				Foreground = Input {
+					SourceOp = "Left_Branch_Gold",
+					Source = "Output",
+				},
+				PerformDepthMerge = Input { Value = 0, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 715, 313.197 } },
+		},
+		Middle_Branch_Mask = RectangleMask {
+			Inputs = {
+				Filter = Input { Value = FuID { "Fast Gaussian" }, },
+				MaskWidth = Input { Value = 1920, },
+				MaskHeight = Input { Value = 1080, },
+				PixelAspect = Input { Value = { 1, 1 }, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				ClippingMode = Input { Value = FuID { "None" }, },
+				Center = Input { Value = { 0.5, 0.44 }, },
+				Width = Input { Value = 0.0015, },
+				Height = Input {
+					Value = 0.1,
+					Expression = "0.1*((min(max((time-36)/24,0),1))*(min(max((time-36)/24,0),1))*(3-2*(min(max((time-36)/24,0),1))))",
+				}
+			},
+			ViewInfo = OperatorInfo { Pos = { 46.9375, 361.22 } },
+		},
+		Middle_Branch_Gold = Background {
+			Inputs = {
+				GlobalOut = Input { Value = 119, },
+				Width = Input { Value = 1920, },
+				Height = Input { Value = 1080, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+				TopLeftRed = Input { Value = 0.773, },
+				TopLeftGreen = Input { Value = 0.627, },
+				TopLeftBlue = Input { Value = 0.349, },
+				EffectMask = Input {
+					SourceOp = "Middle_Branch_Mask",
+					Source = "Mask",
+				}
+			},
+			ViewInfo = OperatorInfo { Pos = { 385, 362.697 } },
+		},
+		Middle_Branch_Reveal = Merge {
+			Inputs = {
+				Blend = Input { Expression = "((min(max((time-36)/18,0),1))*(min(max((time-36)/18,0),1))*(3-2*(min(max((time-36)/18,0),1))))", },
+				Background = Input {
+					SourceOp = "Left_Branch_Reveal",
+					Source = "Output",
+				},
+				Foreground = Input {
+					SourceOp = "Middle_Branch_Gold",
+					Source = "Output",
+				},
+				PerformDepthMerge = Input { Value = 0, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 715, 362.697 } },
+		},
+		Right_Branch_Mask = RectangleMask {
+			Inputs = {
+				Filter = Input { Value = FuID { "Fast Gaussian" }, },
+				MaskWidth = Input { Value = 1920, },
+				MaskHeight = Input { Value = 1080, },
+				PixelAspect = Input { Value = { 1, 1 }, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				ClippingMode = Input { Value = FuID { "None" }, },
+				Center = Input { Value = { 0.75, 0.44 }, },
+				Width = Input { Value = 0.0015, },
+				Height = Input {
+					Value = 0.1,
+					Expression = "0.1*((min(max((time-40)/24,0),1))*(min(max((time-40)/24,0),1))*(3-2*(min(max((time-40)/24,0),1))))",
+				}
+			},
+			ViewInfo = OperatorInfo { Pos = { 46.9375, 410.72 } },
+		},
+		Right_Branch_Gold = Background {
+			Inputs = {
+				GlobalOut = Input { Value = 119, },
+				Width = Input { Value = 1920, },
+				Height = Input { Value = 1080, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+				TopLeftRed = Input { Value = 0.773, },
+				TopLeftGreen = Input { Value = 0.627, },
+				TopLeftBlue = Input { Value = 0.349, },
+				EffectMask = Input {
+					SourceOp = "Right_Branch_Mask",
+					Source = "Mask",
+				}
+			},
+			ViewInfo = OperatorInfo { Pos = { 385, 412.197 } },
+		},
+		Right_Branch_Reveal = Merge {
+			Inputs = {
+				Blend = Input { Expression = "((min(max((time-40)/18,0),1))*(min(max((time-40)/18,0),1))*(3-2*(min(max((time-40)/18,0),1))))", },
+				Background = Input {
+					SourceOp = "Middle_Branch_Reveal",
+					Source = "Output",
+				},
+				Foreground = Input {
+					SourceOp = "Right_Branch_Gold",
+					Source = "Output",
+				},
+				PerformDepthMerge = Input { Value = 0, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 715, 412.197 } },
+		},
+		Ancestors_Ring_Mask = EllipseMask {
+			Inputs = {
+				Filter = Input { Value = FuID { "Fast Gaussian" }, },
+				BorderWidth = Input { Value = 0.0013, },
+				Solid = Input { Value = 0, },
+				MaskWidth = Input { Value = 1920, },
+				MaskHeight = Input { Value = 1080, },
+				PixelAspect = Input { Value = { 1, 1 }, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				ClippingMode = Input { Value = FuID { "None" }, },
+				Center = Input { Value = { 0.5, 0.61 }, },
+				Width = Input { Value = 0.037, },
+				Height = Input {
+					Value = 0.037,
+					Expression = "Ancestors_Ring_Mask.Width",
+				}
+			},
+			ViewInfo = OperatorInfo { Pos = { 46.9375, 460.22 } },
+		},
+		Ancestors_Ring_Gold = Background {
+			Inputs = {
+				GlobalOut = Input { Value = 119, },
+				Width = Input { Value = 1920, },
+				Height = Input { Value = 1080, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+				TopLeftRed = Input { Value = 0.773, },
+				TopLeftGreen = Input { Value = 0.627, },
+				TopLeftBlue = Input { Value = 0.349, },
+				EffectMask = Input {
+					SourceOp = "Ancestors_Ring_Mask",
+					Source = "Mask",
+				}
+			},
+			ViewInfo = OperatorInfo { Pos = { 385, 461.697 } },
+		},
+		Ancestors_Ring_Reveal = Merge {
+			Inputs = {
+				Blend = Input { Expression = "((min(max((time-9)/18,0),1))*(min(max((time-9)/18,0),1))*(3-2*(min(max((time-9)/18,0),1))))", },
+				Background = Input {
+					SourceOp = "Right_Branch_Reveal",
+					Source = "Output",
+				},
+				Foreground = Input {
+					SourceOp = "Ancestors_Ring_Gold",
+					Source = "Output",
+				},
+				PerformDepthMerge = Input { Value = 0, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 715, 461.697 } },
+		},
+		Ancestors_Core_Mask = EllipseMask {
+			Inputs = {
+				Filter = Input { Value = FuID { "Fast Gaussian" }, },
+				MaskWidth = Input { Value = 1920, },
+				MaskHeight = Input { Value = 1080, },
+				PixelAspect = Input { Value = { 1, 1 }, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				ClippingMode = Input { Value = FuID { "None" }, },
+				Center = Input { Value = { 0.5, 0.61 }, },
+				Width = Input { Value = 0.01, },
+				Height = Input {
+					Value = 0.01,
+					Expression = "Ancestors_Core_Mask.Width",
+				}
+			},
+			ViewInfo = OperatorInfo { Pos = { 46.9375, 509.72 } },
+		},
+		Ancestors_Core_Gold = Background {
+			Inputs = {
+				GlobalOut = Input { Value = 119, },
+				Width = Input { Value = 1920, },
+				Height = Input { Value = 1080, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+				TopLeftRed = Input { Value = 0.773, },
+				TopLeftGreen = Input { Value = 0.627, },
+				TopLeftBlue = Input { Value = 0.349, },
+				EffectMask = Input {
+					SourceOp = "Ancestors_Core_Mask",
+					Source = "Mask",
+				}
+			},
+			ViewInfo = OperatorInfo { Pos = { 385, 511.197 } },
+		},
+		Ancestors_Core_Reveal = Merge {
+			Inputs = {
+				Blend = Input { Expression = "((min(max((time-13)/18,0),1))*(min(max((time-13)/18,0),1))*(3-2*(min(max((time-13)/18,0),1))))", },
+				Background = Input {
+					SourceOp = "Ancestors_Ring_Reveal",
+					Source = "Output",
+				},
+				Foreground = Input {
+					SourceOp = "Ancestors_Core_Gold",
+					Source = "Output",
+				},
+				PerformDepthMerge = Input { Value = 0, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 715, 511.197 } },
+		},
+		Ancestors_Label = TextPlus {
+			Inputs = {
+				GlobalOut = Input { Value = 119, },
+				Width = Input { Value = 1920, },
+				Height = Input { Value = 1080, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+				Wrap = Input { Value = 1, },
+				Center = Input {
+					Value = { 0.5, 0.675 },
+					Expression = "Point(0.5,0.675-0.025*(1-(min(max((time-14)/26,0),1))^2*(3-2*min(max((time-14)/26,0),1))))",
+				},
+				LayoutRotation = Input { Value = 1, },
+				TransformRotation = Input { Value = 1, },
+				Red1 = Input { Value = 0.953, },
+				Green1 = Input { Value = 0.898, },
+				Blue1 = Input { Value = 0.792, },
+				Softness1 = Input { Value = 1, },
+				StyledText = Input { Value = "ANCESTORS", },
+				Font = Input { Value = "Inter", },
+				Style = Input { Value = "Regular", },
+				Size = Input { Value = 0.017, },
+				VerticalJustificationNew = Input { Value = 3, },
+				HorizontalJustificationNew = Input { Value = 3, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 385, 560.697 } },
+			Version = 1
+		},
+		Ancestors_Label_Reveal = Merge {
+			Inputs = {
+				Blend = Input { Expression = "((min(max((time-14)/18,0),1))*(min(max((time-14)/18,0),1))*(3-2*(min(max((time-14)/18,0),1))))", },
+				Background = Input {
+					SourceOp = "Ancestors_Core_Reveal",
+					Source = "Output",
+				},
+				Foreground = Input {
+					SourceOp = "Ancestors_Label",
+					Source = "Output",
+				},
+				PerformDepthMerge = Input { Value = 0, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 715, 560.697 } },
+		},
+		Heritage_Ring_Mask = EllipseMask {
+			Inputs = {
+				Filter = Input { Value = FuID { "Fast Gaussian" }, },
+				BorderWidth = Input { Value = 0.0013, },
+				Solid = Input { Value = 0, },
+				MaskWidth = Input { Value = 1920, },
+				MaskHeight = Input { Value = 1080, },
+				PixelAspect = Input { Value = { 1, 1 }, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				ClippingMode = Input { Value = FuID { "None" }, },
+				Center = Input { Value = { 0.25, 0.365 }, },
+				Width = Input { Value = 0.037, },
+				Height = Input {
+					Value = 0.037,
+					Expression = "Heritage_Ring_Mask.Width",
+				}
+			},
+			ViewInfo = OperatorInfo { Pos = { 46.9375, 608.72 } },
+		},
+		Heritage_Ring_Gold = Background {
+			Inputs = {
+				GlobalOut = Input { Value = 119, },
+				Width = Input { Value = 1920, },
+				Height = Input { Value = 1080, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+				TopLeftRed = Input { Value = 0.773, },
+				TopLeftGreen = Input { Value = 0.627, },
+				TopLeftBlue = Input { Value = 0.349, },
+				EffectMask = Input {
+					SourceOp = "Heritage_Ring_Mask",
+					Source = "Mask",
+				}
+			},
+			ViewInfo = OperatorInfo { Pos = { 385, 610.197 } },
+		},
+		Heritage_Ring_Reveal = Merge {
+			Inputs = {
+				Blend = Input { Expression = "((min(max((time-35)/18,0),1))*(min(max((time-35)/18,0),1))*(3-2*(min(max((time-35)/18,0),1))))", },
+				Background = Input {
+					SourceOp = "Ancestors_Label_Reveal",
+					Source = "Output",
+				},
+				Foreground = Input {
+					SourceOp = "Heritage_Ring_Gold",
+					Source = "Output",
+				},
+				PerformDepthMerge = Input { Value = 0, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 715, 610.197 } },
+		},
+		Heritage_Core_Mask = EllipseMask {
+			Inputs = {
+				Filter = Input { Value = FuID { "Fast Gaussian" }, },
+				MaskWidth = Input { Value = 1920, },
+				MaskHeight = Input { Value = 1080, },
+				PixelAspect = Input { Value = { 1, 1 }, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				ClippingMode = Input { Value = FuID { "None" }, },
+				Center = Input { Value = { 0.25, 0.365 }, },
+				Width = Input { Value = 0.01, },
+				Height = Input {
+					Value = 0.01,
+					Expression = "Heritage_Core_Mask.Width",
+				}
+			},
+			ViewInfo = OperatorInfo { Pos = { 46.9375, 658.22 } },
+		},
+		Heritage_Core_Gold = Background {
+			Inputs = {
+				GlobalOut = Input { Value = 119, },
+				Width = Input { Value = 1920, },
+				Height = Input { Value = 1080, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+				TopLeftRed = Input { Value = 0.773, },
+				TopLeftGreen = Input { Value = 0.627, },
+				TopLeftBlue = Input { Value = 0.349, },
+				EffectMask = Input {
+					SourceOp = "Heritage_Core_Mask",
+					Source = "Mask",
+				}
+			},
+			ViewInfo = OperatorInfo { Pos = { 385, 659.697 } },
+		},
+		Heritage_Core_Reveal = Merge {
+			Inputs = {
+				Blend = Input { Expression = "((min(max((time-39)/18,0),1))*(min(max((time-39)/18,0),1))*(3-2*(min(max((time-39)/18,0),1))))", },
+				Background = Input {
+					SourceOp = "Heritage_Ring_Reveal",
+					Source = "Output",
+				},
+				Foreground = Input {
+					SourceOp = "Heritage_Core_Gold",
+					Source = "Output",
+				},
+				PerformDepthMerge = Input { Value = 0, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 715, 659.697 } },
+		},
+		Heritage_Label = TextPlus {
+			Inputs = {
+				GlobalOut = Input { Value = 119, },
+				Width = Input { Value = 1920, },
+				Height = Input { Value = 1080, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+				Wrap = Input { Value = 1, },
+				Center = Input {
+					Value = { 0.25, 0.292 },
+					Expression = "Point(0.25,0.292-0.025*(1-((min(max((time-40)/26,0),1))*(min(max((time-40)/26,0),1))*(3-2*(min(max((time-40)/26,0),1))))))",
+				},
+				LayoutRotation = Input { Value = 1, },
+				TransformRotation = Input { Value = 1, },
+				Red1 = Input { Value = 0.953, },
+				Green1 = Input { Value = 0.898, },
+				Blue1 = Input { Value = 0.792, },
+				Softness1 = Input { Value = 1, },
+				StyledText = Input { Value = "HERITAGE", },
+				Font = Input { Value = "Inter", },
+				Style = Input { Value = "Regular", },
+				Size = Input { Value = 0.017, },
+				VerticalJustificationNew = Input { Value = 3, },
+				HorizontalJustificationNew = Input { Value = 3, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 385, 709.197 } },
+			Version = 1
+		},
+		Heritage_Label_Reveal = Merge {
+			Inputs = {
+				Blend = Input { Expression = "((min(max((time-40)/18,0),1))*(min(max((time-40)/18,0),1))*(3-2*(min(max((time-40)/18,0),1))))", },
+				Background = Input {
+					SourceOp = "Heritage_Core_Reveal",
+					Source = "Output",
+				},
+				Foreground = Input {
+					SourceOp = "Heritage_Label",
+					Source = "Output",
+				},
+				PerformDepthMerge = Input { Value = 0, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 715, 709.197 } },
+		},
+		Kinship_Ring_Mask = EllipseMask {
+			Inputs = {
+				Filter = Input { Value = FuID { "Fast Gaussian" }, },
+				BorderWidth = Input { Value = 0.0013, },
+				Solid = Input { Value = 0, },
+				MaskWidth = Input { Value = 1920, },
+				MaskHeight = Input { Value = 1080, },
+				PixelAspect = Input { Value = { 1, 1 }, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				ClippingMode = Input { Value = FuID { "None" }, },
+				Center = Input { Value = { 0.5, 0.365 }, },
+				Width = Input { Value = 0.037, },
+				Height = Input {
+					Value = 0.037,
+					Expression = "Kinship_Ring_Mask.Width",
+				}
+			},
+			ViewInfo = OperatorInfo { Pos = { 46.9375, 757.22 } },
+		},
+		Kinship_Ring_Gold = Background {
+			Inputs = {
+				GlobalOut = Input { Value = 119, },
+				Width = Input { Value = 1920, },
+				Height = Input { Value = 1080, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+				TopLeftRed = Input { Value = 0.773, },
+				TopLeftGreen = Input { Value = 0.627, },
+				TopLeftBlue = Input { Value = 0.349, },
+				EffectMask = Input {
+					SourceOp = "Kinship_Ring_Mask",
+					Source = "Mask",
+				}
+			},
+			ViewInfo = OperatorInfo { Pos = { 385, 758.697 } },
+		},
+		Kinship_Ring_Reveal = Merge {
+			Inputs = {
+				Blend = Input { Expression = "((min(max((time-40)/18,0),1))*(min(max((time-40)/18,0),1))*(3-2*(min(max((time-40)/18,0),1))))", },
+				Background = Input {
+					SourceOp = "Heritage_Label_Reveal",
+					Source = "Output",
+				},
+				Foreground = Input {
+					SourceOp = "Kinship_Ring_Gold",
+					Source = "Output",
+				},
+				PerformDepthMerge = Input { Value = 0, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 715, 758.697 } },
+		},
+		Kinship_Core_Mask = EllipseMask {
+			Inputs = {
+				Filter = Input { Value = FuID { "Fast Gaussian" }, },
+				MaskWidth = Input { Value = 1920, },
+				MaskHeight = Input { Value = 1080, },
+				PixelAspect = Input { Value = { 1, 1 }, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				ClippingMode = Input { Value = FuID { "None" }, },
+				Center = Input { Value = { 0.5, 0.365 }, },
+				Width = Input { Value = 0.01, },
+				Height = Input {
+					Value = 0.01,
+					Expression = "Kinship_Core_Mask.Width",
+				}
+			},
+			ViewInfo = OperatorInfo { Pos = { 46.9375, 806.72 } },
+		},
+		Kinship_Core_Gold = Background {
+			Inputs = {
+				GlobalOut = Input { Value = 119, },
+				Width = Input { Value = 1920, },
+				Height = Input { Value = 1080, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+				TopLeftRed = Input { Value = 0.773, },
+				TopLeftGreen = Input { Value = 0.627, },
+				TopLeftBlue = Input { Value = 0.349, },
+				EffectMask = Input {
+					SourceOp = "Kinship_Core_Mask",
+					Source = "Mask",
+				}
+			},
+			ViewInfo = OperatorInfo { Pos = { 385, 808.197 } },
+		},
+		Kinship_Core_Reveal = Merge {
+			Inputs = {
+				Blend = Input { Expression = "((min(max((time-44)/18,0),1))*(min(max((time-44)/18,0),1))*(3-2*(min(max((time-44)/18,0),1))))", },
+				Background = Input {
+					SourceOp = "Kinship_Ring_Reveal",
+					Source = "Output",
+				},
+				Foreground = Input {
+					SourceOp = "Kinship_Core_Gold",
+					Source = "Output",
+				},
+				PerformDepthMerge = Input { Value = 0, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 715, 808.197 } },
+		},
+		Kinship_Label = TextPlus {
+			Inputs = {
+				GlobalOut = Input { Value = 119, },
+				Width = Input { Value = 1920, },
+				Height = Input { Value = 1080, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+				Wrap = Input { Value = 1, },
+				Center = Input {
+					Value = { 0.5, 0.292 },
+					Expression = "Point(0.5,0.292-0.025*(1-((min(max((time-45)/26,0),1))*(min(max((time-45)/26,0),1))*(3-2*(min(max((time-45)/26,0),1))))))",
+				},
+				LayoutRotation = Input { Value = 1, },
+				TransformRotation = Input { Value = 1, },
+				Red1 = Input { Value = 0.953, },
+				Green1 = Input { Value = 0.898, },
+				Blue1 = Input { Value = 0.792, },
+				Softness1 = Input { Value = 1, },
+				StyledText = Input { Value = "KINSHIP", },
+				Font = Input { Value = "Inter", },
+				Style = Input { Value = "Regular", },
+				Size = Input { Value = 0.017, },
+				VerticalJustificationNew = Input { Value = 3, },
+				HorizontalJustificationNew = Input { Value = 3, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 385, 857.697 } },
+			Version = 1
+		},
+		Kinship_Label_Reveal = Merge {
+			Inputs = {
+				Blend = Input { Expression = "((min(max((time-45)/18,0),1))*(min(max((time-45)/18,0),1))*(3-2*(min(max((time-45)/18,0),1))))", },
+				Background = Input {
+					SourceOp = "Kinship_Core_Reveal",
+					Source = "Output",
+				},
+				Foreground = Input {
+					SourceOp = "Kinship_Label",
+					Source = "Output",
+				},
+				PerformDepthMerge = Input { Value = 0, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 715, 857.697 } },
+		},
+		Stories_Ring_Mask = EllipseMask {
+			Inputs = {
+				Filter = Input { Value = FuID { "Fast Gaussian" }, },
+				BorderWidth = Input { Value = 0.0013, },
+				Solid = Input { Value = 0, },
+				MaskWidth = Input { Value = 1920, },
+				MaskHeight = Input { Value = 1080, },
+				PixelAspect = Input { Value = { 1, 1 }, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				ClippingMode = Input { Value = FuID { "None" }, },
+				Center = Input { Value = { 0.75, 0.365 }, },
+				Width = Input { Value = 0.037, },
+				Height = Input {
+					Value = 0.037,
+					Expression = "Stories_Ring_Mask.Width",
+				}
+			},
+			ViewInfo = OperatorInfo { Pos = { 46.9375, 905.72 } },
+		},
+		Stories_Ring_Gold = Background {
+			Inputs = {
+				GlobalOut = Input { Value = 119, },
+				Width = Input { Value = 1920, },
+				Height = Input { Value = 1080, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+				TopLeftRed = Input { Value = 0.773, },
+				TopLeftGreen = Input { Value = 0.627, },
+				TopLeftBlue = Input { Value = 0.349, },
+				EffectMask = Input {
+					SourceOp = "Stories_Ring_Mask",
+					Source = "Mask",
+				}
+			},
+			ViewInfo = OperatorInfo { Pos = { 385, 907.197 } },
+		},
+		Stories_Ring_Reveal = Merge {
+			Inputs = {
+				Blend = Input { Expression = "((min(max((time-45)/18,0),1))*(min(max((time-45)/18,0),1))*(3-2*(min(max((time-45)/18,0),1))))", },
+				Background = Input {
+					SourceOp = "Kinship_Label_Reveal",
+					Source = "Output",
+				},
+				Foreground = Input {
+					SourceOp = "Stories_Ring_Gold",
+					Source = "Output",
+				},
+				PerformDepthMerge = Input { Value = 0, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 715, 907.197 } },
+		},
+		Stories_Core_Mask = EllipseMask {
+			Inputs = {
+				Filter = Input { Value = FuID { "Fast Gaussian" }, },
+				MaskWidth = Input { Value = 1920, },
+				MaskHeight = Input { Value = 1080, },
+				PixelAspect = Input { Value = { 1, 1 }, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				ClippingMode = Input { Value = FuID { "None" }, },
+				Center = Input { Value = { 0.75, 0.365 }, },
+				Width = Input { Value = 0.01, },
+				Height = Input {
+					Value = 0.01,
+					Expression = "Stories_Core_Mask.Width",
+				}
+			},
+			ViewInfo = OperatorInfo { Pos = { 46.9375, 955.22 } },
+		},
+		Stories_Core_Gold = Background {
+			Inputs = {
+				GlobalOut = Input { Value = 119, },
+				Width = Input { Value = 1920, },
+				Height = Input { Value = 1080, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+				TopLeftRed = Input { Value = 0.773, },
+				TopLeftGreen = Input { Value = 0.627, },
+				TopLeftBlue = Input { Value = 0.349, },
+				EffectMask = Input {
+					SourceOp = "Stories_Core_Mask",
+					Source = "Mask",
+				}
+			},
+			ViewInfo = OperatorInfo { Pos = { 385, 956.697 } },
+		},
+		Stories_Core_Reveal = Merge {
+			Inputs = {
+				Blend = Input { Expression = "((min(max((time-49)/18,0),1))*(min(max((time-49)/18,0),1))*(3-2*(min(max((time-49)/18,0),1))))", },
+				Background = Input {
+					SourceOp = "Stories_Ring_Reveal",
+					Source = "Output",
+				},
+				Foreground = Input {
+					SourceOp = "Stories_Core_Gold",
+					Source = "Output",
+				},
+				PerformDepthMerge = Input { Value = 0, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 715, 956.697 } },
+		},
+		Stories_Label = TextPlus {
+			Inputs = {
+				GlobalOut = Input { Value = 119, },
+				Width = Input { Value = 1920, },
+				Height = Input { Value = 1080, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+				Wrap = Input { Value = 1, },
+				Center = Input {
+					Value = { 0.75, 0.292 },
+					Expression = "Point(0.75,0.292-0.025*(1-((min(max((time-50)/26,0),1))*(min(max((time-50)/26,0),1))*(3-2*(min(max((time-50)/26,0),1))))))",
+				},
+				LayoutRotation = Input { Value = 1, },
+				TransformRotation = Input { Value = 1, },
+				Red1 = Input { Value = 0.953, },
+				Green1 = Input { Value = 0.898, },
+				Blue1 = Input { Value = 0.792, },
+				Softness1 = Input { Value = 1, },
+				StyledText = Input { Value = "STORIES", },
+				Font = Input { Value = "Inter", },
+				Style = Input { Value = "Regular", },
+				Size = Input { Value = 0.017, },
+				VerticalJustificationNew = Input { Value = 3, },
+				HorizontalJustificationNew = Input { Value = 3, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 385, 1006.2 } },
+			Version = 1
+		},
+		Stories_Label_Reveal = Merge {
+			Inputs = {
+				Blend = Input { Expression = "((min(max((time-50)/18,0),1))*(min(max((time-50)/18,0),1))*(3-2*(min(max((time-50)/18,0),1))))", },
+				Background = Input {
+					SourceOp = "Stories_Core_Reveal",
+					Source = "Output",
+				},
+				Foreground = Input {
+					SourceOp = "Stories_Label",
+					Source = "Output",
+				},
+				PerformDepthMerge = Input { Value = 0, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 715, 1006.2 } },
+		},
+		Lineage_Subtitle = TextPlus {
+			Inputs = {
+				GlobalOut = Input { Value = 119, },
+				Width = Input { Value = 1920, },
+				Height = Input { Value = 1080, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+				Wrap = Input { Value = 1, },
+				Center = Input {
+					Value = { 0.5, 0.18 },
+					Expression = "Point(0.5,0.18-0.025*(1-((min(max((time-53)/26,0),1))*(min(max((time-53)/26,0),1))*(3-2*(min(max((time-53)/26,0),1))))))",
+				},
+				LayoutRotation = Input { Value = 1, },
+				TransformRotation = Input { Value = 1, },
+				Red1 = Input { Value = 0.953, },
+				Green1 = Input { Value = 0.898, },
+				Blue1 = Input { Value = 0.792, },
+				Softness1 = Input { Value = 1, },
+				StyledText = Input { Value = "Trace your roots. Keep your stories alive.", },
+				Font = Input { Value = "Inter", },
+				Style = Input { Value = "Regular", },
+				Size = Input { Value = 0.023, },
+				VerticalJustificationNew = Input { Value = 3, },
+				HorizontalJustificationNew = Input { Value = 3, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 385, 1055.7 } },
+			Version = 1
+		},
+		Lineage_Subtitle_Reveal = Merge {
+			Inputs = {
+				Blend = Input { Expression = "((min(max((time-53)/18,0),1))*(min(max((time-53)/18,0),1))*(3-2*(min(max((time-53)/18,0),1))))", },
+				Background = Input {
+					SourceOp = "Stories_Label_Reveal",
+					Source = "Output",
+				},
+				Foreground = Input {
+					SourceOp = "Lineage_Subtitle",
+					Source = "Output",
+				},
+				PerformDepthMerge = Input { Value = 0, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 715, 1055.7 } },
+		},
+		Chapter = TextPlus {
+			Inputs = {
+				GlobalOut = Input { Value = 119, },
+				Width = Input { Value = 1920, },
+				Height = Input { Value = 1080, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+				Wrap = Input { Value = 1, },
+				Center = Input {
+					Value = { 0.5, 0.105 },
+					Expression = "Point(0.5,0.105-0.025*(1-((min(max((time-0)/26,0),1))*(min(max((time-0)/26,0),1))*(3-2*(min(max((time-0)/26,0),1))))))",
+				},
+				LayoutRotation = Input { Value = 1, },
+				TransformRotation = Input { Value = 1, },
+				Red1 = Input { Value = 0.773, },
+				Green1 = Input { Value = 0.627, },
+				Blue1 = Input { Value = 0.349, },
+				Softness1 = Input { Value = 1, },
+				StyledText = Input { Value = "02   /   03", },
+				Font = Input { Value = "Inter", },
+				Style = Input { Value = "Regular", },
+				Size = Input { Value = 0.012, },
+				VerticalJustificationNew = Input { Value = 3, },
+				HorizontalJustificationNew = Input { Value = 3, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 385, 1105.2 } },
+			Version = 1
+		},
+		Chapter_Reveal = Merge {
+			Inputs = {
+				Blend = Input { Expression = "((min(max((time-0)/18,0),1))*(min(max((time-0)/18,0),1))*(3-2*(min(max((time-0)/18,0),1))))", },
+				Background = Input {
+					SourceOp = "Lineage_Subtitle_Reveal",
+					Source = "Output",
+				},
+				Foreground = Input {
+					SourceOp = "Chapter",
+					Source = "Output",
+				},
+				PerformDepthMerge = Input { Value = 0, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 715, 1105.2 } },
+		},
+		Master_Fade = Merge {
+			CtrlWZoom = false,
+			Inputs = {
+				Blend = Input { Expression = "((min(max((time-0)/10,0),1))*(min(max((time-0)/10,0),1))*(3-2*(min(max((time-0)/10,0),1))))*(1-((min(max((time-105)/14,0),1))*(min(max((time-105)/14,0),1))*(3-2*(min(max((time-105)/14,0),1)))))", },
+				Background = Input {
+					SourceOp = "Obsidian_Background",
+					Source = "Output",
+				},
+				Foreground = Input {
+					SourceOp = "Chapter_Reveal",
+					Source = "Output",
+				},
+				PerformDepthMerge = Input { Value = 0, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 715, 1154.7 } },
+		},
+		MediaOut1 = MediaOut {
+			Inputs = {
+				Index = Input { Value = "0", },
+				Input = Input {
+					SourceOp = "Master_Fade",
+					Source = "Output",
+				}
+			},
+			ViewInfo = OperatorInfo { Pos = { 1045, 16.197 } },
+		}
+	},
+	Frames = {
+		{
+			FrameTypeID = "ChildFrame",
+			Mode = 3,
+			LayoutPreset = 0,
+			PresetName = "Default",
+			Left = 0,
+			Top = 0,
+			Width = 1920,
+			Height = 895,
+			ZoneInfo = {
+				AuxRight = { Expanded = true },
+				Right = { Expanded = true, },
+				Left = { Expanded = false, },
+				AuxLeft = { Expanded = true },
+				["!Left"] = {
+				},
+				["!Right"] = {
+				}
+			},
+			ViewInfo = {
+				Keyframes = { Show = false, },
+				LayoutStrip = { Show = true, },
+				Inspector = { Show = true, RatioX = 100, RatioY = 1, },
+				Effects = { Show = false, },
+				Viewer2 = { Show = true, RatioX = 1, RatioY = 0.01, },
+				Comments = { Show = false },
+				Clips = { Show = false, },
+				ActionStrip = { Show = true, RatioX = 100, },
+				Time = { Show = true, RatioX = 100, },
+				MediaPool = { Show = false, },
+				Nodes = { Show = true, RatioX = 1, RatioY = 100, },
+				Metadata = { Show = false, },
+				Viewer1 = { Show = true, RatioX = 1, RatioY = 0.01, },
+				Spline = { Show = false, },
+				OuterColumns = {
+					RatioX = 100,
+					RatioY = 1,
+				},
+				OuterLeft = {
+				},
+				CenterSplit = {
+					RatioX = 1,
+					RatioY = 100,
+				},
+				OuterRight = {
+					PixelX = 420,
+					RatioY = 100,
+				},
+				InnerColumns = {
+					RatioX = 100,
+					RatioY = 1.99531615925059,
+				},
+				MainSplit = {
+					RatioX = 100,
+					RatioY = 1.00468384074941,
+				},
+				InnerLeft = {
+				},
+				InnerRight = {
+				},
+				ViewerSplit = {
+					RatioX = 100,
+					RatioY = 1,
+				}
+			},
+			Views = ordered() {
+				MediaPool = "MediaPoolView",
+				Effects = MultiView {
+					Active = "EffectView",
+					ViewList = ordered() {
+						EffectView = "EffectView"
+					},
+				},
+				Nodes = MultiView {
+					Active = "FlowView",
+					ViewList = ordered() {
+						FlowView = "FlowView"
+					},
+					FlowView = FlowView {
+						Flags = {
+							Navigator = true,
+							AutoHideNavigator = true,
+							AutoSnap = true,
+							RemoveRouters = true
+						},
+						NavigatorSize = { 200, 140 },
+						Direction = "Horizontal",
+						PipeStyle = "Direct",
+						RootScale = 0.353553,
+						RootOffset = { 415.455, 294.399 }
+					}
+				},
+				Keyframes = MultiView {
+					Active = "TimelineView",
+					ViewList = ordered() {
+						TimelineView = "TimelineView"
+					},
+					TimelineView = TimelineView {
+						TreeControlState = {
+						},
+						DisplayMode = "All Tools",
+						ShowCurrentTimeTools = false,
+						Filter = "Show All",
+						ShowSelectedTools = false,
+						ShowAnimatedToolsOnly = false,
+						ShowEditBoxes = false,
+						KeyFrameView = {
+							Position = { Left = 232, Bottom = 324 },
+							ScaleX = 0.253191489361702,
+							OffsetX = -5.82340425531915,
+							OffsetY = 0,
+							AutoScaling = "scroll",
+							AutoSnapTo = "frame",
+							AutoSnapToGuidelines = false,
+							GuidelinesGrabEnabled = true,
+							GuidelinesSnapTo = "none"
+						},
+						Spreadsheet = { LeftPos = 232, Visible = false }
+					}
+				},
+				Spline = MultiView {
+					Active = "SplineView",
+					ViewList = ordered() {
+						SplineView = "SplineEditorView"
+					},
+					SplineView = SplineEditorView {
+						LeftPos = 264,
+						ScaleX = 0.2,
+						ScaleY = 0.00334448160535117,
+						OffsetX = -3.4,
+						OffsetY = 0,
+						AutoScaling = "scroll",
+						AutoSnapTo = "frame",
+						AutoSnapToGuidelines = false,
+						GuidelinesSnapTo = "frame",
+						ShowKeyMarkers = false,
+						IndependentHandles = false,
+						ShowNonSplineModifiers = false,
+						GuidelinesGrabEnabled = true,
+						ShowOneToolOnly = false,
+						ShowSelectedTools = false,
+						ShowAllInputs = false,
+						Filter = "Show All"
+					}
+				},
+				Inspector = MultiView {
+					Active = "Tools",
+					ViewList = ordered() {
+						Tools = "ControlView",
+						Modifiers = "ModifierView"
+					},
+				},
+				Viewer1 = MultiView {
+					Active = "LeftView",
+					ViewList = ordered() {
+						LeftView = "PreviewContainer"
+					},
+				},
+				Viewer2 = MultiView {
+					Active = "RightView",
+					ViewList = ordered() {
+						RightView = "PreviewContainer"
+					},
+				},
+				Time = "TimeView",
+				ActionStrip = "ActionStripView",
+				LayoutStrip = "LayoutStripView",
+				Clips = "ClipsView",
+				Metadata = "MetadataView"
+			},
+			Layout = {
+				{ ID = "LayoutStrip", FixedY = 36, Resolve = false, Flat = true },
+				{
+					{
+						{ ID = "MediaPool", Fusion = false, RatioX = 1 },
+						{ ID = "Effects", RatioX = 1 },
+						Zone = "Left",
+						Rows = 2,
+						PaneID = "OuterLeft",
+						PixelX = 420
+					},
+					{
+						{
+							{
+								{ ID = "MediaPool", Fusion = false, RatioX = 1 },
+								{ ID = "Effects", RatioX = 1 },
+								PaneID = "InnerLeft",
+								MaxViews = 1,
+								PixelX = 420,
+								Rows = 2,
+								Zone = "!Left"
+							},
+							{
+								{
+									{ ID = "Viewer1", RatioY = 0.01, RatioX = 1 },
+									{ ID = "Viewer2", RatioX = 1 },
+									RatioY = 1,
+									Columns = 2,
+									PaneID = "ViewerSplit"
+								},
+								{ ID = "Time", FixedY = 83, Photo = false, Flat = true },
+								RatioX = 1,
+								Rows = 2
+							},
+							{
+								{ ID = "Inspector", RatioY = 1 },
+								{ ID = "Metadata", RatioY = 1, Fusion = false },
+								PaneID = "InnerRight",
+								MaxViews = 1,
+								PixelX = 420,
+								Rows = 2,
+								Zone = "!Right"
+							},
+							RatioY = 2,
+							Columns = 3,
+							PaneID = "InnerColumns"
+						},
+						{ ID = "ActionStrip", FixedY = 50, Flat = true },
+						{
+							{ ID = "Nodes", RatioX = 1 },
+							{ ID = "Spline", Photo = false, RatioX = 1 },
+							{ ID = "Keyframes", Photo = false, RatioX = 1 },
+							RatioY = 1,
+							Columns = 3,
+							PaneID = "MainSplit"
+						},
+						{ Fusion = false, ID = "Clips", LARGE_FixedY = 160, MEDIUM_FixedY = 138, SMALL_FixedY = 110 },
+						RatioX = 1,
+						Rows = 4,
+						PaneID = "CenterSplit"
+					},
+					{
+						{ ID = "Inspector", RatioY = 1 },
+						{ ID = "Metadata", RatioY = 1, Fusion = false },
+						Zone = "Right",
+						Rows = 2,
+						PaneID = "OuterRight",
+						PixelX = 420
+					},
+					RatioY = 1,
+					Columns = 3,
+					PaneID = "OuterColumns"
+				},
+				RatioX = 1,
+				Rows = 2,
+				RatioY = 1
+			},
+			TopBar = {
+				Left = { "Left", "MediaPool", "Effects", "Clips", "Nodes", "Console" },
+				Right = { "Spline", "Keyframes", "Metadata", "Inspector", "Right" }
+			}
+		}
+	},
+	Prefs = {
+		Comp = {
+			Interactive = {
+				Proxy = {
+					Scale = 1,
+				},
+			},
+			Views = {
+				RightView = {
+					Viewer = {
+						Layer = ":Default",
+					},
+				},
+				LeftView = {
+				},
+				View1 = {
+				},
+			},
+			Paths = {
+				Map = {
+					["ResolveCaches:"] = "C:\\Users\\kouek\\Videos\\KKEVO_PRODUCTION\\02_RESOLVE_WORKING\\CacheClip\\2d9baa63-cdcf-4ccb-8d74-45a2df61c458\\1734de08-63a9-450b-bae5-99a86151eebe\\78a50e00-5588-44f3-a121-903fddef1243\\Fusion",
+				},
+			},
+			FrameFormat = {
+				Rate = 24,
+				GuideRatio = 1.77777777777778,
+				DepthFull = 3,
+				DepthPreview = 3,
+				DepthInteractive = 3,
+			},
+			LastFile = "C:\\Users\\kouek\\Downloads\\Telegram Desktop\\photo_2026-08-21_15-37-38.jpg",
+			Unsorted = {
+				GlobalEnd = 119
+			},
+			SpellCheck = {
+			},
+		}
+	},
+}
+

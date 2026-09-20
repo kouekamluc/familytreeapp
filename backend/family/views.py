@@ -18,13 +18,15 @@ User = get_user_model()
 
 class FamilyTreeViewSet(viewsets.ModelViewSet):
     serializer_class = FamilyTreeSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     
     def get_queryset(self):
         user = self.request.user
-        return FamilyTree.objects.filter(
-            models.Q(owner=user) | models.Q(members=user)
-        ).distinct()
+        if user and user.is_authenticated:
+            return FamilyTree.objects.filter(
+                models.Q(owner=user) | models.Q(members=user) | models.Q(is_public=True)
+            ).distinct()
+        return FamilyTree.objects.filter(is_public=True).distinct()
     
     def get_serializer_class(self):
         if self.action == 'retrieve':
@@ -80,15 +82,18 @@ class FamilyTreeViewSet(viewsets.ModelViewSet):
 
 class PersonViewSet(viewsets.ModelViewSet):
     serializer_class = PersonSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     pagination_class = None
     
     def get_queryset(self):
         user = self.request.user
-        tree_id = self.request.query_params.get('tree_id')
+        tree_id = self.request.query_params.get('tree_id') or self.request.query_params.get('family_tree')
         if tree_id:
             return Person.objects.filter(family_tree_id=tree_id)
-        user_trees = FamilyTree.objects.filter(models.Q(owner=user) | models.Q(members=user))
+        if user and user.is_authenticated:
+            user_trees = FamilyTree.objects.filter(models.Q(owner=user) | models.Q(members=user) | models.Q(is_public=True))
+        else:
+            user_trees = FamilyTree.objects.filter(is_public=True)
         return Person.objects.filter(family_tree__in=user_trees)
     
     def perform_create(self, serializer):
@@ -106,18 +111,21 @@ class PersonViewSet(viewsets.ModelViewSet):
 
 class RelationshipViewSet(viewsets.ModelViewSet):
     serializer_class = RelationshipSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     pagination_class = None
     
     def get_queryset(self):
         user = self.request.user
-        tree_id = self.request.query_params.get('tree_id')
+        tree_id = self.request.query_params.get('tree_id') or self.request.query_params.get('family_tree')
         if tree_id:
             return Relationship.objects.filter(
                 models.Q(person1__family_tree_id=tree_id) |
                 models.Q(person2__family_tree_id=tree_id)
             ).distinct()
-        user_trees = FamilyTree.objects.filter(models.Q(owner=user) | models.Q(members=user))
+        if user and user.is_authenticated:
+            user_trees = FamilyTree.objects.filter(models.Q(owner=user) | models.Q(members=user) | models.Q(is_public=True))
+        else:
+            user_trees = FamilyTree.objects.filter(is_public=True)
         return Relationship.objects.filter(
             models.Q(person1__family_tree__in=user_trees) |
             models.Q(person2__family_tree__in=user_trees)

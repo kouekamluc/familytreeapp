@@ -5,40 +5,40 @@
       class="border-b shadow-lg transition-colors"
       :class="isLight ? 'bg-gradient-to-r from-white via-[#FAF6ED] to-white border-[#C5A059]/40 text-stone-900' : 'bg-[#121316] border-[#C5A059]/40 text-white'"
     >
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div class="flex items-center gap-4">
+      <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3.5 sm:py-8">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 sm:gap-4">
+          <div class="flex items-center gap-3 sm:gap-4">
             <div
-              class="w-14 h-14 rounded-2xl border-2 border-[#C5A059] flex items-center justify-center p-1 shadow-md flex-shrink-0"
+              class="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl border-2 border-[#C5A059] flex items-center justify-center p-0.5 sm:p-1 shadow-md shrink-0"
               :class="isLight ? 'bg-amber-50 shadow-amber-900/10' : 'bg-[#090A0C] shadow-black/50'"
             >
               <img src="/logo.png" alt="Kkevo Family Crest" class="w-full h-full object-contain" />
             </div>
             <div>
-              <div class="flex items-center gap-2 text-xs font-black tracking-widest uppercase" :class="isLight ? 'text-[#855B14]' : 'text-[#C5A059]'">
+              <div class="flex items-center gap-1.5 text-[10px] sm:text-xs font-black tracking-widest uppercase" :class="isLight ? 'text-[#855B14]' : 'text-[#C5A059]'">
                 <span>📖 Kkevo Directory</span>
                 <span>•</span>
                 <span>{{ filteredPeople.length }} {{ filteredPeople.length === 1 ? 'member' : 'members' }}</span>
               </div>
               <h1
-                class="text-3xl font-black tracking-wide font-serif uppercase mt-1"
+                class="text-xl sm:text-3xl font-black tracking-wide font-serif uppercase mt-0.5 sm:mt-1"
                 :class="isLight ? 'text-stone-900' : 'text-transparent bg-clip-text bg-gradient-to-r from-[#F3E5AB] via-[#D4AF37] to-[#C5A059]'"
               >
                 Kkevo Family Members
               </h1>
-              <p class="text-sm mt-0.5 font-medium" :class="isLight ? 'text-stone-600' : 'text-[#FDFBF7]/80'">
+              <p class="text-xs sm:text-sm mt-0.5 font-medium hidden xs:block" :class="isLight ? 'text-stone-600' : 'text-[#FDFBF7]/80'">
                 Browse, search, and connect everyone in our royal lineage and heritage.
               </p>
             </div>
           </div>
 
           <!-- Add Member Button -->
-          <div class="flex items-center gap-3">
+          <div class="flex items-center gap-2 sm:gap-3">
             <button
               @click="openAddModal(null)"
-              class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-[#B8860B] via-[#D4AF37] to-[#C5A059] hover:brightness-105 text-black font-black text-sm shadow-lg shadow-black/20 transition-all transform active:scale-95 cursor-pointer"
+              class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3.5 py-2 sm:px-5 sm:py-3 rounded-xl sm:rounded-2xl bg-gradient-to-r from-[#B8860B] via-[#D4AF37] to-[#C5A059] hover:brightness-105 text-black font-black text-xs sm:text-sm shadow-md transition-all active:scale-95 cursor-pointer"
             >
-              <span class="text-lg leading-none">✨</span>
+              <span class="text-base sm:text-lg leading-none">✨</span>
               <span>+ Add Family Member</span>
             </button>
           </div>
@@ -47,29 +47,29 @@
     </div>
 
     <!-- Main Content Container -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-4">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 -mt-2 sm:-mt-4">
       <!-- Search and Filter Bar -->
       <div
-        class="rounded-3xl shadow-sm border p-4 mb-8 transition-colors"
+        class="rounded-2xl sm:rounded-3xl shadow-sm border p-2.5 sm:p-4 mb-4 sm:mb-8 transition-colors"
         :class="isLight ? 'bg-white border-[#C5A059]/40 shadow-amber-900/5' : 'bg-[#16181F] border-[#C5A059]/40 shadow-black/80'"
       >
-        <div class="flex flex-col md:flex-row items-stretch md:items-center gap-4">
+        <div class="flex flex-col md:flex-row items-stretch md:items-center gap-2.5 sm:gap-4">
           <!-- Search input -->
           <div class="relative flex-1">
-            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-xl">
+            <div class="absolute inset-y-0 left-0 pl-3 sm:pl-4 flex items-center pointer-events-none text-base sm:text-xl">
               🔍
             </div>
             <input
               type="text"
               v-model="searchQuery"
               placeholder="Search by name, village, or hometown..."
-              class="w-full pl-12 pr-4 py-3.5 text-base rounded-2xl border-2 transition-all font-medium focus:outline-none focus:ring-2 focus:ring-[#C5A059] focus:border-[#C5A059]"
+              class="w-full pl-9 sm:pl-12 pr-4 py-2 sm:py-3.5 text-xs sm:text-base rounded-xl sm:rounded-2xl border-2 transition-all font-medium focus:outline-none focus:ring-2 focus:ring-[#C5A059] focus:border-[#C5A059]"
               :class="isLight ? 'border-stone-200 bg-[#FDFBF7] text-stone-900 placeholder-stone-400' : 'border-[#C5A059]/40 bg-[#1F2128] text-stone-100 placeholder-stone-500'"
             />
             <button
               v-if="searchQuery"
               @click="searchQuery = ''"
-              class="absolute inset-y-0 right-0 pr-4 flex items-center text-stone-400 hover:text-stone-600"
+              class="absolute inset-y-0 right-0 pr-3 sm:pr-4 flex items-center text-stone-400 hover:text-stone-600"
             >
               ✕
             </button>
@@ -77,12 +77,12 @@
 
           <!-- Filter Pills -->
           <div
-            class="flex items-center gap-1.5 p-1.5 rounded-2xl border overflow-x-auto"
+            class="flex items-center gap-1 sm:gap-1.5 p-1 sm:p-1.5 rounded-xl sm:rounded-2xl border overflow-x-auto no-scrollbar"
             :class="isLight ? 'bg-stone-100 border-stone-200' : 'bg-[#1F2128] border-[#C5A059]/30'"
           >
             <button
               @click="selectedFilter = 'all'"
-              class="px-4 py-2 rounded-xl text-xs font-black transition-all whitespace-nowrap cursor-pointer"
+              class="px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-black transition-all whitespace-nowrap cursor-pointer"
               :class="[
                 selectedFilter === 'all'
                   ? isLight
@@ -97,7 +97,7 @@
             </button>
             <button
               @click="selectedFilter = 'living'"
-              class="px-4 py-2 rounded-xl text-xs font-black transition-all whitespace-nowrap cursor-pointer"
+              class="px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-black transition-all whitespace-nowrap cursor-pointer"
               :class="[
                 selectedFilter === 'living'
                   ? isLight
@@ -112,7 +112,7 @@
             </button>
             <button
               @click="selectedFilter = 'ancestors'"
-              class="px-4 py-2 rounded-xl text-xs font-black transition-all whitespace-nowrap cursor-pointer"
+              class="px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-black transition-all whitespace-nowrap cursor-pointer"
               :class="[
                 selectedFilter === 'ancestors'
                   ? isLight
@@ -130,40 +130,40 @@
       </div>
 
       <!-- Loading State -->
-      <div v-if="loading" class="text-center py-20">
-        <div class="inline-block animate-spin w-10 h-10 border-4 border-[#C5A059] border-t-transparent rounded-full mb-3"></div>
-        <p class="text-lg font-black" :class="isLight ? 'text-stone-800' : 'text-stone-200'">Loading Kkevo family members...</p>
+      <div v-if="loading" class="text-center py-12 sm:py-20">
+        <div class="inline-block animate-spin w-8 h-8 sm:w-10 sm:h-10 border-4 border-[#C5A059] border-t-transparent rounded-full mb-3"></div>
+        <p class="text-base sm:text-lg font-black" :class="isLight ? 'text-stone-800' : 'text-stone-200'">Loading Kkevo family members...</p>
       </div>
 
       <!-- People Cards Grid -->
-      <div v-else-if="filteredPeople.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div v-else-if="filteredPeople.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
         <div
           v-for="person in filteredPeople"
           :key="person.id"
-          class="rounded-3xl border-2 transition-all duration-200 overflow-hidden flex flex-col justify-between group shadow-sm hover:shadow-xl"
+          class="rounded-2xl sm:rounded-3xl border-2 transition-all duration-200 overflow-hidden flex flex-col justify-between group shadow-sm hover:shadow-xl"
           :class="isLight ? 'bg-white border-[#C5A059]/30 hover:border-[#C5A059] text-stone-900' : 'bg-[#16181F] border-[#C5A059]/40 hover:border-[#D4AF37] text-stone-100 shadow-black/60'"
         >
           <!-- Card Top Info -->
-          <div class="p-6">
-            <div class="flex items-start gap-4">
+          <div class="p-3.5 sm:p-6">
+            <div class="flex items-start gap-3 sm:gap-4">
               <!-- Avatar -->
-              <div class="relative flex-shrink-0">
+              <div class="relative shrink-0">
                 <img
                   v-if="person.avatar"
                   :src="person.avatar"
                   :alt="person.name"
-                  class="w-16 h-16 rounded-2xl object-cover border-2 border-[#C5A059] shadow-inner"
+                  class="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl object-cover border-2 border-[#C5A059] shadow-inner"
                 />
                 <div
                   v-else
-                  class="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl shadow-inner border-2 border-[#C5A059]/40"
+                  class="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl flex items-center justify-center text-2xl sm:text-3xl shadow-inner border-2 border-[#C5A059]/40"
                   :class="isLight ? 'bg-[#FDFBF7]' : 'bg-[#1F2128]'"
                 >
                   {{ getEmojiAvatar(person) }}
                 </div>
                 <!-- Living status pill -->
                 <span
-                  class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 shadow-sm"
+                  class="absolute -bottom-1 -right-1 w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full border-2 shadow-sm"
                   :class="[
                     person.isLiving ? 'bg-[#C5A059]' : 'bg-stone-400',
                     isLight ? 'border-white' : 'border-[#16181F]'
@@ -176,20 +176,20 @@
               <div class="flex-1 min-w-0">
                 <router-link
                   :to="`/people/${person.id}`"
-                  class="text-xl font-black transition-colors line-clamp-1"
+                  class="text-base sm:text-xl font-black transition-colors line-clamp-1"
                   :class="isLight ? 'text-stone-900 hover:text-[#996515]' : 'text-stone-100 hover:text-[#D4AF37]'"
                 >
                   {{ person.name }}
                 </router-link>
 
                 <!-- Village / Origin -->
-                <p class="text-sm font-bold mt-0.5 flex items-center gap-1.5 truncate" :class="isLight ? 'text-[#674B19]' : 'text-[#C5A059]'">
-                  <span class="text-base">📍</span>
-                  <span>{{ person.village || person.birthPlace || 'Village not listed' }}</span>
+                <p class="text-xs sm:text-sm font-bold mt-0.5 flex items-center gap-1 truncate" :class="isLight ? 'text-[#674B19]' : 'text-[#C5A059]'">
+                  <span class="text-xs sm:text-base">📍</span>
+                  <span class="truncate">{{ person.village || person.birthPlace || 'Village not listed' }}</span>
                 </p>
 
                 <!-- Dates -->
-                <p class="text-xs font-medium mt-1" :class="isLight ? 'text-stone-500' : 'text-stone-400'">
+                <p class="text-[11px] sm:text-xs font-medium mt-0.5 sm:mt-1 truncate" :class="isLight ? 'text-stone-500' : 'text-stone-400'">
                   <span v-if="person.birthDate">Born {{ formatYear(person.birthDate) }}</span>
                   <span v-else>Birth date unknown</span>
                   <span v-if="!person.isLiving && person.deathDate"> • Passed {{ formatYear(person.deathDate) }}</span>
@@ -198,15 +198,15 @@
             </div>
 
             <!-- Status Pill & Gender Badge -->
-            <div class="mt-4 flex flex-wrap gap-2 items-center">
+            <div class="mt-2.5 sm:mt-4 flex flex-wrap gap-1.5 sm:gap-2 items-center">
               <span
-                class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold"
+                class="inline-flex items-center px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg text-[10px] sm:text-xs font-bold"
                 :class="person.isLiving ? (isLight ? 'bg-amber-100 text-[#4A3510]' : 'bg-[#C5A059]/20 text-[#F3E5AB]') : (isLight ? 'bg-stone-100 text-stone-700' : 'bg-stone-800 text-stone-300')"
               >
                 {{ person.isLiving ? '🌱 Living' : '🕊️ Ancestor' }}
               </span>
               <span
-                class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold border"
+                class="inline-flex items-center px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg text-[10px] sm:text-xs font-bold border"
                 :class="isLight ? 'bg-[#FDFBF7] text-[#674B19] border-[#C5A059]/30' : 'bg-[#1F2128] text-[#F3E5AB] border-[#C5A059]/30'"
               >
                 {{ person.gender === 'F' ? '👩 Female' : '👨 Male' }}
@@ -216,32 +216,32 @@
 
           <!-- Bottom Action Buttons -->
           <div
-            class="px-6 py-3.5 border-t flex items-center justify-between gap-2"
+            class="px-3.5 py-2 sm:px-6 sm:py-3.5 border-t flex items-center justify-between gap-1.5 sm:gap-2"
             :class="isLight ? 'bg-[#FAF7F0] border-[#C5A059]/20' : 'bg-[#121316] border-[#C5A059]/30'"
           >
             <!-- View in Tree -->
             <router-link
               :to="{ path: '/tree', query: { root: person.id } }"
-              class="flex-1 text-center py-2 px-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 border cursor-pointer"
+              class="flex-1 text-center py-1.5 sm:py-2 px-2 sm:px-2.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-black transition-all flex items-center justify-center gap-1 sm:gap-1.5 border cursor-pointer"
               :class="isLight ? 'bg-white hover:bg-stone-50 border-[#C5A059]/40 text-stone-900 shadow-sm' : 'bg-[#1F2128] hover:bg-[#282C36] text-[#F3E5AB] border-[#C5A059]/30'"
             >
               <span>🌳</span>
-              <span>View in Tree</span>
+              <span>Tree</span>
             </router-link>
 
             <!-- Quick Add Relative -->
             <button
               @click="openAddModal(person)"
-              class="flex-1 text-center py-2 px-2.5 rounded-xl bg-gradient-to-r from-[#B8860B] to-[#C5A059] hover:brightness-105 text-black text-xs font-black shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              class="flex-1 text-center py-1.5 sm:py-2 px-2 sm:px-2.5 rounded-lg sm:rounded-xl bg-gradient-to-r from-[#B8860B] to-[#C5A059] hover:brightness-105 text-black text-[11px] sm:text-xs font-black shadow-sm transition-all flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer"
             >
               <span>➕</span>
-              <span>Add Relative</span>
+              <span>Relative</span>
             </button>
 
             <!-- Full Details Link -->
             <router-link
               :to="`/people/${person.id}`"
-              class="py-2 px-3 rounded-xl border text-xs font-bold transition-all"
+              class="py-1.5 px-2.5 sm:py-2 sm:px-3 rounded-lg sm:rounded-xl border text-[11px] sm:text-xs font-bold transition-all"
               :class="isLight ? 'bg-white hover:bg-stone-100 border-stone-200 text-stone-700' : 'bg-[#1C1E25] hover:bg-[#252832] border-[#C5A059]/40 text-[#F3E5AB]'"
               title="View full profile"
             >

@@ -9,12 +9,15 @@ export const useAuthStore = defineStore('auth', {
     error: null,
     accessToken: localStorage.getItem('accessToken'),
     refreshToken: localStorage.getItem('refreshToken'),
+    activeHeritageKey: null,
+    heritageKeys: [],
   }),
 
   getters: {
     isAuthenticated: (state) => !!state.accessToken,
     currentUser: (state) => state.user,
-    isAdmin: (state) => state.user?.is_staff || false
+    isAdmin: (state) => state.user?.is_staff || false,
+    primaryHeritageKey: (state) => state.user?.primary_heritage_key || state.activeHeritageKey?.key || null,
   },
 
   actions: {
@@ -45,6 +48,69 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
+    async loginWithHeritageKey(heritageKey) {
+      this.loading = true
+      this.error = null
+      try {
+        const response = await api.post('/users/heritage-key/login/', {
+          heritage_key: heritageKey.trim()
+        })
+        const { user, access, refresh, heritage_key } = response.data
+
+        this.accessToken = access
+        this.refreshToken = refresh
+        this.activeHeritageKey = heritage_key
+        localStorage.setItem('accessToken', access)
+        localStorage.setItem('refreshToken', refresh)
+
+        api.defaults.headers.common['Authorization'] = `Bearer ${access}`
+        this.user = user
+        return { user, heritage_key }
+      } catch (error) {
+        this.error = error.response?.data?.error || error.response?.data?.detail || 'Heritage Key sign in failed'
+        throw error
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async fetchHeritageKeys() {
+      try {
+        const response = await api.get('/users/heritage-key/me/')
+        this.heritageKeys = response.data
+        if (response.data && response.data.length > 0) {
+          this.activeHeritageKey = response.data.find(k => k.is_active) || response.data[0]
+        }
+        return response.data
+      } catch (error) {
+        console.error('Error fetching heritage keys:', error)
+        return []
+      }
+    },
+
+    async generateHeritageKey(payload = {}) {
+      try {
+        const response = await api.post('/users/heritage-key/generate/', payload)
+        await this.fetchHeritageKeys()
+        return response.data
+      } catch (error) {
+        this.error = error.response?.data?.error || 'Failed to generate Heritage Key'
+        throw error
+      }
+    },
+
+    async revokeHeritageKey(keyOrId) {
+      try {
+        const payload = typeof keyOrId === 'number' ? { key_id: keyOrId } : { key: keyOrId }
+        const response = await api.post('/users/heritage-key/revoke/', payload)
+        await this.fetchHeritageKeys()
+        return response.data
+      } catch (error) {
+        this.error = error.response?.data?.error || 'Failed to revoke Heritage Key'
+        throw error
+      }
+    },
+
     async logout() {
       try {
         if (this.refreshToken) {
@@ -57,6 +123,8 @@ export const useAuthStore = defineStore('auth', {
         this.accessToken = null
         this.refreshToken = null
         this.user = null
+        this.activeHeritageKey = null
+        this.heritageKeys = []
         localStorage.removeItem('accessToken')
         localStorage.removeItem('refreshToken')
         delete api.defaults.headers.common['Authorization']
@@ -118,6 +186,8 @@ export const useAuthStore = defineStore('auth', {
         this.accessToken = null
         this.refreshToken = null
         this.user = null
+        this.activeHeritageKey = null
+        this.heritageKeys = []
         localStorage.removeItem('accessToken')
         localStorage.removeItem('refreshToken')
         delete api.defaults.headers.common['Authorization']

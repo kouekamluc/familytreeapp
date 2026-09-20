@@ -47,6 +47,7 @@ flutter_frontend/*.iml
 # Browser test profiles & root screenshot captures
 chrome-temp-profile/
 /*.png
+flutter_frontend/*.png
 
 # Editor & OS files
 .DS_Store
@@ -54,3 +55,9 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+# Environment variables & secrets
+.env
+*.env
+backend/.env
+

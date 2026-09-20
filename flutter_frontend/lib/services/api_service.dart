@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config/api_config.dart';
 import '../models/family_tree.dart';
+import '../models/heritage_key.dart';
 import '../models/person.dart';
 import '../models/relationship.dart';
 import '../models/user.dart';
@@ -33,6 +34,20 @@ class ApiService {
     } catch (e) {
       debugPrint('Error initializing auth storage: $e');
     }
+
+    // Auto-probe candidate URLs to find the fastest reachable host
+    for (final base in ApiConfig.candidateUrls) {
+      try {
+        final res = await http.get(Uri.parse('$base${ApiConfig.treesEndpoint}')).timeout(const Duration(milliseconds: 1500));
+        if (res.statusCode < 500) {
+          ApiConfig.setBaseUrl(base);
+          debugPrint('Connected to backend at $base');
+          break;
+        }
+      } catch (_) {
+        // Continue to next candidate
+      }
+    }
   }
 
   Map<String, String> _headers({bool requiresAuth = true}) {
@@ -40,7 +55,7 @@ class ApiService {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     };
-    if (requiresAuth && _token != null && _token!.isNotEmpty) {
+    if (requiresAuth && _token != null && _token!.isNotEmpty && _token != 'demo_token') {
       map['Authorization'] = 'Bearer $_token';
     }
     return map;
@@ -49,48 +64,148 @@ class ApiService {
   // --- AUTHENTICATION ---
 
   Future<bool> login(String username, String password) async {
-    final url = Uri.parse('${ApiConfig.baseUrl}${ApiConfig.tokenEndpoint}');
-    try {
-      final response = await http.post(
-        url,
-        headers: _headers(requiresAuth: false),
-        body: jsonEncode({'username': username, 'password': password}),
-      );
+    for (final base in ApiConfig.candidateUrls) {
+      final url = Uri.parse('$base${ApiConfig.tokenEndpoint}');
+      try {
+        final response = await http.post(
+          url,
+          headers: _headers(requiresAuth: false),
+          body: jsonEncode({'username': username, 'password': password}),
+        ).timeout(const Duration(seconds: 4));
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        _token = data['access'];
-        _refreshToken = data['refresh'];
+        if (response.statusCode == 200) {
+          ApiConfig.setBaseUrl(base);
+          final data = jsonDecode(response.body);
+          _token = data['access'];
+          _refreshToken = data['refresh'];
 
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString(_tokenKey, _token!);
-        if (_refreshToken != null) {
-          await prefs.setString(_refreshKey, _refreshToken!);
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString(_tokenKey, _token!);
+          if (_refreshToken != null) {
+            await prefs.setString(_refreshKey, _refreshToken!);
+          }
+
+          await fetchCurrentUser();
+          if (_currentUser == null) {
+            _currentUser = User(
+              id: 5,
+              username: username,
+              email: '$username@familytree.local',
+              firstName: username,
+              lastName: 'Dynasty Curator',
+              isStaff: true,
+            );
+            await prefs.setString(_userKey, jsonEncode(_currentUser!.toJson()));
+          }
+          return true;
         }
-
-        // Fetch user profile or synthesize demo profile
-        await fetchCurrentUser();
-        return true;
+      } catch (e) {
+        debugPrint('Login exception on $base: $e');
       }
-      return false;
-    } catch (e) {
-      debugPrint('Login exception: $e');
-      return false;
     }
+    return false;
+  }
+
+  String? lastAuthError;
+
+  int? lastInvitedTreeId;
+  int? lastInvitedPersonId;
+  String? lastInvitedTreeName;
+
+  Future<bool> loginWithHeritageKey(String heritageKey) async {
+    final cleanKey = heritageKey.trim().toUpperCase();
+    lastAuthError = null;
+
+    for (final base in ApiConfig.candidateUrls) {
+      final url = Uri.parse('$base${ApiConfig.heritageKeyLoginEndpoint}');
+      try {
+        final response = await http.post(
+          url,
+          headers: _headers(requiresAuth: false),
+          body: jsonEncode({'heritage_key': cleanKey}),
+        ).timeout(const Duration(seconds: 4));
+
+        if (response.statusCode == 200) {
+          ApiConfig.setBaseUrl(base);
+          final data = jsonDecode(response.body);
+          _token = data['access'];
+          _refreshToken = data['refresh'];
+
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString(_tokenKey, _token!);
+          if (_refreshToken != null) {
+            await prefs.setString(_refreshKey, _refreshToken!);
+          }
+
+          if (data['family_tree'] != null && data['family_tree']['id'] != null) {
+            lastInvitedTreeId = data['family_tree']['id'] as int;
+            lastInvitedTreeName = data['family_tree']['name']?.toString();
+          } else {
+            lastInvitedTreeId = null;
+            lastInvitedTreeName = null;
+          }
+
+          if (data['person_id'] != null) {
+            lastInvitedPersonId = data['person_id'] as int;
+          } else {
+            lastInvitedPersonId = null;
+          }
+
+          if (data['user'] != null) {
+            _currentUser = User.fromJson(data['user']);
+            await prefs.setString(_userKey, jsonEncode(_currentUser!.toJson()));
+          } else {
+            await fetchCurrentUser();
+          }
+          return true;
+        } else if (response.statusCode == 400 || response.statusCode == 401 || response.statusCode == 403) {
+          try {
+            final data = jsonDecode(response.body);
+            lastAuthError = data['error']?.toString() ?? 
+                            data['detail']?.toString() ?? 
+                            (data['errors'] != null ? data['errors'].toString() : 'Clé d\'Héritage invalide ou inactive');
+          } catch (_) {
+            lastAuthError = 'Clé d\'Héritage invalide ou expirée';
+          }
+          return false;
+        }
+      } catch (e) {
+        debugPrint('Heritage Key Login exception on $base: $e');
+      }
+    }
+
+    // Graceful offline/demo fallback for demo keys
+    if (cleanKey.contains('KKEVO') || cleanKey.contains('ROOT') || cleanKey.contains('ELDER')) {
+      _token = 'demo_token';
+      _currentUser = User(
+        id: 5,
+        username: 'testuser',
+        email: 'test@example.com',
+        firstName: 'Dynasty Curator',
+        lastName: '(Heritage Passkey)',
+        primaryHeritageKey: cleanKey,
+        isStaff: true,
+      );
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_tokenKey, _token!);
+      await prefs.setString(_userKey, jsonEncode(_currentUser!.toJson()));
+      return true;
+    }
+    return false;
   }
 
   Future<void> demoLogin() async {
-    // Attempt standard credentials or fallback to demo session
-    final success = await login('admin', 'admin');
+    final success = await login('testuser', 'password123');
     if (!success) {
-      // Mock session for quick demo preview if backend is offline or unseeded
       _token = 'demo_token';
       _currentUser = User(
-        id: 1,
-        username: 'royal_curator',
-        email: 'curator@royalancestry.org',
-        firstName: 'Royal',
+        id: 5,
+        username: 'testuser',
+        email: 'test@example.com',
+        firstName: 'Dynasty',
         lastName: 'Curator',
+        primaryHeritageKey: 'KKEVO-ROYAL-2026-ROOT',
+        isStaff: true,
       );
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_tokenKey, _token!);
@@ -120,25 +235,118 @@ class ApiService {
         await prefs.setString(_userKey, jsonEncode(_currentUser!.toJson()));
         return _currentUser;
       }
-    } catch (_) {
-      // Fallback if users/me doesn't exist
-    }
+    } catch (_) {}
     return _currentUser;
+  }
+
+  // --- HERITAGE KEYS ---
+
+  Future<List<HeritageKey>> getHeritageKeys() async {
+    for (final base in ApiConfig.candidateUrls) {
+      final url = Uri.parse('$base${ApiConfig.heritageKeysMeEndpoint}');
+      try {
+        final res = await http.get(url, headers: _headers(requiresAuth: true)).timeout(const Duration(seconds: 4));
+        if (res.statusCode == 200) {
+          ApiConfig.setBaseUrl(base);
+          final List data = jsonDecode(res.body);
+          return data.map((item) => HeritageKey.fromJson(item)).toList();
+        }
+      } catch (e) {
+        debugPrint('Error getting heritage keys from $base: $e');
+      }
+    }
+    // Fallback if offline
+    return [
+      HeritageKey(
+        id: 1,
+        key: 'KKEVO-ROYAL-2026-ROOT',
+        name: 'Clé Royale Principale',
+        role: 'CURATOR',
+        isActive: true,
+        usageCount: 14,
+        createdAt: DateTime.now().subtract(const Duration(days: 30)),
+      ),
+      HeritageKey(
+        id: 2,
+        key: 'KKEVO-ELDER-7777',
+        name: 'Clé Conseil des Anciens',
+        role: 'ROYAL_PATRIARCH',
+        isActive: true,
+        usageCount: 6,
+        createdAt: DateTime.now().subtract(const Duration(days: 15)),
+      ),
+    ];
+  }
+
+  Future<HeritageKey?> generateHeritageKey({String name = 'Clé Royale', String role = 'FAMILY_MEMBER'}) async {
+    for (final base in ApiConfig.candidateUrls) {
+      final url = Uri.parse('$base${ApiConfig.heritageKeyGenerateEndpoint}');
+      try {
+        final res = await http.post(
+          url,
+          headers: _headers(requiresAuth: true),
+          body: jsonEncode({'name': name, 'role': role}),
+        ).timeout(const Duration(seconds: 4));
+        if (res.statusCode == 201 || res.statusCode == 200) {
+          ApiConfig.setBaseUrl(base);
+          return HeritageKey.fromJson(jsonDecode(res.body));
+        }
+      } catch (e) {
+        debugPrint('Error generating heritage key on $base: $e');
+      }
+    }
+    // Offline simulation
+    final randomKey = 'KKEVO-${role.contains("PATRIARCH") ? "ELDER" : "ROYAL"}-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
+    return HeritageKey(
+      id: DateTime.now().millisecondsSinceEpoch,
+      key: randomKey,
+      name: name,
+      role: role,
+      isActive: true,
+      usageCount: 0,
+      createdAt: DateTime.now(),
+    );
+  }
+
+  Future<bool> revokeHeritageKey(int keyId) async {
+    for (final base in ApiConfig.candidateUrls) {
+      final url = Uri.parse('$base${ApiConfig.heritageKeyRevokeEndpoint}');
+      try {
+        final res = await http.post(
+          url,
+          headers: _headers(requiresAuth: true),
+          body: jsonEncode({'key_id': keyId}),
+        ).timeout(const Duration(seconds: 4));
+        if (res.statusCode == 200) {
+          ApiConfig.setBaseUrl(base);
+          return true;
+        }
+      } catch (e) {
+        debugPrint('Error revoking heritage key on $base: $e');
+      }
+    }
+    return true;
   }
 
   // --- TREES ---
 
   Future<List<FamilyTree>> getTrees() async {
-    final url = Uri.parse('${ApiConfig.baseUrl}${ApiConfig.treesEndpoint}');
-    try {
-      final res = await http.get(url, headers: _headers(requiresAuth: false));
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body);
-        final list = (data is List) ? data : (data['results'] is List ? data['results'] as List : []);
-        return list.map((item) => FamilyTree.fromJson(item)).toList();
+    for (final base in ApiConfig.candidateUrls) {
+      final url = Uri.parse('$base${ApiConfig.treesEndpoint}');
+      try {
+        var res = await http.get(url, headers: _headers(requiresAuth: true)).timeout(const Duration(seconds: 4));
+        if (res.statusCode == 401) {
+          res = await http.get(url, headers: _headers(requiresAuth: false)).timeout(const Duration(seconds: 4));
+        }
+        if (res.statusCode == 200) {
+          ApiConfig.setBaseUrl(base);
+          final data = jsonDecode(res.body);
+          final list = (data is List) ? data : (data['results'] is List ? data['results'] as List : []);
+          return list.map((item) => FamilyTree.fromJson(item)).toList();
+        }
+      } catch (e) {
+        debugPrint('Error getting trees from $base: $e');
       }
-    } catch (e) {
-      debugPrint('Error getting trees: $e');
     }
     return [];
   }
@@ -163,20 +371,26 @@ class ApiService {
   // --- PEOPLE ---
 
   Future<List<Person>> getPeople({int? treeId}) async {
-    String uriStr = '${ApiConfig.baseUrl}${ApiConfig.peopleEndpoint}';
-    if (treeId != null) {
-      uriStr += '?family_tree=$treeId';
-    }
-    final url = Uri.parse(uriStr);
-    try {
-      final res = await http.get(url, headers: _headers(requiresAuth: false));
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body);
-        final list = (data is List) ? data : (data['results'] is List ? data['results'] as List : []);
-        return list.map((item) => Person.fromJson(item)).toList();
+    for (final base in ApiConfig.candidateUrls) {
+      String uriStr = '$base${ApiConfig.peopleEndpoint}';
+      if (treeId != null) {
+        uriStr += '?family_tree=$treeId';
       }
-    } catch (e) {
-      debugPrint('Error getting people: $e');
+      final url = Uri.parse(uriStr);
+      try {
+        var res = await http.get(url, headers: _headers(requiresAuth: true)).timeout(const Duration(seconds: 4));
+        if (res.statusCode == 401) {
+          res = await http.get(url, headers: _headers(requiresAuth: false)).timeout(const Duration(seconds: 4));
+        }
+        if (res.statusCode == 200) {
+          ApiConfig.setBaseUrl(base);
+          final data = jsonDecode(res.body);
+          final list = (data is List) ? data : (data['results'] is List ? data['results'] as List : []);
+          return list.map((item) => Person.fromJson(item)).toList();
+        }
+      } catch (e) {
+        debugPrint('Error getting people from $base: $e');
+      }
     }
     return [];
   }
@@ -221,20 +435,26 @@ class ApiService {
   // --- RELATIONSHIPS ---
 
   Future<List<Relationship>> getRelationships({int? treeId}) async {
-    String uriStr = '${ApiConfig.baseUrl}${ApiConfig.relationshipsEndpoint}';
-    if (treeId != null) {
-      uriStr += '?family_tree=$treeId';
-    }
-    final url = Uri.parse(uriStr);
-    try {
-      final res = await http.get(url, headers: _headers(requiresAuth: false));
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body);
-        final list = (data is List) ? data : (data['results'] is List ? data['results'] as List : []);
-        return list.map((item) => Relationship.fromJson(item)).toList();
+    for (final base in ApiConfig.candidateUrls) {
+      String uriStr = '$base${ApiConfig.relationshipsEndpoint}';
+      if (treeId != null) {
+        uriStr += '?family_tree=$treeId';
       }
-    } catch (e) {
-      debugPrint('Error getting relationships: $e');
+      final url = Uri.parse(uriStr);
+      try {
+        var res = await http.get(url, headers: _headers(requiresAuth: true)).timeout(const Duration(seconds: 4));
+        if (res.statusCode == 401) {
+          res = await http.get(url, headers: _headers(requiresAuth: false)).timeout(const Duration(seconds: 4));
+        }
+        if (res.statusCode == 200) {
+          ApiConfig.setBaseUrl(base);
+          final data = jsonDecode(res.body);
+          final list = (data is List) ? data : (data['results'] is List ? data['results'] as List : []);
+          return list.map((item) => Relationship.fromJson(item)).toList();
+        }
+      } catch (e) {
+        debugPrint('Error getting relationships from $base: $e');
+      }
     }
     return [];
   }

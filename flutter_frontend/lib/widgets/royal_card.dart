@@ -45,7 +45,7 @@ class RoyalCard extends StatelessWidget {
             boxShadow: [
               BoxShadow(
                 color: isSelected
-                    ? RoyalTheme.brightGold.withOpacity(0.25)
+                    ? RoyalTheme.brightGold.withValues(alpha: 0.25)
                     : (isDark ? Colors.black38 : Colors.black12),
                 blurRadius: isSelected ? 16 : 8,
                 offset: const Offset(0, 4),
