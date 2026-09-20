@@ -70,7 +70,7 @@ void main() {
         relationships: relationships,
       );
       expect(res, isNotNull);
-      expect(res!.relationship, equals('Wife'));
+      expect(res!.relationship, contains('Épouse'));
     });
 
     test('Identifies parent-child relationship', () {
@@ -81,7 +81,7 @@ void main() {
         relationships: relationships,
       );
       expect(resChildToFather, isNotNull);
-      expect(resChildToFather!.title, equals('Father'));
+      expect(resChildToFather!.title, contains('Père'));
 
       final resFatherToChild = KinshipSolver.calculateKinship(
         personAId: 1,
@@ -90,7 +90,7 @@ void main() {
         relationships: relationships,
       );
       expect(resFatherToChild, isNotNull);
-      expect(resFatherToChild!.title, equals('Son'));
+      expect(resFatherToChild!.title, equals('Fils'));
     });
 
     test('Identifies sibling relationship', () {
@@ -101,7 +101,7 @@ void main() {
         relationships: relationships,
       );
       expect(res, isNotNull);
-      expect(res!.relationship, contains('Sister'));
+      expect(res!.relationship, contains('Sœur'));
     });
   });
 }

@@ -23,12 +23,6 @@ void main() async {
       systemNavigationBarIconBrightness: Brightness.light,
     ),
   );
-  // Lock orientation to portrait modes on mobile phones to prevent layout breakage
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
-
   final apiService = ApiService();
   await apiService.init();
 
@@ -36,8 +30,8 @@ void main() async {
   final treeProvider = TreeProvider(apiService);
   final accessibilityProvider = AccessibilityProvider();
 
-  // Unconditionally preload dynasty lineage records so people and tree are always available
-  await treeProvider.loadData();
+  // Asynchronously trigger data load without blocking initial frame rendering
+  treeProvider.loadData();
 
   runApp(
     MultiProvider(
@@ -68,9 +62,13 @@ class RoyalAncestryApp extends StatelessWidget {
       darkTheme: RoyalTheme.darkTheme,
       themeMode: themeProvider.themeMode,
       builder: (context, child) {
+        // Respect native system text scaling multiplied by custom accessibility scale
+        final systemScale = MediaQuery.textScalerOf(context).scale(1.0);
+        final effectiveScale = (systemScale * accessibility.fontScale).clamp(0.85, 2.2);
+
         return MediaQuery(
           data: MediaQuery.of(context).copyWith(
-            textScaler: TextScaler.linear(accessibility.fontScale),
+            textScaler: TextScaler.linear(effectiveScale),
           ),
           child: child!,
         );
