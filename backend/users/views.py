@@ -26,7 +26,7 @@ class LoginView(APIView):
     permission_classes = [AllowAny]
     
     def post(self, request):
-        logger.debug(f"Login attempt with data: {request.data}")
+        logger.debug("Received authentication request")
         serializer = LoginSerializer(data=request.data)
         
         if not serializer.is_valid():

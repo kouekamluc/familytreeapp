@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'drf_spectacular',
     'import_export',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
     
     # Local apps
     'users',

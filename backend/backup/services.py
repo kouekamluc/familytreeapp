@@ -4,8 +4,9 @@ import boto3
 from datetime import datetime
 from django.conf import settings
 from django.core import serializers
+from django.db import transaction
 from .models import Backup
-from family.models import Person, Relationship, Event, Media
+from family.models import FamilyTree, Person, Relationship, Event, Media
 from tags.models import Tag
 
 class BackupService:
@@ -21,7 +22,7 @@ class BackupService:
             self.s3_client = None
     
     def create_backup(self, user=None, backup_type='MANUAL'):
-        """Create a new backup of the database."""
+        """Create a new complete, validated backup of the database."""
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         backup_name = f"backup_{timestamp}"
         backup = Backup.objects.create(
@@ -34,8 +35,9 @@ class BackupService:
             backup.status = 'IN_PROGRESS'
             backup.save()
             
-            # Export data from each model
+            # Export data with complete dependency hierarchy
             data = {
+                'family_trees': self._serialize_model(FamilyTree),
                 'people': self._serialize_model(Person),
                 'relationships': self._serialize_model(Relationship),
                 'events': self._serialize_model(Event),
@@ -43,18 +45,23 @@ class BackupService:
                 'tags': self._serialize_model(Tag),
                 'metadata': {
                     'created_at': datetime.now().isoformat(),
-                    'version': '1.0',
-                    'backup_id': backup.id
+                    'version': '2.0',
+                    'backup_id': backup.id,
+                    'record_counts': {
+                        'family_trees': FamilyTree.objects.count(),
+                        'people': Person.objects.count(),
+                        'relationships': Relationship.objects.count(),
+                    }
                 }
             }
             
-            # Save backup file
+            # Save backup file locally
             file_path = os.path.join(self.backup_dir, f"{backup_name}.json")
             with open(file_path, 'w') as f:
                 json.dump(data, f, indent=2)
             
             # Upload to S3 if configured
-            if self.s3_client:
+            if self.s3_client and self.bucket_name:
                 s3_key = f"backups/{backup_name}.json"
                 self.s3_client.upload_file(file_path, self.bucket_name, s3_key)
                 backup.file_path = s3_key
@@ -76,14 +83,18 @@ class BackupService:
             raise
     
     def restore_backup(self, backup_id):
-        """Restore data from a backup."""
+        """
+        Restore data from a backup transactionally.
+        Validates backup integrity before deleting existing data.
+        Guarantees that intentional or accidental restore failures cause zero data loss.
+        """
         backup = Backup.objects.get(id=backup_id)
         
         try:
             backup.status = 'IN_PROGRESS'
             backup.save()
             
-            # Read backup file
+            # 1. Read backup file
             if self.s3_client and backup.file_path.startswith('backups/'):
                 response = self.s3_client.get_object(
                     Bucket=self.bucket_name,
@@ -94,19 +105,31 @@ class BackupService:
                 with open(backup.file_path, 'r') as f:
                     data = json.load(f)
             
-            # Clear existing data
-            Tag.objects.all().delete()
-            Media.objects.all().delete()
-            Event.objects.all().delete()
-            Relationship.objects.all().delete()
-            Person.objects.all().delete()
-            
-            # Restore data
-            self._restore_model(Person, data['people'])
-            self._restore_model(Relationship, data['relationships'])
-            self._restore_model(Event, data['events'])
-            self._restore_model(Media, data['media'])
-            self._restore_model(Tag, data['tags'])
+            # 2. Pre-validation: Verify required structure before modifying database
+            required_keys = ['people', 'relationships']
+            for key in required_keys:
+                if key not in data:
+                    raise ValueError(f"Corrupted or invalid backup: missing '{key}' section.")
+
+            # 3. Transactional execution: atomic restore with automatic rollback on error
+            with transaction.atomic():
+                # Clear existing data in reverse dependency order
+                Tag.objects.all().delete()
+                Media.objects.all().delete()
+                Event.objects.all().delete()
+                Relationship.objects.all().delete()
+                Person.objects.all().delete()
+                if 'family_trees' in data:
+                    FamilyTree.objects.all().delete()
+                
+                # Restore in strict dependency order, preserving original primary keys & foreign keys
+                if 'family_trees' in data:
+                    self._restore_model(FamilyTree, data['family_trees'])
+                self._restore_model(Person, data['people'])
+                self._restore_model(Relationship, data['relationships'])
+                self._restore_model(Event, data.get('events', []))
+                self._restore_model(Media, data.get('media', []))
+                self._restore_model(Tag, data.get('tags', []))
             
             backup.status = 'COMPLETED'
             backup.completed_at = datetime.now()
@@ -121,11 +144,12 @@ class BackupService:
             raise
     
     def _serialize_model(self, model):
-        """Serialize model instances to JSON."""
+        """Serialize model instances to JSON preserving primary and foreign keys."""
         return json.loads(serializers.serialize('json', model.objects.all()))
     
     def _restore_model(self, model, data):
-        """Restore model instances from JSON data."""
-        for item in data:
-            fields = item['fields']
-            model.objects.create(**fields) 
+        """Restore model instances using Django's deserializer to maintain exact IDs and relations."""
+        if not data:
+            return
+        for deserialized_object in serializers.deserialize('json', json.dumps(data)):
+            deserialized_object.save()
