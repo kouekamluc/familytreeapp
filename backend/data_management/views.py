@@ -1,15 +1,14 @@
 import json
 from datetime import datetime
-from django.shortcuts import get_object_or_404
 from django.http import HttpResponse
 from django.db import models, transaction
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core import serializers
 from rest_framework import views, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 
 from family.models import FamilyTree, Person, Relationship, Event, Media
-from tags.models import Tag
 
 class ExportDataView(views.APIView):
     """
@@ -55,14 +54,15 @@ class ExportDataView(views.APIView):
                 person2__family_tree__in=target_trees
             ).distinct()
             events_qs = Event.objects.filter(person__family_tree__in=target_trees).distinct()
-            media_qs = Media.objects.filter(people__family_tree__in=target_trees).distinct()
+            media_count = Media.objects.filter(people__family_tree__in=target_trees).distinct().count()
 
             export_data = {
                 'family_trees': [{'id': t.id, 'name': t.name, 'description': t.description} for t in target_trees],
                 'people': json.loads(serializers.serialize('json', people_qs)),
                 'relationships': json.loads(serializers.serialize('json', rels_qs)),
                 'events': json.loads(serializers.serialize('json', events_qs)),
-                'media': json.loads(serializers.serialize('json', media_qs)),
+                'media_omitted': media_count,
+                'note': 'JSON export contains people, relationships and events. Use an admin backup for media files.',
                 'export_date': datetime.now().isoformat(),
                 'version': '2.0',
                 'exported_by': user.username,
@@ -105,44 +105,55 @@ class ImportDataView(views.APIView):
             except FamilyTree.DoesNotExist:
                 return Response({'error': 'Target family tree not found.'}, status=status.HTTP_404_NOT_FOUND)
             
-            if target_tree.owner != user and not target_tree.members.filter(id=user.id).exists() and not user.is_superuser:
+            if target_tree.owner_id != user.id and not user.is_superuser:
                 return Response(
-                    {'error': 'You do not have permission to import data into this family tree.'},
+                    {'error': 'Only the tree owner can import data into this family tree.'},
                     status=status.HTTP_403_FORBIDDEN
                 )
         else:
             target_tree = FamilyTree.objects.filter(owner=user).first()
-            if not target_tree:
-                target_tree = FamilyTree.objects.create(name=f"{user.username}'s Lineage", owner=user)
 
         try:
             file = request.FILES['file']
+            if file.size > 10 * 1024 * 1024:
+                return Response({'error': 'Import file exceeds 10 MB.'}, status=status.HTTP_400_BAD_REQUEST)
             import_data = json.loads(file.read())
             
-            if 'people' not in import_data or 'relationships' not in import_data:
+            if (not isinstance(import_data, dict) or
+                not all(isinstance(import_data.get(key), list) for key in ('people', 'relationships'))):
                 return Response(
                     {'error': 'Invalid import file format: missing people or relationships.'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
+            if import_data.get('media'):
+                return Response({'error': 'Media files need a separate upload; this JSON import cannot restore them.'},
+                                status=status.HTTP_400_BAD_REQUEST)
+            if not isinstance(import_data.get('events', []), list):
+                return Response({'error': 'Invalid events section.'}, status=status.HTTP_400_BAD_REQUEST)
             
             # Transactionally import people and relationships scoped to target_tree
             with transaction.atomic():
+                if target_tree is None:
+                    target_tree = FamilyTree.objects.create(name=f"{user.username}'s Lineage", owner=user)
                 imported_people_count = 0
                 imported_rel_count = 0
+                imported_event_count = 0
                 id_mapping = {}
 
                 for p_entry in import_data['people']:
+                    if not isinstance(p_entry, dict) or not isinstance(p_entry.get('fields'), dict):
+                        raise ValueError('Invalid person entry.')
                     fields = p_entry.get('fields', {})
                     old_pk = p_entry.get('pk')
                     
-                    person = Person.objects.create(
+                    person = Person(
                         family_tree=target_tree,
                         first_name=fields.get('first_name', ''),
                         last_name=fields.get('last_name', ''),
                         gender=fields.get('gender', 'M'),
                         traditional_name=fields.get('traditional_name', ''),
-                        notable_title=fields.get('notable_title', ''),
-                        concession_name=fields.get('concession_name', ''),
+                        birth_place=fields.get('birth_place', ''),
+                        current_location=fields.get('current_location', ''),
                         village_of_origin=fields.get('village_of_origin', ''),
                         clan_totem=fields.get('clan_totem', ''),
                         generation_tier=fields.get('generation_tier', 1),
@@ -151,27 +162,57 @@ class ImportDataView(views.APIView):
                         date_of_death=fields.get('date_of_death'),
                         biography=fields.get('biography', ''),
                     )
-                    if old_pk:
-                        id_mapping[old_pk] = person.id
+                    person.full_clean()
+                    person.save()
+                    if old_pk is not None:
+                        id_mapping[str(old_pk)] = person.id
                     imported_people_count += 1
 
                 for r_entry in import_data['relationships']:
+                    if not isinstance(r_entry, dict) or not isinstance(r_entry.get('fields'), dict):
+                        raise ValueError('Invalid relationship entry.')
                     fields = r_entry.get('fields', {})
                     old_p1 = fields.get('person1')
                     old_p2 = fields.get('person2')
                     
-                    new_p1 = id_mapping.get(old_p1)
-                    new_p2 = id_mapping.get(old_p2)
+                    new_p1 = id_mapping.get(str(old_p1))
+                    new_p2 = id_mapping.get(str(old_p2))
                     
-                    if new_p1 and new_p2:
-                        Relationship.objects.create(
-                            person1_id=new_p1,
-                            person2_id=new_p2,
-                            relationship_type=fields.get('relationship_type', 'PARENT'),
-                            start_date=fields.get('start_date'),
-                            is_active=fields.get('is_active', True),
-                        )
-                        imported_rel_count += 1
+                    if not new_p1 or not new_p2:
+                        raise ValueError('A relationship references a person missing from this import.')
+                    relationship = Relationship(
+                        person1_id=new_p1,
+                        person2_id=new_p2,
+                        relationship_type=fields.get('relationship_type', 'PARENT'),
+                        start_date=fields.get('start_date'),
+                        end_date=fields.get('end_date'),
+                        is_current=fields.get('is_current', True),
+                        notes=fields.get('notes', ''),
+                    )
+                    relationship.full_clean()
+                    relationship.save()
+                    imported_rel_count += 1
+
+                for e_entry in import_data.get('events', []):
+                    if not isinstance(e_entry, dict) or not isinstance(e_entry.get('fields'), dict):
+                        raise ValueError('Invalid event entry.')
+                    fields = e_entry.get('fields', {})
+                    person_id = id_mapping.get(str(fields.get('person')))
+                    related_id = (id_mapping.get(str(fields.get('related_person')))
+                                  if fields.get('related_person') is not None else None)
+                    if not person_id or (fields.get('related_person') is not None and not related_id):
+                        raise ValueError('An event references a person missing from this import.')
+                    event = Event(
+                        person_id=person_id,
+                        related_person_id=related_id,
+                        event_type=fields.get('event_type', 'OTHER'),
+                        date=fields.get('date'),
+                        location=fields.get('location', ''),
+                        description=fields.get('description', ''),
+                    )
+                    event.full_clean()
+                    event.save()
+                    imported_event_count += 1
 
             return Response({
                 'message': 'Import completed successfully',
@@ -182,10 +223,13 @@ class ImportDataView(views.APIView):
                 'results': {
                     'people_created': imported_people_count,
                     'relationships_created': imported_rel_count,
+                    'events_created': imported_event_count,
                 }
             }, status=status.HTTP_201_CREATED)
             
         except json.JSONDecodeError:
             return Response({'error': 'Invalid JSON file.'}, status=status.HTTP_400_BAD_REQUEST)
+        except (ValueError, DjangoValidationError) as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

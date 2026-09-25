@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from .models import FamilyTree, Person, Relationship, Event, Media
 from django.contrib.auth import get_user_model
+from django.db.models import Q
+from .media_access import signed_media_url
 
 User = get_user_model()
 
@@ -9,6 +11,12 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'email', 'username', 'first_name', 'last_name', 'profile_picture']
         read_only_fields = ['id']
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['profile_picture'] = signed_media_url(
+            instance.profile_picture, self.context.get('request'))
+        return data
 
 class PersonSummarySerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
@@ -30,11 +38,13 @@ class PersonSummarySerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         ret = super().to_representation(instance)
+        ret['profile_picture'] = signed_media_url(
+            instance.profile_picture, self.context.get('request'))
         ret['firstName'] = instance.first_name
         ret['lastName'] = instance.last_name
         ret['birthDate'] = instance.date_of_birth
         ret['deathDate'] = instance.date_of_death
-        ret['avatar'] = instance.profile_picture.url if instance.profile_picture else None
+        ret['avatar'] = ret['profile_picture']
         ret['traditionalName'] = instance.traditional_name
         ret['villageOfOrigin'] = instance.village_of_origin
         ret['village'] = instance.village_of_origin or instance.birth_place
@@ -107,6 +117,8 @@ class PersonSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         ret = super().to_representation(instance)
+        ret['profile_picture'] = signed_media_url(
+            instance.profile_picture, self.context.get('request'))
         ret['firstName'] = instance.first_name
         ret['lastName'] = instance.last_name
         ret['name'] = f"{instance.first_name} {instance.last_name}"
@@ -118,23 +130,27 @@ class PersonSerializer(serializers.ModelSerializer):
         ret['village'] = instance.village_of_origin or instance.birth_place
         ret['clanTotem'] = instance.clan_totem
         ret['generationTier'] = instance.generation_tier
-        ret['avatar'] = instance.profile_picture.url if instance.profile_picture else None
+        ret['avatar'] = ret['profile_picture']
         return ret
     
     def get_full_name(self, obj):
         return f"{obj.first_name} {obj.last_name}"
     
     def get_parents(self, obj):
-        return PersonSummarySerializer(obj.get_parents(), many=True).data
+        return PersonSummarySerializer(obj.get_parents().filter(family_tree=obj.family_tree),
+                                       many=True, context=self.context).data
     
     def get_children(self, obj):
-        return PersonSummarySerializer(obj.get_children(), many=True).data
+        return PersonSummarySerializer(obj.get_children().filter(family_tree=obj.family_tree),
+                                       many=True, context=self.context).data
     
     def get_spouses(self, obj):
-        return PersonSummarySerializer(obj.get_spouses(), many=True).data
+        return PersonSummarySerializer(obj.get_spouses().filter(family_tree=obj.family_tree),
+                                       many=True, context=self.context).data
     
     def get_siblings(self, obj):
-        return PersonSummarySerializer(obj.get_siblings(), many=True).data
+        return PersonSummarySerializer(obj.get_siblings().filter(family_tree=obj.family_tree),
+                                       many=True, context=self.context).data
 
 class RelationshipSerializer(serializers.ModelSerializer):
     person1_details = PersonSummarySerializer(source='person1', read_only=True)
@@ -165,6 +181,11 @@ class MediaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Media
         fields = '__all__'
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['file'] = signed_media_url(instance.file, self.context.get('request'))
+        return data
 
 class FamilyTreeSerializer(serializers.ModelSerializer):
     people = PersonSerializer(many=True, read_only=True)
@@ -220,20 +241,22 @@ class FamilyTreeDetailSerializer(FamilyTreeSerializer):
     media = serializers.SerializerMethodField()
     
     class Meta(FamilyTreeSerializer.Meta):
-        fields = list(FamilyTreeSerializer.Meta.fields) + ['relationships', 'events', 'media']
+        fields = '__all__'
     
     def get_relationships(self, obj):
         relationships = Relationship.objects.filter(
-            person1__family_tree=obj
-        ) | Relationship.objects.filter(
-            person2__family_tree=obj
-        )
-        return RelationshipSerializer(relationships, many=True).data
+            person1__family_tree=obj, person2__family_tree=obj)
+        return RelationshipSerializer(relationships, many=True, context=self.context).data
     
     def get_events(self, obj):
-        events = Event.objects.filter(person__family_tree=obj)
-        return EventSerializer(events, many=True).data
+        events = Event.objects.filter(person__family_tree=obj).filter(
+            Q(related_person__isnull=True) |
+            Q(related_person__family_tree=obj))
+        return EventSerializer(events, many=True, context=self.context).data
     
     def get_media(self, obj):
-        media = Media.objects.filter(people__family_tree=obj)
-        return MediaSerializer(media, many=True).data 
+        media = Media.objects.filter(people__family_tree=obj).distinct()
+        media = [item for item in media if
+                 all(person.family_tree_id == obj.id for person in item.people.all()) and
+                 (not item.event or item.event.person.family_tree_id == obj.id)]
+        return MediaSerializer(media, many=True, context=self.context).data

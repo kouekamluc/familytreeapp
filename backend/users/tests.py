@@ -4,6 +4,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 from django.contrib.auth import get_user_model
 from django.utils import timezone
+from django.core.cache import cache
 from datetime import timedelta
 from .models import HeritageKey
 
@@ -11,6 +12,7 @@ User = get_user_model()
 
 class HeritageKeyAuthTests(TestCase):
     def setUp(self):
+        cache.clear()
         self.client = APIClient()
         self.user = User.objects.create_user(
             username='dynastycurator',
@@ -33,6 +35,8 @@ class HeritageKeyAuthTests(TestCase):
         self.assertTrue(generated.startswith('KKEVO-ROYAL-'))
         parts = generated.split('-')
         self.assertEqual(len(parts), 4)
+        self.assertEqual(len(parts[2]), 8)
+        self.assertEqual(len(parts[3]), 8)
 
     def test_login_with_valid_heritage_key(self):
         """Test successful authentication using a valid Heritage Key."""

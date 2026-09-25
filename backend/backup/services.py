@@ -1,7 +1,7 @@
 import os
 import json
 import boto3
-from datetime import datetime
+from django.utils import timezone
 from django.conf import settings
 from django.core import serializers
 from django.db import transaction
@@ -23,7 +23,7 @@ class BackupService:
     
     def create_backup(self, user=None, backup_type='MANUAL'):
         """Create a new complete, validated backup of the database."""
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        timestamp = timezone.now().strftime('%Y%m%d_%H%M%S_%f')
         backup_name = f"backup_{timestamp}"
         backup = Backup.objects.create(
             name=backup_name,
@@ -44,7 +44,7 @@ class BackupService:
                 'media': self._serialize_model(Media),
                 'tags': self._serialize_model(Tag),
                 'metadata': {
-                    'created_at': datetime.now().isoformat(),
+                    'created_at': timezone.now().isoformat(),
                     'version': '2.0',
                     'backup_id': backup.id,
                     'record_counts': {
@@ -71,7 +71,7 @@ class BackupService:
             # Update backup record
             backup.file_size = os.path.getsize(file_path)
             backup.status = 'COMPLETED'
-            backup.completed_at = datetime.now()
+            backup.completed_at = timezone.now()
             backup.save()
             
             return backup
@@ -132,7 +132,7 @@ class BackupService:
                 self._restore_model(Tag, data.get('tags', []))
             
             backup.status = 'COMPLETED'
-            backup.completed_at = datetime.now()
+            backup.completed_at = timezone.now()
             backup.save()
             
             return True

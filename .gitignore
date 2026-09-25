@@ -20,6 +20,7 @@ local_settings.py
 db.sqlite3-journal
 backups/
 backend/backups/
+backend/media/
 
 
 # Flutter / Dart

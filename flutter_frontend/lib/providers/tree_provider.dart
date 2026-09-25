@@ -3,8 +3,10 @@ import '../models/family_tree.dart';
 import '../models/person.dart';
 import '../models/relationship.dart';
 import '../services/api_service.dart';
+import '../services/local_storage_service.dart';
 
 enum TreeOrientation { vertical, horizontal }
+
 enum TreeScope { extendedDynasty, immediateFamily }
 
 class TreeProvider extends ChangeNotifier {
@@ -25,6 +27,8 @@ class TreeProvider extends ChangeNotifier {
   String _peopleFilterTab = 'all'; // 'all', 'living', 'ancestors'
   bool _isLoading = false;
   String? _errorMessage;
+  bool _isOfflineMode = false;
+  int _loadVersion = 0;
 
   TreeProvider(this._apiService);
 
@@ -41,6 +45,7 @@ class TreeProvider extends ChangeNotifier {
   String get peopleFilterTab => _peopleFilterTab;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
+  bool get isOfflineMode => _isOfflineMode;
 
   Person? get focusPerson {
     if (_focusPersonId != null) {
@@ -99,7 +104,9 @@ class TreeProvider extends ChangeNotifier {
         final q = _searchQuery.toLowerCase();
         final nameMatch = p.fullName.toLowerCase().contains(q);
         final tradMatch = (p.traditionalName ?? '').toLowerCase().contains(q);
-        final villageMatch = (p.villageOfOrigin ?? '').toLowerCase().contains(q);
+        final villageMatch = (p.villageOfOrigin ?? '').toLowerCase().contains(
+          q,
+        );
         final totemMatch = (p.clanTotem ?? '').toLowerCase().contains(q);
         if (!nameMatch && !tradMatch && !villageMatch && !totemMatch) {
           return false;
@@ -156,7 +163,9 @@ class TreeProvider extends ChangeNotifier {
 
     final siblingIds = <int>{};
     for (var r in _relationships) {
-      if (r.isParent && parentIds.contains(r.person1Id) && r.person2Id != personId) {
+      if (r.isParent &&
+          parentIds.contains(r.person1Id) &&
+          r.person2Id != personId) {
         siblingIds.add(r.person2Id);
       }
     }
@@ -186,13 +195,17 @@ class TreeProvider extends ChangeNotifier {
         for (final s in getSiblingsOf(focus.id)) {
           immediateIds.add(s.id);
         }
-        final scoped = _people.where((p) => immediateIds.contains(p.id)).toList();
+        final scoped = _people
+            .where((p) => immediateIds.contains(p.id))
+            .toList();
         baseList = scoped.isNotEmpty ? scoped : _people;
       }
     }
 
     if (_generationFilter != null) {
-      return baseList.where((p) => p.generationTier == _generationFilter).toList();
+      return baseList
+          .where((p) => p.generationTier == _generationFilter)
+          .toList();
     }
     return baseList;
   }
@@ -200,48 +213,117 @@ class TreeProvider extends ChangeNotifier {
   // --- DATA SYNC ---
 
   Future<void> loadData({int? targetTreeId, int? targetPersonId}) async {
+    final version = ++_loadVersion;
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
+    final local = LocalStorageService();
+
+    // 1. Immediately hydrate from local phone cache so app works instantly offline
+    if (_trees.isEmpty) {
+      try {
+        final cachedTrees = await local.getCachedTrees();
+        if (cachedTrees.isNotEmpty && version == _loadVersion) {
+          _trees = cachedTrees;
+          final targetId = targetTreeId ?? await local.getLastActiveTreeId();
+          _selectedTree = _trees.firstWhere(
+            (t) => t.id == targetId,
+            orElse: () => _trees.first,
+          );
+          final cachedPeople = await local.getCachedPeople(_selectedTree!.id);
+          final cachedRels = await local.getCachedRelationships(_selectedTree!.id);
+          if (cachedPeople.isNotEmpty) {
+            _people = cachedPeople;
+            _relationships = cachedRels;
+            final lastPid = targetPersonId ?? await local.getLastActivePersonId();
+            if (lastPid != null) {
+              final match = _people.where((p) => p.id == lastPid).toList();
+              if (match.isNotEmpty) {
+                _selectedPerson = match.first;
+                _focusPersonId = match.first.id;
+              }
+            }
+            _isOfflineMode = true;
+            notifyListeners();
+          }
+        }
+      } catch (e) {
+        debugPrint('Error loading offline phone cache: $e');
+      }
+    }
+
     try {
+      final previousTreeId = _selectedTree?.id;
+      final previousPersonId = _selectedPerson?.id;
       final treesList = await _apiService.getTrees();
+      if (version != _loadVersion) return;
       _trees = treesList;
 
-      if (targetTreeId != null) {
+      if (_trees.isEmpty) {
+        _selectedTree = null;
+        _people = [];
+        _relationships = [];
+        _selectedPerson = null;
+        _focusPersonId = null;
+      } else if (targetTreeId != null) {
         final matched = _trees.where((t) => t.id == targetTreeId).toList();
         if (matched.isNotEmpty) {
           _selectedTree = matched.first;
-        } else if (_trees.isNotEmpty && _selectedTree == null) {
+        } else {
           _selectedTree = _trees.first;
         }
-      } else if (_trees.isNotEmpty && _selectedTree == null) {
+      } else if (_selectedTree == null ||
+          !_trees.any((t) => t.id == _selectedTree!.id)) {
         _selectedTree = _trees.first;
       }
 
-      final peopleList = await _apiService.getPeople(treeId: _selectedTree?.id);
-      final relsList = await _apiService.getRelationships(treeId: _selectedTree?.id);
+      if (_selectedTree == null) return;
+      local.saveLastActiveTreeId(_selectedTree!.id);
+
+      final peopleList = await _apiService.getPeople(treeId: _selectedTree!.id);
+      if (version != _loadVersion) return;
+      final relsList = await _apiService.getRelationships(
+        treeId: _selectedTree!.id,
+      );
+      if (version != _loadVersion) return;
 
       _people = peopleList;
       _relationships = relsList;
+      _isOfflineMode = false;
+      _errorMessage = null;
 
       if (targetPersonId != null) {
-        final invitedPerson = _people.where((p) => p.id == targetPersonId).toList();
+        final invitedPerson = _people
+            .where((p) => p.id == targetPersonId)
+            .toList();
         if (invitedPerson.isNotEmpty) {
           _selectedPerson = invitedPerson.first;
           _focusPersonId = targetPersonId;
+          local.saveLastActivePersonId(targetPersonId);
         }
-      } else if (_selectedPerson != null) {
-        _selectedPerson = _people.firstWhere(
-          (p) => p.id == _selectedPerson!.id,
-          orElse: () => _people.isNotEmpty ? _people.first : _selectedPerson!,
-        );
+      } else if (previousTreeId == _selectedTree?.id && previousPersonId != null) {
+        final matches = _people.where((p) => p.id == previousPersonId);
+        if (matches.isNotEmpty) {
+          _selectedPerson = matches.first;
+        }
       }
     } catch (e) {
-      _errorMessage = 'Failed to load ancestry data: $e';
+      if (version == _loadVersion) {
+        // If we already have people in memory (from phone local cache), KEEP THEM!
+        if (_people.isNotEmpty) {
+          _isOfflineMode = true;
+          _errorMessage = null; // Do not block the UI with an error screen
+          debugPrint('Network unavailable - running in offline mode with ${_people.length} local records');
+        } else {
+          _errorMessage = 'Mode hors-ligne : Aucune archive locale trouvée. Connectez-vous au serveur ou utilisez le mode Découverte.';
+        }
+      }
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      if (version == _loadVersion) {
+        _isLoading = false;
+        notifyListeners();
+      }
     }
   }
 
@@ -295,7 +377,9 @@ class TreeProvider extends ChangeNotifier {
       final success = await _apiService.deletePerson(id);
       if (success) {
         _people.removeWhere((p) => p.id == id);
-        _relationships.removeWhere((r) => r.person1Id == id || r.person2Id == id);
+        _relationships.removeWhere(
+          (r) => r.person1Id == id || r.person2Id == id,
+        );
         if (_selectedPerson?.id == id) {
           _selectedPerson = _people.isNotEmpty ? _people.first : null;
         }
@@ -338,6 +422,7 @@ class TreeProvider extends ChangeNotifier {
   }
 
   void clearData() {
+    _loadVersion++;
     _trees = [];
     _selectedTree = null;
     _people = [];
@@ -413,4 +498,3 @@ class TreeProvider extends ChangeNotifier {
     return await addRelationship(p1Id, p2Id, relType);
   }
 }
-

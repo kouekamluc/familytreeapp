@@ -34,7 +34,9 @@ class HeritageKeySheet extends StatefulWidget {
         isScrollControlled: true,
         backgroundColor: Colors.transparent,
         builder: (ctx) => Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(ctx).viewInsets.bottom,
+          ),
           child: HeritageKeySheet(onLoginSuccess: handleSuccess),
         ),
       );
@@ -57,7 +59,7 @@ class HeritageKeySheet extends StatefulWidget {
 }
 
 class _HeritageKeySheetState extends State<HeritageKeySheet> {
-  final _keyController = TextEditingController(text: 'KKEVO-ROYAL-2026-ROOT');
+  final _keyController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   String? _localError;
 
@@ -75,13 +77,6 @@ class _HeritageKeySheetState extends State<HeritageKeySheet> {
         _localError = null;
       });
     }
-  }
-
-  void _applyPresetKey(String key) {
-    setState(() {
-      _keyController.text = key;
-      _localError = null;
-    });
   }
 
   Future<void> _handleHeritageLogin() async {
@@ -106,7 +101,9 @@ class _HeritageKeySheetState extends State<HeritageKeySheet> {
       }
     } else {
       setState(() {
-        _localError = auth.errorMessage ?? 'Invalid Heritage Key. Please check the key and try again.';
+        _localError =
+            auth.errorMessage ??
+            'Invalid Heritage Key. Please check the key and try again.';
       });
     }
   }
@@ -158,7 +155,11 @@ class _HeritageKeySheetState extends State<HeritageKeySheet> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: const RadialGradient(
-                    colors: [Color(0xFFFFD700), Color(0xFFB8860B), Color(0xFF6B4E00)],
+                    colors: [
+                      Color(0xFFFFD700),
+                      Color(0xFFB8860B),
+                      Color(0xFF6B4E00),
+                    ],
                   ),
                   border: Border.all(color: Colors.white, width: 2),
                   boxShadow: [
@@ -170,11 +171,7 @@ class _HeritageKeySheetState extends State<HeritageKeySheet> {
                   ],
                 ),
                 child: const Center(
-                  child: Icon(
-                    Icons.key_rounded,
-                    color: Colors.black,
-                    size: 34,
-                  ),
+                  child: Icon(Icons.key_rounded, color: Colors.black, size: 34),
                 ),
               ),
 
@@ -186,7 +183,9 @@ class _HeritageKeySheetState extends State<HeritageKeySheet> {
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 0.5,
-                  color: isDark ? RoyalTheme.lightGold : const Color(0xFF1E293B),
+                  color: isDark
+                      ? RoyalTheme.lightGold
+                      : const Color(0xFF1E293B),
                 ),
               ),
 
@@ -206,21 +205,33 @@ class _HeritageKeySheetState extends State<HeritageKeySheet> {
               // Error Display
               if (_localError != null || auth.errorMessage != null)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
                     color: Colors.red.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.red.withValues(alpha: 0.4)),
+                    border: Border.all(
+                      color: Colors.red.withValues(alpha: 0.4),
+                    ),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: 18),
+                      const Icon(
+                        Icons.error_outline_rounded,
+                        color: Colors.redAccent,
+                        size: 18,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           _localError ?? auth.errorMessage!,
-                          style: const TextStyle(color: Colors.redAccent, fontSize: 12),
+                          style: const TextStyle(
+                            color: Colors.redAccent,
+                            fontSize: 12,
+                          ),
                         ),
                       ),
                     ],
@@ -244,11 +255,18 @@ class _HeritageKeySheetState extends State<HeritageKeySheet> {
                     onTap: _pasteFromClipboard,
                     borderRadius: BorderRadius.circular(6),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.content_paste_rounded, size: 13, color: RoyalTheme.brightGold),
+                          const Icon(
+                            Icons.content_paste_rounded,
+                            size: 13,
+                            color: RoyalTheme.brightGold,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             'Paste',
@@ -277,32 +295,53 @@ class _HeritageKeySheetState extends State<HeritageKeySheet> {
                   color: isDark ? Colors.white : const Color(0xFF0F172A),
                 ),
                 decoration: InputDecoration(
-                  hintText: 'e.g. KKEVO-ROYAL-2026-ROOT',
+                  hintText: 'Votre clé personnelle',
                   hintStyle: TextStyle(
                     color: isDark ? Colors.grey[600] : Colors.grey[400],
                     letterSpacing: 0.5,
                   ),
-                  prefixIcon: const Icon(Icons.vpn_key_outlined, color: RoyalTheme.brightGold, size: 20),
+                  prefixIcon: const Icon(
+                    Icons.vpn_key_outlined,
+                    color: RoyalTheme.brightGold,
+                    size: 20,
+                  ),
                   suffixIcon: _keyController.text.isNotEmpty
                       ? IconButton(
-                          icon: const Icon(Icons.clear_rounded, size: 18, color: Colors.grey),
-                          onPressed: () => setState(() => _keyController.clear()),
+                          icon: const Icon(
+                            Icons.clear_rounded,
+                            size: 18,
+                            color: Colors.grey,
+                          ),
+                          onPressed: () =>
+                              setState(() => _keyController.clear()),
                         )
                       : null,
                   filled: true,
-                  fillColor: isDark ? const Color(0xFF0B0D13) : const Color(0xFFF8FAFC),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  fillColor: isDark
+                      ? const Color(0xFF0B0D13)
+                      : const Color(0xFFF8FAFC),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(color: RoyalTheme.brightGold.withValues(alpha: 0.4)),
+                    borderSide: BorderSide(
+                      color: RoyalTheme.brightGold.withValues(alpha: 0.4),
+                    ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(color: RoyalTheme.brightGold.withValues(alpha: 0.4)),
+                    borderSide: BorderSide(
+                      color: RoyalTheme.brightGold.withValues(alpha: 0.4),
+                    ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(color: RoyalTheme.brightGold, width: 2),
+                    borderSide: const BorderSide(
+                      color: RoyalTheme.brightGold,
+                      width: 2,
+                    ),
                   ),
                 ),
                 onChanged: (_) {
@@ -313,45 +352,10 @@ class _HeritageKeySheetState extends State<HeritageKeySheet> {
               const SizedBox(height: 18),
 
               // Quick Preset Key Chips
-              Align(
+              const Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'Clés d\'Accès Immédiat (PostgreSQL Authentifié)',
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.grey[400] : Colors.grey[600],
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 8),
-
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    _buildPresetPill(
-                      label: '👑 Curateur',
-                      sub: '2026-ROOT',
-                      keyStr: 'KKEVO-ROYAL-2026-ROOT',
-                      isDark: isDark,
-                    ),
-                    const SizedBox(width: 8),
-                    _buildPresetPill(
-                      label: '🛡️ Sages',
-                      sub: 'ELDER-7777',
-                      keyStr: 'KKEVO-ELDER-7777',
-                      isDark: isDark,
-                    ),
-                    const SizedBox(width: 8),
-                    _buildPresetPill(
-                      label: '🌱 Membre',
-                      sub: 'N9AH-FYAJ',
-                      keyStr: 'KKEVO-ROYAL-N9AH-FYAJ',
-                      isDark: isDark,
-                    ),
-                  ],
+                  'Cette clé ouvre votre compte personnel. Ne la partagez pas.',
                 ),
               ),
 
@@ -367,9 +371,16 @@ class _HeritageKeySheetState extends State<HeritageKeySheet> {
                       ? const SizedBox(
                           width: 20,
                           height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.black),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.2,
+                            color: Colors.black,
+                          ),
                         )
-                      : const Icon(Icons.lock_open_rounded, color: Colors.black, size: 20),
+                      : const Icon(
+                          Icons.lock_open_rounded,
+                          color: Colors.black,
+                          size: 20,
+                        ),
                   variant: RoyalButtonVariant.gold,
                   fontSize: 15,
                   onPressed: auth.isLoading ? null : _handleHeritageLogin,
@@ -390,61 +401,6 @@ class _HeritageKeySheetState extends State<HeritageKeySheet> {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPresetPill({
-    required String label,
-    required String sub,
-    required String keyStr,
-    required bool isDark,
-  }) {
-    final isSelected = _keyController.text.trim() == keyStr;
-
-    return InkWell(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        _applyPresetKey(keyStr);
-      },
-      borderRadius: BorderRadius.circular(12),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? RoyalTheme.brightGold.withValues(alpha: 0.16)
-              : (isDark ? Colors.white.withValues(alpha: 0.04) : Colors.black.withValues(alpha: 0.03)),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected
-                ? RoyalTheme.brightGold
-                : RoyalTheme.brightGold.withValues(alpha: 0.35),
-            width: isSelected ? 1.5 : 1.0,
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              label,
-              style: GoogleFonts.inter(
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-                color: isSelected ? RoyalTheme.brightGold : (isDark ? Colors.white : Colors.black87),
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              sub,
-              style: GoogleFonts.jetBrainsMono(
-                fontSize: 9.5,
-                color: isDark ? Colors.grey[400] : Colors.grey[600],
-              ),
-            ),
-          ],
         ),
       ),
     );

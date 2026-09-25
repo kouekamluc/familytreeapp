@@ -45,6 +45,7 @@ void main() async {
       child: const RoyalAncestryApp(),
     ),
   );
+  apiService.probeBackend();
 }
 
 class RoyalAncestryApp extends StatelessWidget {
@@ -64,12 +65,15 @@ class RoyalAncestryApp extends StatelessWidget {
       builder: (context, child) {
         // Respect native system text scaling multiplied by custom accessibility scale
         final systemScale = MediaQuery.textScalerOf(context).scale(1.0);
-        final effectiveScale = (systemScale * accessibility.fontScale).clamp(0.85, 2.2);
+        final effectiveScale = (systemScale * accessibility.fontScale).clamp(
+          0.85,
+          2.2,
+        );
 
         return MediaQuery(
-          data: MediaQuery.of(context).copyWith(
-            textScaler: TextScaler.linear(effectiveScale),
-          ),
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: TextScaler.linear(effectiveScale)),
           child: child!,
         );
       },

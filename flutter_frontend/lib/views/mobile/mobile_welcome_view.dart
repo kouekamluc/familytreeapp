@@ -1,13 +1,8 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
 import '../../config/royal_theme.dart';
-import '../../providers/auth_provider.dart';
-import '../../providers/tree_provider.dart';
-import '../../widgets/heritage_key_sheet.dart';
-import '../../widgets/royal_button.dart';
-import '../../widgets/floating_dynasty_card.dart';
 
 class MobileWelcomeView extends StatefulWidget {
   final VoidCallback onExplore;
@@ -23,407 +18,277 @@ class MobileWelcomeView extends StatefulWidget {
   State<MobileWelcomeView> createState() => _MobileWelcomeViewState();
 }
 
-class _MobileWelcomeViewState extends State<MobileWelcomeView>
-    with SingleTickerProviderStateMixin {
-  final PageController _pageController = PageController();
-  int _currentPage = 0;
-  late AnimationController _pulseController;
-  late Animation<double> _pulseAnimation;
-  bool _isAutoLoggingIn = false;
+class _Chapter {
+  final String label;
+  final String title;
+  final String description;
+  final IconData icon;
 
-  final List<Map<String, dynamic>> _features = [
-    {
-      'tag': 'TAPISSERIE SACRÉE',
-      'title': 'Arbre Royal & Généalogie Vivante',
-      'desc':
-          'Explorez 4 générations royales sur une toile infinie et fluide, honorant le berceau de Bandjoun et le totem du Léopard.',
-      'icon': Icons.account_tree_rounded,
-      'stats': '71 Membres • 4 Générations • Bandjoun',
-      'member': FloatingDynastyMemberData.royalShowcaseList[0],
-    },
-    {
-      'tag': 'RÉALITÉ COUTUMIÈRE',
-      'title': 'Parenté, Alliances & Lignées Directes',
-      'desc':
-          'Résolution intelligente des degrés de parenté, célébration des alliances multiples (polygamie) et respect des enfants nés hors mariage.',
-      'icon': Icons.hub_rounded,
-      'stats': 'Calculateur Coutumier • Multi-Épouses • Lignées Pures',
-      'member': FloatingDynastyMemberData.royalShowcaseList[1],
-    },
-    {
-      'tag': 'SOUVERAINETÉ NUMÉRIQUE',
-      'title': 'Coffre-Fort & Clés d\'Héritage',
-      'desc':
-          'Accès chiffré sans mot de passe via Clés d\'Héritage royales. Données pérennes migrées en toute sécurité sur PostgreSQL.',
-      'icon': Icons.vpn_key_rounded,
-      'stats': 'PostgreSQL • JWT • Clés Dédiées par Rôle',
-      'member': FloatingDynastyMemberData.royalShowcaseList[2],
-    },
+  const _Chapter(this.label, this.title, this.description, this.icon);
+}
+
+class _MobileWelcomeViewState extends State<MobileWelcomeView> {
+  static const _chapters = [
+    _Chapter(
+      '01 / RACINES',
+      'Chaque histoire a une place.',
+      'Retrouvez les personnes, les liens et les générations qui composent votre famille.',
+      Icons.account_tree_rounded,
+    ),
+    _Chapter(
+      '02 / SOUVENIRS',
+      'Faites vivre leur mémoire.',
+      'Ajoutez des événements et des souvenirs aux histoires que vous souhaitez préserver.',
+      Icons.auto_stories_rounded,
+    ),
+    _Chapter(
+      '03 / TRANSMISSION',
+      'Un héritage à partager avec soin.',
+      'Accédez à votre arbre avec votre compte ou votre Clé d’Héritage personnelle.',
+      Icons.key_rounded,
+    ),
   ];
 
-  @override
-  void initState() {
-    super.initState();
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 3),
-    )..repeat(reverse: true);
-    _pulseAnimation = Tween<double>(begin: 0.95, end: 1.05).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
-  }
+  final PageController _controller = PageController();
+  int _page = 0;
 
   @override
   void dispose() {
-    _pageController.dispose();
-    _pulseController.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
-  Future<void> _quickLoginWithKey(String key) async {
-    HapticFeedback.heavyImpact();
-    setState(() => _isAutoLoggingIn = true);
-    final auth = Provider.of<AuthProvider>(context, listen: false);
-    final tree = Provider.of<TreeProvider>(context, listen: false);
-    final ok = await auth.loginWithHeritageKey(key);
-    if (ok) {
-      await tree.loadData(
-        targetTreeId: auth.invitedTreeId,
-        targetPersonId: auth.invitedPersonId,
-      );
-      if (mounted) {
-        widget.onExplore();
-      }
+  void _next() {
+    HapticFeedback.selectionClick();
+    if (_page == _chapters.length - 1) {
+      widget.onExplore();
     } else {
-      if (mounted) {
-        setState(() => _isAutoLoggingIn = false);
-        HeritageKeySheet.show(context, onLoginSuccess: widget.onExplore);
-      }
+      _controller.nextPage(
+        duration: const Duration(milliseconds: 420),
+        curve: Curves.easeOutCubic,
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final reduceMotion = MediaQuery.of(context).disableAnimations;
+    final ink = dark ? const Color(0xFFF9F5EB) : const Color(0xFF241F16);
+    final muted = dark ? const Color(0xFFC8C2B7) : const Color(0xFF635B50);
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF080A10) : const Color(0xFFF9F7F2),
+      backgroundColor: dark ? const Color(0xFF0E1016) : const Color(0xFFFAF8F4),
       body: SafeArea(
-        child: Stack(
-          children: [
-            // Ambient Sacred Gold Glow
-            Positioned(
-              top: -80,
-              left: -40,
-              right: -40,
-              height: 320,
-              child: AnimatedBuilder(
-                animation: _pulseAnimation,
-                builder: (context, _) {
-                  return Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: RadialGradient(
-                        colors: [
-                          RoyalTheme.brightGold.withValues(alpha: isDark ? 0.20 : 0.14),
-                          RoyalTheme.primaryGold.withValues(alpha: isDark ? 0.08 : 0.05),
-                          Colors.transparent,
-                        ],
-                        radius: 0.85 * _pulseAnimation.value,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-
-            // Main Content Layout
-            Column(
-              children: [
-                const SizedBox(height: 14),
-
-                // Top Royal Crest Medallion with Subtle Pulse
-                AnimatedBuilder(
-                  animation: _pulseAnimation,
-                  builder: (context, child) {
-                    return Transform.scale(
-                      scale: _pulseAnimation.value,
-                      child: Container(
-                        width: 76,
-                        height: 76,
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: isDark ? const Color(0xFF131722) : Colors.white,
-                          border: Border.all(
-                            color: RoyalTheme.brightGold,
-                            width: 2.2,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: RoyalTheme.brightGold.withValues(alpha: isDark ? 0.45 : 0.25),
-                              blurRadius: 28,
-                              spreadRadius: 2,
-                            ),
-                          ],
-                        ),
-                        child: Image.asset(
-                          'assets/logo.png',
-                          fit: BoxFit.contain,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-
-                const SizedBox(height: 12),
-
-                // Dynasty Title Header
-                ShaderMask(
-                  shaderCallback: (bounds) => const LinearGradient(
-                    colors: [Color(0xFFFFDF73), Color(0xFFD4AF37), Color(0xFFB8860B)],
-                  ).createShader(bounds),
-                  child: Text(
-                    'KKEVO ROYAL DYNASTY',
-                    style: GoogleFonts.cinzel(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 2.5,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 18, 24, 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(
-                      'BERCEAU DE BANDJOUN',
-                      style: GoogleFonts.inter(
-                        fontSize: 9.5,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 1.8,
-                        color: isDark ? RoyalTheme.lightGold : const Color(0xFF855B14),
+                    Row(
+                      children: [
+                        Image.asset('assets/logo.png', width: 38, height: 38),
+                        const SizedBox(width: 11),
+                        Expanded(
+                          child: Text(
+                            'KKEVO',
+                            style: GoogleFonts.cinzel(
+                              color: ink,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 2.3,
+                            ),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: widget.onSignIn,
+                          child: const Text('Se connecter'),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 22),
+                    SizedBox(
+                      height: math.min(
+                        470.0,
+                        math.max(350.0, constraints.maxHeight - 230),
+                      ),
+                      child: PageView.builder(
+                        controller: _controller,
+                        itemCount: _chapters.length,
+                        onPageChanged: (value) {
+                          HapticFeedback.selectionClick();
+                          setState(() => _page = value);
+                        },
+                        itemBuilder: (context, index) {
+                          final chapter = _chapters[index];
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: TweenAnimationBuilder<double>(
+                                  key: ValueKey(index),
+                                  tween: Tween(begin: 0, end: 1),
+                                  duration: reduceMotion
+                                      ? Duration.zero
+                                      : const Duration(milliseconds: 950),
+                                  curve: Curves.easeOutCubic,
+                                  builder: (context, progress, child) =>
+                                      CustomPaint(
+                                        painter: _HeritageIllustration(
+                                          progress,
+                                          dark,
+                                          chapter.icon,
+                                        ),
+                                        child: const SizedBox.expand(),
+                                      ),
+                                ),
+                              ),
+                              const SizedBox(height: 18),
+                              Text(
+                                chapter.label,
+                                style: GoogleFonts.inter(
+                                  color: RoyalTheme.darkGold,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 2,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                chapter.title,
+                                style: GoogleFonts.cinzel(
+                                  color: ink,
+                                  fontSize: 27,
+                                  height: 1.18,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                chapter.description,
+                                style: GoogleFonts.inter(
+                                  color: muted,
+                                  fontSize: 15,
+                                  height: 1.5,
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                            ],
+                          );
+                        },
                       ),
                     ),
-                    const SizedBox(width: 6),
-                    const Text('🐆', style: TextStyle(fontSize: 11)),
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(
+                        _chapters.length,
+                        (index) => AnimatedContainer(
+                          duration: reduceMotion
+                              ? Duration.zero
+                              : const Duration(milliseconds: 250),
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          width: index == _page ? 28 : 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: index == _page
+                                ? RoyalTheme.primaryGold
+                                : muted.withValues(alpha: 0.35),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 22),
+                    SizedBox(
+                      height: 52,
+                      child: ElevatedButton(
+                        onPressed: _next,
+                        child: Text(
+                          _page == _chapters.length - 1
+                              ? 'Explorer l’exemple'
+                              : 'Continuer',
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'L’exemple contient des données fictives et ne modifie aucun arbre.',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.inter(color: muted, fontSize: 11.5),
+                    ),
                   ],
                 ),
-
-                const SizedBox(height: 14),
-
-                // Feature Carousel Cards
-                Expanded(
-                  child: PageView.builder(
-                    controller: _pageController,
-                    onPageChanged: (idx) {
-                      HapticFeedback.selectionClick();
-                      setState(() => _currentPage = idx);
-                    },
-                    itemCount: _features.length,
-                    itemBuilder: (context, index) {
-                      final item = _features[index];
-                      final member = item['member'] as FloatingDynastyMemberData;
-                      return Center(
-                        child: SingleChildScrollView(
-                          physics: const BouncingScrollPhysics(),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                            child: FloatingDynastyCard(
-                              member: member,
-                              floatPhase: index * 1.2,
-                              floatAmplitudeY: 6.0,
-                              floatAmplitudeX: 3.5,
-                              floatDuration: Duration(milliseconds: 3200 + (index * 400)),
-                              isSelected: _currentPage == index,
-                              onTap: () {
-                                HapticFeedback.mediumImpact();
-                              },
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-
-                const SizedBox(height: 10),
-
-                // Carousel Dots Indicator
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(
-                    _features.length,
-                    (idx) => AnimatedContainer(
-                      duration: const Duration(milliseconds: 250),
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      width: _currentPage == idx ? 22 : 7,
-                      height: 7,
-                      decoration: BoxDecoration(
-                        color: _currentPage == idx
-                            ? RoyalTheme.brightGold
-                            : (isDark
-                                ? Colors.white.withValues(alpha: 0.2)
-                                : Colors.black.withValues(alpha: 0.15)),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 14),
-
-                // Quick Demo Key 1-Tap Pill
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: InkWell(
-                    onTap: _isAutoLoggingIn
-                        ? null
-                        : () => _quickLoginWithKey('KKEVO-ROYAL-2026-ROOT'),
-                    borderRadius: BorderRadius.circular(14),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF141723) : const Color(0xFFF7F2E7),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: RoyalTheme.brightGold.withValues(alpha: 0.4),
-                          width: 1,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.stars_rounded, color: RoyalTheme.brightGold, size: 18),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'CLÉ ROYALE DÉMO (1-TAP)',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                    color: RoyalTheme.brightGold,
-                                  ),
-                                ),
-                                Text(
-                                  'KKEVO-ROYAL-2026-ROOT',
-                                  style: GoogleFonts.jetBrainsMono(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
-                                    color: isDark ? Colors.white : Colors.black87,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          if (_isAutoLoggingIn)
-                            const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: RoyalTheme.brightGold),
-                            )
-                          else
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: RoyalTheme.brightGold.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Text(
-                                'Entrer ➔',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: RoyalTheme.brightGold,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-
-                // Bottom Action Dock
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Primary Gold Enter Vault CTA
-                      SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: RoyalButton(
-                          label: 'Explorer la Dynastie (Accès Libre)',
-                          icon: const Icon(Icons.auto_awesome_rounded, color: Colors.black, size: 18),
-                          variant: RoyalButtonVariant.gold,
-                          fontSize: 14,
-                          onPressed: () {
-                            HapticFeedback.mediumImpact();
-                            widget.onExplore();
-                          },
-                        ),
-                      ),
-
-                      const SizedBox(height: 10),
-
-                      // Secondary Sign In Button
-                      SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: OutlinedButton(
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(
-                              color: isDark
-                                  ? RoyalTheme.brightGold.withValues(alpha: 0.5)
-                                  : const Color(0xFFB8860B),
-                              width: 1.2,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            backgroundColor: isDark
-                                ? Colors.white.withValues(alpha: 0.03)
-                                : Colors.black.withValues(alpha: 0.02),
-                          ),
-                          onPressed: () {
-                            HapticFeedback.selectionClick();
-                            HeritageKeySheet.show(context, onLoginSuccess: widget.onExplore);
-                          },
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.key_rounded, color: RoyalTheme.brightGold, size: 18),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Déverrouiller avec Clé d\'Héritage',
-                                style: GoogleFonts.inter(
-                                  fontSize: 13.5,
-                                  fontWeight: FontWeight.w600,
-                                  color: isDark ? Colors.white : const Color(0xFF1E293B),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 12),
-                    ],
-                  ),
-                ),
-              ],
+              ),
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
+class _HeritageIllustration extends CustomPainter {
+  final double progress;
+  final bool dark;
+  final IconData icon;
+  const _HeritageIllustration(this.progress, this.dark, this.icon);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height * 0.52);
+    final gold = RoyalTheme.primaryGold;
+    final surface = dark ? const Color(0xFF20242D) : const Color(0xFFF1E9DA);
+    canvas.drawCircle(
+      center,
+      math.min(size.width * 0.43, size.height * 0.48),
+      Paint()..color = gold.withValues(alpha: dark ? 0.13 : 0.11),
+    );
+    final anchors = [
+      Offset(center.dx - size.width * 0.29, center.dy - size.height * 0.29),
+      Offset(center.dx + size.width * 0.29, center.dy - size.height * 0.29),
+      Offset(center.dx - size.width * 0.29, center.dy + size.height * 0.29),
+      Offset(center.dx + size.width * 0.29, center.dy + size.height * 0.29),
+    ];
+    final line = Paint()
+      ..color = gold.withValues(alpha: 0.64)
+      ..strokeWidth = 2
+      ..strokeCap = StrokeCap.round;
+    for (final anchor in anchors) {
+      canvas.drawLine(center, Offset.lerp(center, anchor, progress)!, line);
+      canvas.drawCircle(anchor, 19 * progress, Paint()..color = surface);
+      canvas.drawCircle(anchor, 5 * progress, Paint()..color = gold);
+    }
+    canvas.drawCircle(center, 58 * progress, Paint()..color = surface);
+    canvas.drawCircle(
+      center,
+      58 * progress,
+      Paint()
+        ..color = gold
+        ..strokeWidth = 1.5
+        ..style = PaintingStyle.stroke,
+    );
+    final glyph = TextPainter(
+      text: TextSpan(
+        text: String.fromCharCode(icon.codePoint),
+        style: TextStyle(
+          fontFamily: icon.fontFamily,
+          package: icon.fontPackage,
+          fontSize: 47 * progress,
+          color: gold,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    glyph.paint(canvas, center - Offset(glyph.width / 2, glyph.height / 2));
+  }
+
+  @override
+  bool shouldRepaint(covariant _HeritageIllustration oldDelegate) =>
+      oldDelegate.progress != progress ||
+      oldDelegate.dark != dark ||
+      oldDelegate.icon != icon;
+}

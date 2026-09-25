@@ -5,6 +5,7 @@ from rest_framework import status, generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.throttling import ScopedRateThrottle
 from django.contrib.auth import authenticate
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -14,6 +15,7 @@ from .serializers import (
     LoginSerializer,
     HeritageKeySerializer,
     HeritageKeyLoginSerializer,
+    RegisterSerializer,
 )
 import logging
 
@@ -24,6 +26,8 @@ User = get_user_model()
 
 class LoginView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'login'
     
     def post(self, request):
         logger.debug("Received authentication request")
@@ -81,6 +85,8 @@ class HeritageKeyLoginView(APIView):
     Authenticate and sign in a family member using only their sacred Heritage Key.
     """
     permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'heritage_login'
 
     def post(self, request):
         # Support either 'key' or 'heritage_key' in request payload
@@ -100,39 +106,32 @@ class HeritageKeyLoginView(APIView):
         user = serializer.validated_data['user']
         key_obj = serializer.validated_data['heritage_key_instance']
 
-        # Update last used timestamp and increment usage count
+        # A login key belongs to an existing account; it cannot invite that account
+        # into an unrelated tree or claim an unrelated person's profile.
+        target_tree = key_obj.family_tree or user.owned_trees.first() or user.shared_trees.first()
+        if target_tree and target_tree.owner_id != user.id and not target_tree.members.filter(id=user.id).exists():
+            return Response({'error': 'This key no longer grants access to its family tree.'},
+                            status=status.HTTP_403_FORBIDDEN)
+
+        # Determine target person in tree (if key is assigned to a specific person or user has one)
+        target_person = key_obj.person
+        if target_person and (target_person.family_tree_id != (target_tree.id if target_tree else None)
+                              or (target_person.user_id and target_person.user_id != user.id)):
+            return Response({'error': 'This key is not bound to a valid person.'},
+                            status=status.HTTP_403_FORBIDDEN)
+        if not target_person:
+            from family.models import Person
+            target_person = Person.objects.filter(user=user).first()
+
         HeritageKey.objects.filter(id=key_obj.id).update(
             last_used_at=timezone.now(),
             usage_count=F('usage_count') + 1
         )
         key_obj.refresh_from_db()
 
-        # Determine the family tree this key invites or grants access to
-        target_tree = None
-        if key_obj.family_tree:
-            target_tree = key_obj.family_tree
-        else:
-            target_tree = user.owned_trees.first() or user.shared_trees.first()
-            if not target_tree:
-                from family.models import FamilyTree
-                target_tree = FamilyTree.objects.first()
-
-        # Add user to the family tree members if not already owner or member
-        if target_tree and target_tree.owner != user and not target_tree.members.filter(id=user.id).exists():
-            target_tree.members.add(user)
-
-        # Determine target person in tree (if key is assigned to a specific person or user has one)
-        target_person = key_obj.person
-        if target_person and not target_person.user:
-            target_person.user = user
-            target_person.save(update_fields=['user'])
-        elif not target_person:
-            from family.models import Person
-            target_person = Person.objects.filter(user=user).first()
-
         # Generate SimpleJWT tokens
         refresh = RefreshToken.for_user(user)
-        logger.info(f"User '{user.username}' successfully authenticated via Heritage Key: {key_obj.key}")
+        logger.info("Heritage Key authentication succeeded for user id %s", user.id)
 
         tree_info = None
         if target_tree:
@@ -173,8 +172,31 @@ class HeritageKeyGenerateView(APIView):
     def post(self, request):
         name = request.data.get('name', 'Royal Dynasty Passkey')
         role = request.data.get('role', 'CURATOR' if request.user.is_staff else 'FAMILY_MEMBER')
+        if role not in dict(HeritageKey.ROLE_CHOICES):
+            return Response({'role': 'Invalid role.'}, status=status.HTTP_400_BAD_REQUEST)
         family_tree_id = request.data.get('family_tree') or request.data.get('family_tree_id')
         person_id = request.data.get('person') or request.data.get('person_id')
+
+        from family.models import FamilyTree, Person
+        if family_tree_id:
+            try:
+                tree = FamilyTree.objects.get(id=family_tree_id)
+            except (FamilyTree.DoesNotExist, ValueError, TypeError):
+                return Response({'family_tree': 'Tree not found.'}, status=status.HTTP_400_BAD_REQUEST)
+            if tree.owner_id != request.user.id and not request.user.is_superuser:
+                return Response({'family_tree': 'Only the tree owner can create keys for it.'},
+                                status=status.HTTP_403_FORBIDDEN)
+        else:
+            tree = None
+
+        if person_id:
+            try:
+                person = Person.objects.get(id=person_id)
+            except (Person.DoesNotExist, ValueError, TypeError):
+                return Response({'person': 'Person not found.'}, status=status.HTTP_400_BAD_REQUEST)
+            if not tree or person.family_tree_id != tree.id or person.user_id != request.user.id:
+                return Response({'person': 'A login key can only identify your own profile in this tree.'},
+                                status=status.HTTP_403_FORBIDDEN)
         
         new_key_str = HeritageKey.generate_royal_key_string(prefix="KKEVO-ROYAL")
         new_key = HeritageKey.objects.create(
@@ -212,7 +234,7 @@ class HeritageKeyRevokeView(APIView):
 
         key_obj.is_active = False
         key_obj.save()
-        return Response({'message': f'Heritage Key {key_obj.key} has been revoked.'})
+        return Response({'message': 'Heritage Key revoked.'})
 
 
 class LogoutView(APIView):
@@ -233,11 +255,10 @@ class LogoutView(APIView):
 
 class RegisterView(generics.CreateAPIView):
     permission_classes = [AllowAny]
-    serializer_class = UserSerializer
+    serializer_class = RegisterSerializer
 
 class UserView(APIView):
     permission_classes = [IsAuthenticated]
     
     def get(self, request):
         return Response(UserSerializer(request.user).data)
-

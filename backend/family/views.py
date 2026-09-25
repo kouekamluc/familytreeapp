@@ -12,9 +12,14 @@ from .serializers import (
     PersonSerializer, RelationshipSerializer,
     EventSerializer, MediaSerializer
 )
-from .permissions import IsTreeOwner, IsTreeEditor, IsTreeReadable
+from .permissions import IsTreeReadable, can_access_tree
 
 User = get_user_model()
+
+
+def require_tree_editor(user, tree):
+    if not can_access_tree(user, tree, write=True):
+        raise exceptions.PermissionDenied("You cannot modify this family tree.")
 
 
 class FamilyTreeViewSet(viewsets.ModelViewSet):
@@ -23,6 +28,8 @@ class FamilyTreeViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         user = self.request.user
+        if user and user.is_authenticated and user.is_superuser:
+            return FamilyTree.objects.all()
         if user and user.is_authenticated:
             return FamilyTree.objects.filter(
                 models.Q(owner=user) | models.Q(members=user) | models.Q(is_public=True)
@@ -113,7 +120,9 @@ class PersonViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         user = self.request.user
-        if user and user.is_authenticated:
+        if user and user.is_authenticated and user.is_superuser:
+            user_trees = FamilyTree.objects.all()
+        elif user and user.is_authenticated:
             user_trees = FamilyTree.objects.filter(
                 models.Q(owner=user) | models.Q(members=user) | models.Q(is_public=True)
             )
@@ -153,8 +162,9 @@ class PersonViewSet(viewsets.ModelViewSet):
         person = self.get_object()
         user = self.request.user
         tree = person.family_tree
-        if tree and tree.owner != user and not tree.members.filter(id=user.id).exists() and not user.is_superuser:
-            raise exceptions.PermissionDenied("You do not have permission to modify individuals in this family tree.")
+        require_tree_editor(user, tree)
+        if 'family_tree' in serializer.validated_data and serializer.validated_data['family_tree'] != tree:
+            raise serializers.ValidationError({'family_tree': 'Moving a person between trees is not supported.'})
         serializer.save()
 
     def perform_destroy(self, instance):
@@ -172,7 +182,9 @@ class RelationshipViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         user = self.request.user
-        if user and user.is_authenticated:
+        if user and user.is_authenticated and user.is_superuser:
+            user_trees = FamilyTree.objects.all()
+        elif user and user.is_authenticated:
             user_trees = FamilyTree.objects.filter(
                 models.Q(owner=user) | models.Q(members=user) | models.Q(is_public=True)
             )
@@ -199,18 +211,19 @@ class RelationshipViewSet(viewsets.ModelViewSet):
 
         if person1_id and person2_id and rel_type:
             # Check if relationship already exists
-            existing = Relationship.objects.filter(
+            existing = self.get_queryset().filter(
                 person1_id=person1_id,
                 person2_id=person2_id,
                 relationship_type=rel_type
             ).first()
             if not existing and rel_type == 'SPOUSE':
-                existing = Relationship.objects.filter(
+                existing = self.get_queryset().filter(
                     person1_id=person2_id,
                     person2_id=person1_id,
                     relationship_type=rel_type
                 ).first()
             if existing:
+                require_tree_editor(request.user, existing.person1.family_tree)
                 serializer = self.get_serializer(existing)
                 return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -234,11 +247,20 @@ class RelationshipViewSet(viewsets.ModelViewSet):
             })
         
         tree = person1.family_tree
-        if tree and tree.owner != user and not tree.members.filter(id=user.id).exists() and not user.is_superuser:
-            raise exceptions.PermissionDenied("You do not have permission to manage relationships in this family tree.")
+        require_tree_editor(user, tree)
 
         with transaction.atomic():
             serializer.save()
+
+    def perform_update(self, serializer):
+        relationship = self.get_object()
+        require_tree_editor(self.request.user, relationship.person1.family_tree)
+        person1 = serializer.validated_data.get('person1', relationship.person1)
+        person2 = serializer.validated_data.get('person2', relationship.person2)
+        if person1.family_tree_id != person2.family_tree_id:
+            raise serializers.ValidationError({'people': 'Both people must be in the same tree.'})
+        require_tree_editor(self.request.user, person1.family_tree)
+        serializer.save()
 
     def perform_destroy(self, instance):
         user = self.request.user
@@ -254,11 +276,30 @@ class EventViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         user = self.request.user
-        user_trees = FamilyTree.objects.filter(models.Q(owner=user) | models.Q(members=user))
+        if not user or not user.is_authenticated:
+            return Event.objects.none()
+        user_trees = (FamilyTree.objects.all() if user.is_superuser else
+                      FamilyTree.objects.filter(models.Q(owner=user) | models.Q(members=user)))
         tree_id = self.request.query_params.get('tree_id')
         if tree_id:
             return Event.objects.filter(person__family_tree_id=tree_id, person__family_tree__in=user_trees)
         return Event.objects.filter(person__family_tree__in=user_trees)
+
+    def _check_people(self, person, related_person):
+        require_tree_editor(self.request.user, person.family_tree)
+        if related_person and related_person.family_tree_id != person.family_tree_id:
+            raise serializers.ValidationError({'related_person': 'People must be in the same tree.'})
+
+    def perform_create(self, serializer):
+        self._check_people(serializer.validated_data['person'], serializer.validated_data.get('related_person'))
+        serializer.save()
+
+    def perform_update(self, serializer):
+        event = self.get_object()
+        person = serializer.validated_data.get('person', event.person)
+        related_person = serializer.validated_data.get('related_person', event.related_person)
+        self._check_people(person, related_person)
+        serializer.save()
 
 
 class MediaViewSet(viewsets.ModelViewSet):
@@ -267,18 +308,35 @@ class MediaViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         user = self.request.user
+        if not user or not user.is_authenticated:
+            return Media.objects.none()
         tree_id = self.request.query_params.get('tree_id')
         person_id = self.request.query_params.get('person_id')
         media_type = self.request.query_params.get('media_type')
         
-        user_trees = FamilyTree.objects.filter(models.Q(owner=user) | models.Q(members=user))
+        user_trees = (FamilyTree.objects.all() if user.is_superuser else
+                      FamilyTree.objects.filter(models.Q(owner=user) | models.Q(members=user)))
         qs = Media.objects.filter(
             models.Q(people__family_tree__in=user_trees) |
+            models.Q(event__person__family_tree__in=user_trees) |
             models.Q(uploaded_by=user)
         ).distinct()
+        # Old records may contain associations to several trees. Never serialize
+        # their other people's details to a user who can see only one tree.
+        unauthorized_people = Person.objects.exclude(family_tree__in=user_trees)
+        qs = qs.exclude(pk__in=Media.objects.filter(
+            people__in=unauthorized_people).values('pk'))
+        qs = qs.exclude(pk__in=Media.objects.exclude(event__isnull=True)
+                        .exclude(event__person__family_tree__in=user_trees).values('pk'))
         
         if tree_id:
-            qs = qs.filter(people__family_tree_id=tree_id, people__family_tree__in=user_trees)
+            qs = qs.filter(
+                models.Q(people__family_tree_id=tree_id) |
+                models.Q(event__person__family_tree_id=tree_id)
+            ).filter(
+                models.Q(people__family_tree__in=user_trees) |
+                models.Q(event__person__family_tree__in=user_trees)
+            )
         if person_id:
             qs = qs.filter(people__id=person_id)
         if media_type:
@@ -287,4 +345,22 @@ class MediaViewSet(viewsets.ModelViewSet):
         return qs
     
     def perform_create(self, serializer):
+        self._check_associations(serializer.validated_data.get('people', []),
+                                 serializer.validated_data.get('event'))
         serializer.save(uploaded_by=self.request.user)
+
+    def perform_update(self, serializer):
+        media = self.get_object()
+        people = serializer.validated_data.get('people', list(media.people.all()))
+        event = serializer.validated_data.get('event', media.event)
+        self._check_associations(people, event)
+        serializer.save()
+
+    def _check_associations(self, people, event):
+        trees = {person.family_tree_id for person in people}
+        if event:
+            trees.add(event.person.family_tree_id)
+        if len(trees) > 1:
+            raise serializers.ValidationError({'people': 'All associations must belong to one tree.'})
+        for tree_id in trees:
+            require_tree_editor(self.request.user, FamilyTree.objects.filter(id=tree_id).first())

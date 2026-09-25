@@ -14,12 +14,10 @@ import os
 class BackupViewSet(viewsets.ModelViewSet):
     queryset = Backup.objects.all()
     serializer_class = BackupSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminUser]
     
     def get_permissions(self):
-        if self.action in ['create', 'restore', 'destroy']:
-            return [IsAdminUser()]
-        return [IsAuthenticated()]
+        return [IsAdminUser()]
     
     @action(detail=False, methods=['post'])
     def create_backup(self, request):

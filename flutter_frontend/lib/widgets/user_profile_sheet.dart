@@ -4,8 +4,10 @@ import 'package:provider/provider.dart';
 import '../config/royal_theme.dart';
 import '../providers/auth_provider.dart';
 import '../providers/tree_provider.dart';
+import 'account_switcher_sheet.dart';
 import 'monogram_medallion.dart';
 import 'royal_button.dart';
+import 'server_settings_dialog.dart';
 
 class UserProfileSheet extends StatelessWidget {
   final VoidCallback? onOpenTree;
@@ -337,7 +339,118 @@ class UserProfileSheet extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 22),
+            const SizedBox(height: 16),
+
+            // Connection & Storage Status Banner
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: tree.isOfflineMode
+                    ? const Color(0xFFB8860B).withValues(alpha: 0.15)
+                    : const Color(0xFF16A34A).withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: tree.isOfflineMode
+                      ? RoyalTheme.brightGold.withValues(alpha: 0.6)
+                      : const Color(0xFF22C55E).withValues(alpha: 0.6),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    tree.isOfflineMode ? Icons.phone_android_rounded : Icons.cloud_done_rounded,
+                    color: tree.isOfflineMode ? RoyalTheme.brightGold : const Color(0xFF22C55E),
+                    size: 20,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          tree.isOfflineMode
+                              ? '📱 Mode Mémoire Locale Téléphone'
+                              : '🌐 Synchronisé en Direct',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white : const Color(0xFF1E293B),
+                          ),
+                        ),
+                        Text(
+                          tree.isOfflineMode
+                              ? '${people.length} membres consultables hors-ligne sans câble'
+                              : 'Connecté au serveur dynastique',
+                          style: TextStyle(
+                            fontSize: 10.5,
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      minimumSize: Size.zero,
+                    ),
+                    onPressed: () {
+                      Navigator.pop(context);
+                      ServerSettingsDialog.show(context);
+                    },
+                    child: const Text('Réseau', style: TextStyle(fontSize: 11, color: RoyalTheme.brightGold)),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Switch Account Quick Tile
+            InkWell(
+              onTap: () {
+                Navigator.pop(context);
+                AccountSwitcherSheet.show(context);
+              },
+              borderRadius: BorderRadius.circular(14),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF171A26) : const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: isDark ? RoyalTheme.borderDark : RoyalTheme.borderLight),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.switch_account_rounded, color: RoyalTheme.brightGold, size: 20),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Changer de Compte',
+                            style: GoogleFonts.inter(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? Colors.white : const Color(0xFF1E293B),
+                            ),
+                          ),
+                          Text(
+                            'Connectez-vous avec un autre membre ou clé',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: isDark ? Colors.grey[400] : Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right_rounded, color: RoyalTheme.brightGold),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
 
             // Action Buttons
             RoyalButton(

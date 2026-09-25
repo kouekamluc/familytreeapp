@@ -94,15 +94,14 @@ class HeritageKey(models.Model):
 
     @classmethod
     def generate_royal_key_string(cls, prefix="KKEVO-ROYAL"):
-        """Generates a secure, human-readable royal formatted key like KKEVO-ROYAL-XXXX-XXXX."""
+        """Generate a 16-character random credential in two readable groups."""
         alphabet = string.ascii_uppercase + string.digits.replace('0', '').replace('O', '').replace('I', '').replace('1', '')
-        part1 = ''.join(secrets.choice(alphabet) for _ in range(4))
-        part2 = ''.join(secrets.choice(alphabet) for _ in range(4))
+        part1 = ''.join(secrets.choice(alphabet) for _ in range(8))
+        part2 = ''.join(secrets.choice(alphabet) for _ in range(8))
         candidate = f"{prefix}-{part1}-{part2}"
         # Ensure unique
         while cls.objects.filter(key=candidate).exists():
-            part1 = ''.join(secrets.choice(alphabet) for _ in range(4))
-            part2 = ''.join(secrets.choice(alphabet) for _ in range(4))
+            part1 = ''.join(secrets.choice(alphabet) for _ in range(8))
+            part2 = ''.join(secrets.choice(alphabet) for _ in range(8))
             candidate = f"{prefix}-{part1}-{part2}"
         return candidate
-

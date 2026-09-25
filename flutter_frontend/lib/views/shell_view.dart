@@ -30,7 +30,8 @@ class ShellView extends StatefulWidget {
 }
 
 class _ShellViewState extends State<ShellView> {
-  int _dashboardIndex = 0; // 0: Tree, 1: Registry, 2: Kinship, 3: Alliances, 4: Heritage Vault
+  int _dashboardIndex =
+      0; // 0: Tree, 1: Registry, 2: Kinship, 3: Alliances, 4: Heritage Vault
   late final PageController _pageController;
   Person? _kinshipPersonA;
   Person? _kinshipPersonB;
@@ -113,11 +114,17 @@ class _ShellViewState extends State<ShellView> {
         isScrollControlled: true,
         backgroundColor: Colors.transparent,
         builder: (ctx) => Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(ctx).viewInsets.bottom,
+          ),
           child: Container(
             decoration: BoxDecoration(
-              color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF131620) : Colors.white,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? const Color(0xFF131620)
+                  : Colors.white,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(28),
+              ),
               border: Border(
                 top: BorderSide(
                   color: RoyalTheme.brightGold.withValues(alpha: 0.6),
@@ -168,6 +175,16 @@ class _ShellViewState extends State<ShellView> {
   }
 
   void _showAddPersonDialog(BuildContext context) {
+    if (context.read<AuthProvider>().isPreviewMode) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'L’exemple est en lecture seule. Connectez-vous pour ajouter un membre.',
+          ),
+        ),
+      );
+      return;
+    }
     final treeProvider = Provider.of<TreeProvider>(context, listen: false);
     final isMobile = MediaQuery.of(context).size.shortestSide < 600;
     final firstController = TextEditingController();
@@ -208,10 +225,22 @@ class _ShellViewState extends State<ShellView> {
             initialValue: genTier,
             decoration: const InputDecoration(labelText: 'Generation Tier'),
             items: const [
-              DropdownMenuItem(value: 1, child: Text('👑 Gen 1 • Founding Patriarch / Matriarch')),
-              DropdownMenuItem(value: 2, child: Text('🛡️ Gen 2 • Royal Elder / Dignitary')),
-              DropdownMenuItem(value: 3, child: Text('🌿 Gen 3 • Modern Pillar / Descendant')),
-              DropdownMenuItem(value: 4, child: Text('🌱 Gen 4 • Next Generation Youth')),
+              DropdownMenuItem(
+                value: 1,
+                child: Text('👑 Gen 1 • Founding Patriarch / Matriarch'),
+              ),
+              DropdownMenuItem(
+                value: 2,
+                child: Text('🛡️ Gen 2 • Royal Elder / Dignitary'),
+              ),
+              DropdownMenuItem(
+                value: 3,
+                child: Text('🌿 Gen 3 • Modern Pillar / Descendant'),
+              ),
+              DropdownMenuItem(
+                value: 4,
+                child: Text('🌱 Gen 4 • Next Generation Youth'),
+              ),
             ],
             onChanged: (val) {
               if (val != null) setDialogState(() => genTier = val);
@@ -228,11 +257,17 @@ class _ShellViewState extends State<ShellView> {
         backgroundColor: Colors.transparent,
         builder: (ctx) => StatefulBuilder(
           builder: (ctx, setDialogState) => Padding(
-            padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(ctx).viewInsets.bottom,
+            ),
             child: Container(
               decoration: BoxDecoration(
-                color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF131620) : Colors.white,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? const Color(0xFF131620)
+                    : Colors.white,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(28),
+                ),
                 border: Border(
                   top: BorderSide(
                     color: RoyalTheme.brightGold.withValues(alpha: 0.6),
@@ -256,7 +291,10 @@ class _ShellViewState extends State<ShellView> {
                     const SizedBox(height: 16),
                     Text(
                       'Enroll Dynasty Member',
-                      style: GoogleFonts.cinzel(fontWeight: FontWeight.bold, fontSize: 18),
+                      style: GoogleFonts.cinzel(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
                     ),
                     const SizedBox(height: 16),
                     buildForm(setDialogState),
@@ -280,9 +318,18 @@ class _ShellViewState extends State<ShellView> {
                               if (firstController.text.trim().isEmpty) return;
                               await treeProvider.addPerson({
                                 'first_name': firstController.text.trim(),
-                                'last_name': lastController.text.trim().isNotEmpty ? lastController.text.trim() : 'Kkevo',
-                                'traditional_name': tradController.text.trim().isNotEmpty ? tradController.text.trim() : null,
-                                'village_of_origin': villageController.text.trim().isNotEmpty ? villageController.text.trim() : 'Bandjoun',
+                                'last_name':
+                                    lastController.text.trim().isNotEmpty
+                                    ? lastController.text.trim()
+                                    : 'Kkevo',
+                                'traditional_name':
+                                    tradController.text.trim().isNotEmpty
+                                    ? tradController.text.trim()
+                                    : null,
+                                'village_of_origin':
+                                    villageController.text.trim().isNotEmpty
+                                    ? villageController.text.trim()
+                                    : 'Bandjoun',
                                 'generation_tier': genTier,
                                 'is_living': true,
                               });
@@ -304,14 +351,17 @@ class _ShellViewState extends State<ShellView> {
         context: context,
         builder: (ctx) => StatefulBuilder(
           builder: (ctx, setDialogState) => AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
+            ),
             title: Text(
               'Enroll Royal Dynasty Member',
-              style: GoogleFonts.cinzel(fontWeight: FontWeight.bold, fontSize: 18),
+              style: GoogleFonts.cinzel(
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
             ),
-            content: SingleChildScrollView(
-              child: buildForm(setDialogState),
-            ),
+            content: SingleChildScrollView(child: buildForm(setDialogState)),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
@@ -325,9 +375,16 @@ class _ShellViewState extends State<ShellView> {
                   if (firstController.text.trim().isEmpty) return;
                   await treeProvider.addPerson({
                     'first_name': firstController.text.trim(),
-                    'last_name': lastController.text.trim().isNotEmpty ? lastController.text.trim() : 'Kkevo',
-                    'traditional_name': tradController.text.trim().isNotEmpty ? tradController.text.trim() : null,
-                    'village_of_origin': villageController.text.trim().isNotEmpty ? villageController.text.trim() : 'Bandjoun',
+                    'last_name': lastController.text.trim().isNotEmpty
+                        ? lastController.text.trim()
+                        : 'Kkevo',
+                    'traditional_name': tradController.text.trim().isNotEmpty
+                        ? tradController.text.trim()
+                        : null,
+                    'village_of_origin':
+                        villageController.text.trim().isNotEmpty
+                        ? villageController.text.trim()
+                        : 'Bandjoun',
                     'generation_tier': genTier,
                     'is_living': true,
                   });
@@ -352,7 +409,10 @@ class _ShellViewState extends State<ShellView> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final isPhone = MediaQuery.of(context).size.shortestSide < 600;
-        final isWide = !isPhone && constraints.maxWidth >= 960 && constraints.maxHeight >= 640;
+        final isWide =
+            !isPhone &&
+            constraints.maxWidth >= 960 &&
+            constraints.maxHeight >= 640;
 
         // =========================================================
         // CASE A: GUEST / LOGGED-OUT VISITORS
@@ -390,7 +450,6 @@ class _ShellViewState extends State<ShellView> {
             );
           }
 
-
           // Desktop Web Landing Portal (>=860px)
           return Scaffold(
             body: Column(
@@ -401,8 +460,14 @@ class _ShellViewState extends State<ShellView> {
                     onSignIn: () => _showLoginDialog(context),
                     onJoin: () => _showLoginDialog(context),
                     onExploreDemo: () async {
-                      final auth = Provider.of<AuthProvider>(context, listen: false);
-                      final tree = Provider.of<TreeProvider>(context, listen: false);
+                      final auth = Provider.of<AuthProvider>(
+                        context,
+                        listen: false,
+                      );
+                      final tree = Provider.of<TreeProvider>(
+                        context,
+                        listen: false,
+                      );
                       await auth.demoLogin();
                       await tree.loadData();
                     },
@@ -453,7 +518,13 @@ class _ShellViewState extends State<ShellView> {
 
                 // Main Page Canvas
                 Expanded(
-                  child: dashboardPages[_dashboardIndex],
+                  child: Column(
+                    children: [
+                      if (authProvider.isPreviewMode)
+                        _buildPreviewBanner(authProvider, treeProvider),
+                      Expanded(child: dashboardPages[_dashboardIndex]),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -477,24 +548,36 @@ class _ShellViewState extends State<ShellView> {
               authProvider,
               treeProvider,
             ),
-            body: PageView(
-              controller: _pageController,
-              physics: _dashboardIndex == 0
-                  ? const NeverScrollableScrollPhysics()
-                  : const BouncingScrollPhysics(),
-              onPageChanged: (index) {
-                HapticFeedback.selectionClick();
-                setState(() {
-                  _dashboardIndex = index;
-                });
-              },
-              children: dashboardPages,
+            body: Column(
+              children: [
+                if (authProvider.isPreviewMode)
+                  _buildPreviewBanner(authProvider, treeProvider),
+                Expanded(
+                  child: PageView(
+                    controller: _pageController,
+                    physics: _dashboardIndex == 0
+                        ? const NeverScrollableScrollPhysics()
+                        : const BouncingScrollPhysics(),
+                    onPageChanged: (index) {
+                      HapticFeedback.selectionClick();
+                      setState(() {
+                        _dashboardIndex = index;
+                      });
+                    },
+                    children: dashboardPages,
+                  ),
+                ),
+              ],
             ),
             bottomNavigationBar: NavigationBarTheme(
               data: NavigationBarThemeData(
                 height: 66,
-                backgroundColor: isDark ? const Color(0xFF0C0E14) : const Color(0xFFFAFBFD),
-                indicatorColor: RoyalTheme.brightGold.withValues(alpha: isDark ? 0.22 : 0.18),
+                backgroundColor: isDark
+                    ? const Color(0xFF0C0E14)
+                    : const Color(0xFFFAFBFD),
+                indicatorColor: RoyalTheme.brightGold.withValues(
+                  alpha: isDark ? 0.22 : 0.18,
+                ),
                 labelTextStyle: WidgetStateProperty.resolveWith((states) {
                   final isSelected = states.contains(WidgetState.selected);
                   return GoogleFonts.inter(
@@ -502,7 +585,9 @@ class _ShellViewState extends State<ShellView> {
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                     color: isSelected
                         ? RoyalTheme.brightGold
-                        : (isDark ? const Color(0xFF8E95A5) : const Color(0xFF64748B)),
+                        : (isDark
+                              ? const Color(0xFF8E95A5)
+                              : const Color(0xFF64748B)),
                   );
                 }),
                 iconTheme: WidgetStateProperty.resolveWith((states) {
@@ -511,7 +596,9 @@ class _ShellViewState extends State<ShellView> {
                     size: 22,
                     color: isSelected
                         ? RoyalTheme.brightGold
-                        : (isDark ? const Color(0xFF8E95A5) : const Color(0xFF64748B)),
+                        : (isDark
+                              ? const Color(0xFF8E95A5)
+                              : const Color(0xFF64748B)),
                   );
                 }),
               ),
@@ -522,12 +609,18 @@ class _ShellViewState extends State<ShellView> {
                 destinations: const [
                   NavigationDestination(
                     icon: Icon(Icons.account_tree_outlined),
-                    selectedIcon: Icon(Icons.account_tree, color: RoyalTheme.brightGold),
+                    selectedIcon: Icon(
+                      Icons.account_tree,
+                      color: RoyalTheme.brightGold,
+                    ),
                     label: 'Arbre',
                   ),
                   NavigationDestination(
                     icon: Icon(Icons.people_outline),
-                    selectedIcon: Icon(Icons.people, color: RoyalTheme.brightGold),
+                    selectedIcon: Icon(
+                      Icons.people,
+                      color: RoyalTheme.brightGold,
+                    ),
                     label: 'Membres',
                   ),
                   NavigationDestination(
@@ -537,12 +630,18 @@ class _ShellViewState extends State<ShellView> {
                   ),
                   NavigationDestination(
                     icon: Icon(Icons.link_outlined),
-                    selectedIcon: Icon(Icons.link, color: RoyalTheme.brightGold),
+                    selectedIcon: Icon(
+                      Icons.link,
+                      color: RoyalTheme.brightGold,
+                    ),
                     label: 'Alliances',
                   ),
                   NavigationDestination(
                     icon: Icon(Icons.vpn_key_outlined),
-                    selectedIcon: Icon(Icons.vpn_key_rounded, color: RoyalTheme.brightGold),
+                    selectedIcon: Icon(
+                      Icons.vpn_key_rounded,
+                      color: RoyalTheme.brightGold,
+                    ),
                     label: 'Clés',
                   ),
                 ],
@@ -551,6 +650,35 @@ class _ShellViewState extends State<ShellView> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildPreviewBanner(AuthProvider auth, TreeProvider tree) {
+    return Material(
+      color: RoyalTheme.primaryGold.withValues(alpha: 0.18),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        child: Row(
+          children: [
+            const Icon(Icons.visibility_outlined, size: 18),
+            const SizedBox(width: 8),
+            const Expanded(
+              child: Text(
+                'Exemple fictif · lecture seule',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+              ),
+            ),
+            TextButton(
+              onPressed: () async {
+                await auth.logout();
+                tree.clearData();
+                if (mounted) setState(() => _dashboardIndex = 0);
+              },
+              child: const Text('Quitter'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -570,7 +698,9 @@ class _ShellViewState extends State<ShellView> {
         color: isDark ? const Color(0xFF111319) : Colors.white,
         border: Border(
           bottom: BorderSide(
-            color: RoyalTheme.primaryGold.withValues(alpha: isDark ? 0.35 : 0.45),
+            color: RoyalTheme.primaryGold.withValues(
+              alpha: isDark ? 0.35 : 0.45,
+            ),
             width: 1.2,
           ),
         ),
@@ -596,8 +726,13 @@ class _ShellViewState extends State<ShellView> {
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: isDark ? const Color(0xFF141722) : const Color(0xFFF9F5EC),
-                    border: Border.all(color: RoyalTheme.brightGold.withValues(alpha: 0.8), width: 1.5),
+                    color: isDark
+                        ? const Color(0xFF141722)
+                        : const Color(0xFFF9F5EC),
+                    border: Border.all(
+                      color: RoyalTheme.brightGold.withValues(alpha: 0.8),
+                      width: 1.5,
+                    ),
                     boxShadow: [
                       BoxShadow(
                         color: RoyalTheme.brightGold.withValues(alpha: 0.35),
@@ -616,7 +751,11 @@ class _ShellViewState extends State<ShellView> {
                     children: [
                       ShaderMask(
                         shaderCallback: (bounds) => const LinearGradient(
-                          colors: [Color(0xFFB8860B), Color(0xFFD4AF37), Color(0xFFC5A059)],
+                          colors: [
+                            Color(0xFFB8860B),
+                            Color(0xFFD4AF37),
+                            Color(0xFFC5A059),
+                          ],
                         ).createShader(bounds),
                         child: Text(
                           'KKEVO FAMILY',
@@ -637,7 +776,9 @@ class _ShellViewState extends State<ShellView> {
                             fontSize: 9.5,
                             fontWeight: FontWeight.w800,
                             letterSpacing: 1.8,
-                            color: isDark ? RoyalTheme.lightGold : const Color(0xFF855B14),
+                            color: isDark
+                                ? RoyalTheme.lightGold
+                                : const Color(0xFF855B14),
                           ),
                         ),
                     ],
@@ -651,11 +792,23 @@ class _ShellViewState extends State<ShellView> {
           if (isWide)
             Row(
               children: [
-                _buildPublicTag(Icons.lock_outline_rounded, 'Family Privacy Protected', isDark),
+                _buildPublicTag(
+                  Icons.lock_outline_rounded,
+                  'Family Privacy Protected',
+                  isDark,
+                ),
                 const SizedBox(width: 20),
-                _buildPublicTag(Icons.auto_stories_outlined, 'Sacred Customary Vault', isDark),
+                _buildPublicTag(
+                  Icons.auto_stories_outlined,
+                  'Sacred Customary Vault',
+                  isDark,
+                ),
                 const SizedBox(width: 20),
-                _buildPublicTag(Icons.account_tree_outlined, 'Multi-Generation Lineage', isDark),
+                _buildPublicTag(
+                  Icons.account_tree_outlined,
+                  'Multi-Generation Lineage',
+                  isDark,
+                ),
               ],
             ),
 
@@ -664,19 +817,25 @@ class _ShellViewState extends State<ShellView> {
             mainAxisSize: MainAxisSize.min,
             children: [
               IconButton(
-                tooltip: isDark ? 'Switch to Alabaster Light Mode' : 'Switch to Obsidian Dark Mode',
+                tooltip: isDark
+                    ? 'Switch to Alabaster Light Mode'
+                    : 'Switch to Obsidian Dark Mode',
                 icon: Container(
                   width: isWide ? 38 : 34,
                   height: isWide ? 38 : 34,
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF1E212B) : const Color(0xFFF7F2E7),
+                    color: isDark
+                        ? const Color(0xFF1E212B)
+                        : const Color(0xFFF7F2E7),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
                       color: RoyalTheme.primaryGold.withValues(alpha: 0.4),
                     ),
                   ),
                   child: Icon(
-                    isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+                    isDark
+                        ? Icons.light_mode_outlined
+                        : Icons.dark_mode_outlined,
                     color: RoyalTheme.brightGold,
                     size: 18,
                   ),
@@ -687,14 +846,24 @@ class _ShellViewState extends State<ShellView> {
                 const SizedBox(width: 12),
                 RoyalButton(
                   label: 'Explore Demo Vault',
-                  icon: const Icon(Icons.flash_on_rounded, size: 15, color: Colors.black),
+                  icon: const Icon(
+                    Icons.flash_on_rounded,
+                    size: 15,
+                    color: Colors.black,
+                  ),
                   variant: RoyalButtonVariant.gold,
                   height: 42,
                   fontSize: 13,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   onPressed: () async {
-                    final auth = Provider.of<AuthProvider>(context, listen: false);
-                    final tree = Provider.of<TreeProvider>(context, listen: false);
+                    final auth = Provider.of<AuthProvider>(
+                      context,
+                      listen: false,
+                    );
+                    final tree = Provider.of<TreeProvider>(
+                      context,
+                      listen: false,
+                    );
                     await auth.demoLogin();
                     await tree.loadData();
                   },
@@ -703,7 +872,11 @@ class _ShellViewState extends State<ShellView> {
               const SizedBox(width: 8),
               RoyalButton(
                 label: 'Sign In',
-                icon: const Icon(Icons.login_rounded, size: 14, color: Colors.black),
+                icon: const Icon(
+                  Icons.login_rounded,
+                  size: 14,
+                  color: Colors.black,
+                ),
                 variant: RoyalButtonVariant.gold,
                 height: isWide ? 42 : 36,
                 fontSize: 12.5,
@@ -714,7 +887,11 @@ class _ShellViewState extends State<ShellView> {
                 const SizedBox(width: 10),
                 RoyalButton(
                   label: 'Join Dynasty',
-                  icon: const Icon(Icons.how_to_reg_rounded, size: 15, color: RoyalTheme.brightGold),
+                  icon: const Icon(
+                    Icons.how_to_reg_rounded,
+                    size: 15,
+                    color: RoyalTheme.brightGold,
+                  ),
                   variant: RoyalButtonVariant.outline,
                   height: 42,
                   fontSize: 13,
@@ -791,8 +968,13 @@ class _ShellViewState extends State<ShellView> {
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: isDark ? const Color(0xFF141722) : const Color(0xFFF9F5EC),
-                    border: Border.all(color: RoyalTheme.brightGold.withValues(alpha: 0.8), width: 1.5),
+                    color: isDark
+                        ? const Color(0xFF141722)
+                        : const Color(0xFFF9F5EC),
+                    border: Border.all(
+                      color: RoyalTheme.brightGold.withValues(alpha: 0.8),
+                      width: 1.5,
+                    ),
                     boxShadow: [
                       BoxShadow(
                         color: RoyalTheme.brightGold.withValues(alpha: 0.35),
@@ -810,7 +992,11 @@ class _ShellViewState extends State<ShellView> {
                     children: [
                       ShaderMask(
                         shaderCallback: (bounds) => const LinearGradient(
-                          colors: [Color(0xFFB8860B), Color(0xFFD4AF37), Color(0xFFC5A059)],
+                          colors: [
+                            Color(0xFFB8860B),
+                            Color(0xFFD4AF37),
+                            Color(0xFFC5A059),
+                          ],
                         ).createShader(bounds),
                         child: Text(
                           'KKEVO FAMILY',
@@ -828,7 +1014,9 @@ class _ShellViewState extends State<ShellView> {
                           fontSize: 8.5,
                           fontWeight: FontWeight.w800,
                           letterSpacing: 1.2,
-                          color: isDark ? RoyalTheme.lightGold : const Color(0xFF855B14),
+                          color: isDark
+                              ? RoyalTheme.lightGold
+                              : const Color(0xFF855B14),
                         ),
                       ),
                     ],
@@ -845,7 +1033,9 @@ class _ShellViewState extends State<ShellView> {
             decoration: BoxDecoration(
               color: isDark ? const Color(0xFF161A26) : const Color(0xFFF0EBE0),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: RoyalTheme.primaryGold.withValues(alpha: 0.3)),
+              border: Border.all(
+                color: RoyalTheme.primaryGold.withValues(alpha: 0.3),
+              ),
             ),
             child: Row(
               children: [
@@ -860,14 +1050,19 @@ class _ShellViewState extends State<ShellView> {
                         style: GoogleFonts.cinzel(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
-                          color: isDark ? RoyalTheme.lightGold : const Color(0xFF855B14),
+                          color: isDark
+                              ? RoyalTheme.lightGold
+                              : const Color(0xFF855B14),
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       Text(
                         '$memberCount Living & Ancestral Pillars',
-                        style: const TextStyle(fontSize: 9.5, color: Colors.grey),
+                        style: const TextStyle(
+                          fontSize: 9.5,
+                          color: Colors.grey,
+                        ),
                       ),
                     ],
                   ),
@@ -933,7 +1128,11 @@ class _ShellViewState extends State<ShellView> {
             padding: const EdgeInsets.symmetric(horizontal: 14),
             child: RoyalButton(
               label: 'Enroll Relative',
-              icon: const Icon(Icons.person_add_rounded, size: 16, color: Colors.black),
+              icon: const Icon(
+                Icons.person_add_rounded,
+                size: 16,
+                color: Colors.black,
+              ),
               variant: RoyalButtonVariant.gold,
               height: 42,
               fontSize: 13,
@@ -950,7 +1149,9 @@ class _ShellViewState extends State<ShellView> {
               color: isDark ? const Color(0xFF0B0D14) : const Color(0xFFF1F3F7),
               border: Border(
                 top: BorderSide(
-                  color: isDark ? RoyalTheme.borderDark : RoyalTheme.borderLight,
+                  color: isDark
+                      ? RoyalTheme.borderDark
+                      : RoyalTheme.borderLight,
                 ),
               ),
             ),
@@ -961,7 +1162,10 @@ class _ShellViewState extends State<ShellView> {
                   builder: (context, access, _) {
                     return Container(
                       margin: const EdgeInsets.only(bottom: 10),
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: access.isSeniorMode
                             ? RoyalTheme.primaryGold.withValues(alpha: 0.16)
@@ -970,7 +1174,9 @@ class _ShellViewState extends State<ShellView> {
                         border: Border.all(
                           color: access.isSeniorMode
                               ? RoyalTheme.brightGold
-                              : (isDark ? RoyalTheme.borderDark : RoyalTheme.borderLight),
+                              : (isDark
+                                    ? RoyalTheme.borderDark
+                                    : RoyalTheme.borderLight),
                         ),
                       ),
                       child: InkWell(
@@ -980,7 +1186,11 @@ class _ShellViewState extends State<ShellView> {
                           children: [
                             Icon(
                               Icons.format_size_rounded,
-                              color: access.isSeniorMode ? RoyalTheme.brightGold : (isDark ? Colors.grey[400] : Colors.grey[600]),
+                              color: access.isSeniorMode
+                                  ? RoyalTheme.brightGold
+                                  : (isDark
+                                        ? Colors.grey[400]
+                                        : Colors.grey[600]),
                               size: 20,
                             ),
                             const SizedBox(width: 8),
@@ -989,18 +1199,24 @@ class _ShellViewState extends State<ShellView> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    access.isSeniorMode ? 'Large Text: ON' : 'Large Text: OFF',
+                                    access.isSeniorMode
+                                        ? 'Large Text: ON'
+                                        : 'Large Text: OFF',
                                     style: GoogleFonts.inter(
                                       fontSize: 11.5,
                                       fontWeight: FontWeight.bold,
-                                      color: isDark ? Colors.white : Colors.black87,
+                                      color: isDark
+                                          ? Colors.white
+                                          : Colors.black87,
                                     ),
                                   ),
                                   Text(
                                     'Senior / High Legibility',
                                     style: TextStyle(
                                       fontSize: 9.5,
-                                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                                      color: isDark
+                                          ? Colors.grey[400]
+                                          : Colors.grey[600],
                                     ),
                                   ),
                                 ],
@@ -1009,9 +1225,11 @@ class _ShellViewState extends State<ShellView> {
                             Switch.adaptive(
                               value: access.isSeniorMode,
                               onChanged: (_) => access.toggleSeniorMode(),
-                              activeTrackColor: RoyalTheme.brightGold.withValues(alpha: 0.5),
+                              activeTrackColor: RoyalTheme.brightGold
+                                  .withValues(alpha: 0.5),
                               activeThumbColor: RoyalTheme.brightGold,
-                              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              materialTapTargetSize:
+                                  MaterialTapTargetSize.shrinkWrap,
                             ),
                           ],
                         ),
@@ -1036,7 +1254,9 @@ class _ShellViewState extends State<ShellView> {
                       iconSize: 18,
                       tooltip: 'Toggle Theme',
                       icon: Icon(
-                        isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+                        isDark
+                            ? Icons.light_mode_outlined
+                            : Icons.dark_mode_outlined,
                         color: RoyalTheme.brightGold,
                       ),
                       onPressed: () => themeProvider.toggleTheme(),
@@ -1047,12 +1267,17 @@ class _ShellViewState extends State<ShellView> {
 
                 // Curator Profile Card & Logout Button
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: isDark ? const Color(0xFF151822) : Colors.white,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: isDark ? RoyalTheme.borderDark : RoyalTheme.borderLight,
+                      color: isDark
+                          ? RoyalTheme.borderDark
+                          : RoyalTheme.borderLight,
                     ),
                   ),
                   child: Row(
@@ -1064,7 +1289,8 @@ class _ShellViewState extends State<ShellView> {
                           radius: 14,
                           backgroundColor: RoyalTheme.brightGold,
                           child: Text(
-                            (authProvider.currentUser?.displayName ?? 'C')[0].toUpperCase(),
+                            (authProvider.currentUser?.displayName ?? 'C')[0]
+                                .toUpperCase(),
                             style: const TextStyle(
                               color: Colors.black,
                               fontWeight: FontWeight.bold,
@@ -1082,7 +1308,8 @@ class _ShellViewState extends State<ShellView> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                authProvider.currentUser?.displayName ?? 'Curator',
+                                authProvider.currentUser?.displayName ??
+                                    'Curator',
                                 style: GoogleFonts.inter(
                                   fontSize: 11.5,
                                   fontWeight: FontWeight.bold,
@@ -1093,7 +1320,10 @@ class _ShellViewState extends State<ShellView> {
                               ),
                               const Text(
                                 'Dynasty Profile & Scope ⚙️',
-                                style: TextStyle(fontSize: 9.5, color: RoyalTheme.brightGold),
+                                style: TextStyle(
+                                  fontSize: 9.5,
+                                  color: RoyalTheme.brightGold,
+                                ),
                               ),
                             ],
                           ),
@@ -1101,7 +1331,11 @@ class _ShellViewState extends State<ShellView> {
                       ),
                       // Sign out button
                       IconButton(
-                        icon: const Icon(Icons.logout_rounded, color: Color(0xFFEF4444), size: 18),
+                        icon: const Icon(
+                          Icons.logout_rounded,
+                          color: Color(0xFFEF4444),
+                          size: 18,
+                        ),
                         tooltip: 'Sign Out & Lock Archive',
                         onPressed: () {
                           authProvider.logout();
@@ -1137,8 +1371,8 @@ class _ShellViewState extends State<ShellView> {
         decoration: BoxDecoration(
           color: isSelected
               ? (isDark
-                  ? RoyalTheme.primaryGold.withValues(alpha: 0.22)
-                  : RoyalTheme.primaryGold.withValues(alpha: 0.18))
+                    ? RoyalTheme.primaryGold.withValues(alpha: 0.22)
+                    : RoyalTheme.primaryGold.withValues(alpha: 0.18))
               : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
           border: isSelected
@@ -1155,7 +1389,9 @@ class _ShellViewState extends State<ShellView> {
               decoration: BoxDecoration(
                 color: isSelected
                     ? RoyalTheme.brightGold.withValues(alpha: 0.2)
-                    : (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.04)),
+                    : (isDark
+                          ? Colors.white.withValues(alpha: 0.05)
+                          : Colors.black.withValues(alpha: 0.04)),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
@@ -1176,11 +1412,17 @@ class _ShellViewState extends State<ShellView> {
                     label,
                     style: GoogleFonts.cinzel(
                       fontSize: 13,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w700,
+                      fontWeight: isSelected
+                          ? FontWeight.bold
+                          : FontWeight.w700,
                       letterSpacing: 0.3,
                       color: isSelected
-                          ? (isDark ? RoyalTheme.lightGold : const Color(0xFF855B14))
-                          : (isDark ? Colors.grey[200] : const Color(0xFF1E293B)),
+                          ? (isDark
+                                ? RoyalTheme.lightGold
+                                : const Color(0xFF855B14))
+                          : (isDark
+                                ? Colors.grey[200]
+                                : const Color(0xFF1E293B)),
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -1190,7 +1432,9 @@ class _ShellViewState extends State<ShellView> {
                       fontSize: 10.5,
                       fontWeight: FontWeight.w500,
                       color: isSelected
-                          ? (isDark ? RoyalTheme.brightGold.withValues(alpha: 0.9) : const Color(0xFF855B14))
+                          ? (isDark
+                                ? RoyalTheme.brightGold.withValues(alpha: 0.9)
+                                : const Color(0xFF855B14))
                           : (isDark ? Colors.grey[400] : Colors.grey[500]),
                     ),
                   ),
@@ -1295,14 +1539,22 @@ class _ShellViewState extends State<ShellView> {
           tooltip: 'Add Family Member',
           padding: const EdgeInsets.all(6),
           constraints: const BoxConstraints(),
-          icon: const Icon(Icons.person_add_alt_1_rounded, color: RoyalTheme.brightGold, size: 20),
+          icon: const Icon(
+            Icons.person_add_alt_1_rounded,
+            color: RoyalTheme.brightGold,
+            size: 20,
+          ),
           onPressed: () => _showAddPersonDialog(context),
         ),
         const SizedBox(width: 4),
         IconButton(
           padding: const EdgeInsets.all(6),
           constraints: const BoxConstraints(),
-          icon: const Icon(Icons.vpn_key_outlined, color: RoyalTheme.brightGold, size: 20),
+          icon: const Icon(
+            Icons.vpn_key_outlined,
+            color: RoyalTheme.brightGold,
+            size: 20,
+          ),
           tooltip: 'Heritage Vault',
           onPressed: () => _navigateToDashboardIndex(4),
         ),
@@ -1322,7 +1574,11 @@ class _ShellViewState extends State<ShellView> {
         PopupMenuButton<String>(
           padding: const EdgeInsets.all(6),
           constraints: const BoxConstraints(),
-          icon: const Icon(Icons.more_vert_rounded, color: RoyalTheme.brightGold, size: 20),
+          icon: const Icon(
+            Icons.more_vert_rounded,
+            color: RoyalTheme.brightGold,
+            size: 20,
+          ),
           color: isDark ? const Color(0xFF161A26) : Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -1345,9 +1601,16 @@ class _ShellViewState extends State<ShellView> {
               value: 'profile',
               child: Row(
                 children: [
-                  Icon(Icons.badge_rounded, color: RoyalTheme.brightGold, size: 18),
+                  Icon(
+                    Icons.badge_rounded,
+                    color: RoyalTheme.brightGold,
+                    size: 18,
+                  ),
                   SizedBox(width: 10),
-                  Text('Profil & Portée Dynastique', style: TextStyle(fontSize: 13)),
+                  Text(
+                    'Profil & Portée Dynastique',
+                    style: TextStyle(fontSize: 13),
+                  ),
                 ],
               ),
             ),
@@ -1355,7 +1618,11 @@ class _ShellViewState extends State<ShellView> {
               value: 'vault',
               child: Row(
                 children: [
-                  Icon(Icons.vpn_key_rounded, color: RoyalTheme.brightGold, size: 18),
+                  Icon(
+                    Icons.vpn_key_rounded,
+                    color: RoyalTheme.brightGold,
+                    size: 18,
+                  ),
                   SizedBox(width: 10),
                   Text('Heritage Vault', style: TextStyle(fontSize: 13)),
                 ],
@@ -1367,12 +1634,16 @@ class _ShellViewState extends State<ShellView> {
                 children: [
                   Icon(
                     Icons.format_size_rounded,
-                    color: access.isSeniorMode ? RoyalTheme.brightGold : Colors.grey,
+                    color: access.isSeniorMode
+                        ? RoyalTheme.brightGold
+                        : Colors.grey,
                     size: 18,
                   ),
                   SizedBox(width: 10),
                   Text(
-                    access.isSeniorMode ? 'Disable Large Text' : 'Senior Large Text',
+                    access.isSeniorMode
+                        ? 'Disable Large Text'
+                        : 'Senior Large Text',
                     style: const TextStyle(fontSize: 13),
                   ),
                 ],
