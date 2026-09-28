@@ -40,6 +40,7 @@ class _PersonDetailViewState extends State<PersonDetailView> {
     final birthCtrl = TextEditingController(text: person.dateOfBirth ?? '');
     final deathCtrl = TextEditingController(text: person.dateOfDeath ?? '');
     final bioCtrl = TextEditingController(text: person.biography ?? '');
+    final profilePicCtrl = TextEditingController(text: person.profilePicture ?? '');
     String gender = person.gender;
     int tier = person.generationTier;
     bool isLiving = person.isLiving;
@@ -95,6 +96,15 @@ class _PersonDetailViewState extends State<PersonDetailView> {
                     TextField(
                       controller: totemCtrl,
                       decoration: const InputDecoration(labelText: 'Clan Totem / Emblème'),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: profilePicCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Photo / Portrait URL',
+                        hintText: 'https://... or portrait link',
+                        prefixIcon: Icon(Icons.image_outlined, color: RoyalTheme.brightGold),
+                      ),
                     ),
                     const SizedBox(height: 14),
                     Row(
@@ -161,7 +171,12 @@ class _PersonDetailViewState extends State<PersonDetailView> {
               ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: RoyalTheme.brightGold),
                 onPressed: () async {
-                  if (firstCtrl.text.trim().isEmpty || lastCtrl.text.trim().isEmpty) return;
+                  if (firstCtrl.text.trim().isEmpty || lastCtrl.text.trim().isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Please enter both first and last name.')),
+                    );
+                    return;
+                  }
 
                   final patchData = <String, dynamic>{
                     'first_name': firstCtrl.text.trim(),
@@ -175,15 +190,27 @@ class _PersonDetailViewState extends State<PersonDetailView> {
                     'date_of_birth': birthCtrl.text.trim().isNotEmpty ? birthCtrl.text.trim() : null,
                     'date_of_death': (!isLiving && deathCtrl.text.trim().isNotEmpty) ? deathCtrl.text.trim() : null,
                     'biography': bioCtrl.text.trim(),
+                    'profile_picture': profilePicCtrl.text.trim().isNotEmpty ? profilePicCtrl.text.trim() : null,
                   };
 
-                  Navigator.pop(ctx);
                   final ok = await treeProvider.updatePerson(person.id, patchData);
-                  if (context.mounted && ok) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Profile updated successfully.')),
-                    );
-                    setState(() {});
+                  if (ok) {
+                    if (ctx.mounted) Navigator.pop(ctx);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Profile updated successfully.')),
+                      );
+                      setState(() {});
+                    }
+                  } else {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          backgroundColor: Colors.redAccent,
+                          content: Text('Failed to save changes. Form preserved for retry.'),
+                        ),
+                      );
+                    }
                   }
                 },
                 child: const Text('Save Changes', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
@@ -396,9 +423,13 @@ class _PersonDetailViewState extends State<PersonDetailView> {
               ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: RoyalTheme.brightGold),
                 onPressed: () async {
-                  Navigator.pop(ctx);
                   if (createNew) {
-                    if (firstCtrl.text.trim().isEmpty || lastCtrl.text.trim().isEmpty) return;
+                    if (firstCtrl.text.trim().isEmpty || lastCtrl.text.trim().isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Please enter both first and last name.')),
+                      );
+                      return;
+                    }
                     int genTier = currentPerson.generationTier;
                     if (selectedRole == 'father' || selectedRole == 'mother') {
                       genTier = (currentPerson.generationTier > 1) ? currentPerson.generationTier - 1 : 1;
@@ -427,15 +458,30 @@ class _PersonDetailViewState extends State<PersonDetailView> {
                       if (selectedRole == 'child' && selectedCoParentId != null) {
                         await treeProvider.addRelationship(selectedCoParentId!, created.id, 'PARENT');
                       }
+                      if (ctx.mounted) Navigator.pop(ctx);
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text('Connected ${created.fullName} as $selectedRole.')),
                         );
                         setState(() {});
                       }
+                    } else {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            backgroundColor: Colors.redAccent,
+                            content: Text('Failed to save relative bond. Form preserved for correction.'),
+                          ),
+                        );
+                      }
                     }
                   } else {
-                    if (selectedExistingId == null) return;
+                    if (selectedExistingId == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Please select an existing dynasty member.')),
+                      );
+                      return;
+                    }
                     final ok = await treeProvider.linkExistingRelative(
                       sourcePersonId: currentPerson.id,
                       targetPersonId: selectedExistingId!,
@@ -446,11 +492,21 @@ class _PersonDetailViewState extends State<PersonDetailView> {
                       if (selectedRole == 'child' && selectedCoParentId != null) {
                         await treeProvider.addRelationship(selectedCoParentId!, selectedExistingId!, 'PARENT');
                       }
+                      if (ctx.mounted) Navigator.pop(ctx);
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('Lineage bond established successfully.')),
                         );
                         setState(() {});
+                      }
+                    } else {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            backgroundColor: Colors.redAccent,
+                            content: Text('Failed to establish bond. Verify relationship rules.'),
+                          ),
+                        );
                       }
                     }
                   }
@@ -460,6 +516,100 @@ class _PersonDetailViewState extends State<PersonDetailView> {
             ],
           );
         },
+      ),
+    );
+  }
+
+  void _showPhotoDialog(BuildContext context, Person person) {
+    final treeProvider = Provider.of<TreeProvider>(context, listen: false);
+    final photoCtrl = TextEditingController(text: person.profilePicture ?? '');
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: isDark ? RoyalTheme.surfaceDark : Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: const BorderSide(color: RoyalTheme.borderDark),
+        ),
+        title: Row(
+          children: [
+            const Icon(Icons.camera_alt_outlined, color: RoyalTheme.brightGold),
+            const SizedBox(width: 8),
+            Text(
+              'Portrait & Media',
+              style: GoogleFonts.cinzel(color: RoyalTheme.brightGold, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        content: SizedBox(
+          width: 440,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Enter an image URL for ${person.fullName}, or leave blank to use the royal portrait preset.',
+                style: GoogleFonts.inter(
+                  fontSize: 12.5,
+                  color: isDark ? const Color(0xFFC7C1B7) : const Color(0xFF555048),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: photoCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Portrait URL',
+                  hintText: 'https://... or photo link',
+                  prefixIcon: Icon(Icons.link, color: RoyalTheme.brightGold),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  TextButton.icon(
+                    icon: const Icon(Icons.clear_rounded, size: 16),
+                    label: const Text('Reset to Royal Preset'),
+                    onPressed: () => photoCtrl.clear(),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: RoyalTheme.brightGold),
+            onPressed: () async {
+              final newUrl = photoCtrl.text.trim().isNotEmpty ? photoCtrl.text.trim() : null;
+              final ok = await treeProvider.updatePerson(person.id, {'profile_picture': newUrl});
+              if (ok) {
+                if (ctx.mounted) Navigator.pop(ctx);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Portrait updated successfully.')),
+                  );
+                  setState(() {});
+                }
+              } else {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      backgroundColor: Colors.redAccent,
+                      content: Text('Failed to update portrait.'),
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('Save Portrait', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+          ),
+        ],
       ),
     );
   }
@@ -586,7 +736,41 @@ class _PersonDetailViewState extends State<PersonDetailView> {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      MonogramMedallion(person: currentPerson, size: 84, isSelected: true),
+                      Stack(
+                        children: [
+                          MonogramMedallion(person: currentPerson, size: 84, isSelected: true),
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: InkWell(
+                              onTap: () => _showPhotoDialog(context, currentPerson),
+                              borderRadius: BorderRadius.circular(16),
+                              child: Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: RoyalTheme.brightGold,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: isDark ? const Color(0xFF161A26) : Colors.white,
+                                    width: 2,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.3),
+                                      blurRadius: 4,
+                                    ),
+                                  ],
+                                ),
+                                child: const Icon(
+                                  Icons.camera_alt_rounded,
+                                  size: 15,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                       const SizedBox(width: 18),
                       Expanded(
                         child: Column(

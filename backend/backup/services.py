@@ -1,5 +1,7 @@
 import os
 import json
+import zipfile
+import shutil
 import boto3
 from django.utils import timezone
 from django.conf import settings
@@ -22,7 +24,7 @@ class BackupService:
             self.s3_client = None
     
     def create_backup(self, user=None, backup_type='MANUAL'):
-        """Create a new complete, validated backup of the database."""
+        """Create a complete disaster-recovery backup bundling database records AND physical media files."""
         timestamp = timezone.now().strftime('%Y%m%d_%H%M%S_%f')
         backup_name = f"backup_{timestamp}"
         backup = Backup.objects.create(
@@ -35,7 +37,8 @@ class BackupService:
             backup.status = 'IN_PROGRESS'
             backup.save()
             
-            # Export data with complete dependency hierarchy
+            # 1. Export data with complete dependency hierarchy
+            media_files_count = 0
             data = {
                 'family_trees': self._serialize_model(FamilyTree),
                 'people': self._serialize_model(Person),
@@ -45,31 +48,53 @@ class BackupService:
                 'tags': self._serialize_model(Tag),
                 'metadata': {
                     'created_at': timezone.now().isoformat(),
-                    'version': '2.0',
+                    'version': '3.0',
                     'backup_id': backup.id,
                     'record_counts': {
                         'family_trees': FamilyTree.objects.count(),
                         'people': Person.objects.count(),
                         'relationships': Relationship.objects.count(),
+                        'media': Media.objects.count(),
                     }
                 }
             }
             
-            # Save backup file locally
-            file_path = os.path.join(self.backup_dir, f"{backup_name}.json")
-            with open(file_path, 'w') as f:
-                json.dump(data, f, indent=2)
+            # 2. Package database records and media files into a full disaster-recovery ZIP archive
+            zip_file_path = os.path.join(self.backup_dir, f"{backup_name}.zip")
+            with zipfile.ZipFile(zip_file_path, 'w', compression=zipfile.ZIP_DEFLATED) as zipf:
+                # Add serialized database JSON
+                zipf.writestr('database.json', json.dumps(data, indent=2))
+                
+                # Bundle all media files (avatars, documents, certificates)
+                media_root = getattr(settings, 'MEDIA_ROOT', None)
+                if media_root and os.path.exists(media_root):
+                    for root, dirs, files in os.walk(media_root):
+                        for file in files:
+                            abs_path = os.path.join(root, file)
+                            rel_path = os.path.relpath(abs_path, media_root)
+                            zipf.write(abs_path, os.path.join('media', rel_path))
+                            media_files_count += 1
+                
+                # Add disaster-recovery manifest
+                manifest = {
+                    'backup_name': backup_name,
+                    'created_at': timezone.now().isoformat(),
+                    'includes_media': True,
+                    'media_files_count': media_files_count,
+                    'version': '3.0'
+                }
+                zipf.writestr('manifest.json', json.dumps(manifest, indent=2))
             
             # Upload to S3 if configured
             if self.s3_client and self.bucket_name:
-                s3_key = f"backups/{backup_name}.json"
-                self.s3_client.upload_file(file_path, self.bucket_name, s3_key)
+                s3_key = f"backups/{backup_name}.zip"
+                self.s3_client.upload_file(zip_file_path, self.bucket_name, s3_key)
                 backup.file_path = s3_key
             else:
-                backup.file_path = file_path
+                backup.file_path = zip_file_path
             
             # Update backup record
-            backup.file_size = os.path.getsize(file_path)
+            backup.file_size = os.path.getsize(zip_file_path)
             backup.status = 'COMPLETED'
             backup.completed_at = timezone.now()
             backup.save()
@@ -84,7 +109,7 @@ class BackupService:
     
     def restore_backup(self, backup_id):
         """
-        Restore data from a backup transactionally.
+        Restore data and media files from a backup transactionally.
         Validates backup integrity before deleting existing data.
         Guarantees that intentional or accidental restore failures cause zero data loss.
         """
@@ -94,24 +119,47 @@ class BackupService:
             backup.status = 'IN_PROGRESS'
             backup.save()
             
-            # 1. Read backup file
+            local_backup_path = backup.file_path
+            # Download from S3 if needed
             if self.s3_client and backup.file_path.startswith('backups/'):
-                response = self.s3_client.get_object(
-                    Bucket=self.bucket_name,
-                    Key=backup.file_path
-                )
-                data = json.loads(response['Body'].read())
+                local_backup_path = os.path.join(self.backup_dir, os.path.basename(backup.file_path))
+                self.s3_client.download_file(self.bucket_name, backup.file_path, local_backup_path)
+            
+            data = None
+            is_zip = local_backup_path.endswith('.zip') or zipfile.is_zipfile(local_backup_path)
+            
+            if is_zip:
+                with zipfile.ZipFile(local_backup_path, 'r') as zipf:
+                    if 'database.json' in zipf.namelist():
+                        data = json.loads(zipf.read('database.json').decode('utf-8'))
+                    elif 'data.json' in zipf.namelist():
+                        data = json.loads(zipf.read('data.json').decode('utf-8'))
+                    else:
+                        raise ValueError("Corrupted disaster-recovery backup: 'database.json' missing from ZIP.")
+                    
+                    # Restore physical media files
+                    media_root = getattr(settings, 'MEDIA_ROOT', None)
+                    if media_root:
+                        os.makedirs(media_root, exist_ok=True)
+                        for member in zipf.namelist():
+                            if member.startswith('media/') and not member.endswith('/'):
+                                rel_path = member[len('media/'):]
+                                dest_path = os.path.join(media_root, rel_path)
+                                os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+                                with zipf.open(member) as src, open(dest_path, 'wb') as dst:
+                                    shutil.copyfileobj(src, dst)
             else:
-                with open(backup.file_path, 'r') as f:
+                # Legacy JSON format compatibility
+                with open(local_backup_path, 'r', encoding='utf-8') as f:
                     data = json.load(f)
             
-            # 2. Pre-validation: Verify required structure before modifying database
+            # Pre-validation: Verify required structure before modifying database
             required_keys = ['people', 'relationships']
             for key in required_keys:
                 if key not in data:
                     raise ValueError(f"Corrupted or invalid backup: missing '{key}' section.")
 
-            # 3. Transactional execution: atomic restore with automatic rollback on error
+            # Transactional execution: atomic restore with automatic rollback on error
             with transaction.atomic():
                 # Clear existing data in reverse dependency order
                 Tag.objects.all().delete()

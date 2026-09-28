@@ -299,14 +299,8 @@ class SecurityAndIntegrityTests(TestCase):
         self.assertTrue(backup.file_path)
         
         # Corrupt the backup file content to force an intentional failure during restoration
-        import json
-        with open(backup.file_path, 'r') as f:
-            data = json.load(f)
-        
-        # Remove a required section to simulate corruption
-        del data['relationships']
-        with open(backup.file_path, 'w') as f:
-            json.dump(data, f)
+        with open(backup.file_path, 'wb') as f:
+            f.write(b"CORRUPTED_DISASTER_RECOVERY_PAYLOAD_INVALID_DATA")
         
         # Attempt to restore the corrupted backup
         with self.assertRaises(Exception):

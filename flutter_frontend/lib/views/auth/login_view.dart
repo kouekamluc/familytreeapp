@@ -20,12 +20,16 @@ class LoginView extends StatefulWidget {
 
 class _LoginViewState extends State<LoginView> {
   bool _useHeritageKey = true;
+  bool _isRegisterMode = false;
   final _formKey = GlobalKey<FormState>();
   final _keyFormKey = GlobalKey<FormState>();
 
   final _heritageKeyController = TextEditingController();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
   bool _obscurePassword = true;
 
   @override
@@ -33,7 +37,42 @@ class _LoginViewState extends State<LoginView> {
     _heritageKeyController.dispose();
     _usernameController.dispose();
     _passwordController.dispose();
+    _emailController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     super.dispose();
+  }
+
+  Future<void> _handleRegister() async {
+    if (!_formKey.currentState!.validate()) return;
+    HapticFeedback.mediumImpact();
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final tree = Provider.of<TreeProvider>(context, listen: false);
+    final success = await auth.register(
+      username: _usernameController.text.trim(),
+      email: _emailController.text.trim(),
+      password: _passwordController.text.trim(),
+      firstName: _firstNameController.text.trim(),
+      lastName: _lastNameController.text.trim(),
+    );
+    if (success) {
+      await tree.loadData();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Compte créé avec succès ! Bienvenue dans la dynastie.')),
+        );
+        widget.onLoginSuccess();
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: const Color(0xFF8A1C14),
+            content: Text(auth.errorMessage ?? 'Échec de l\'inscription.'),
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _handleHeritageKeyLogin() async {
@@ -543,16 +582,57 @@ class _LoginViewState extends State<LoginView> {
                       ),
                     ),
                   ]
-                  // TAB B: PASSWORD FORM
+                  // TAB B: PASSWORD & REGISTRATION FORM
                   else ...[
                     Form(
                       key: _formKey,
                       child: Column(
                         children: [
+                          if (_isRegisterMode) ...[
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: TextFormField(
+                                    controller: _firstNameController,
+                                    decoration: InputDecoration(
+                                      labelText: 'Prénom',
+                                      prefixIcon: const Icon(Icons.badge_outlined, color: RoyalTheme.brightGold),
+                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                    ),
+                                    validator: (val) => val == null || val.trim().isEmpty ? 'Requis' : null,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: TextFormField(
+                                    controller: _lastNameController,
+                                    decoration: InputDecoration(
+                                      labelText: 'Nom',
+                                      prefixIcon: const Icon(Icons.badge_outlined, color: RoyalTheme.brightGold),
+                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                    ),
+                                    validator: (val) => val == null || val.trim().isEmpty ? 'Requis' : null,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 14),
+                            TextFormField(
+                              controller: _emailController,
+                              keyboardType: TextInputType.emailAddress,
+                              decoration: InputDecoration(
+                                labelText: 'Adresse Email',
+                                prefixIcon: const Icon(Icons.email_outlined, color: RoyalTheme.brightGold),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                              validator: (val) => val == null || !val.contains('@') ? 'Email valide requis' : null,
+                            ),
+                            const SizedBox(height: 14),
+                          ],
                           TextFormField(
                             controller: _usernameController,
                             decoration: InputDecoration(
-                              labelText: 'Username',
+                              labelText: 'Identifiant / Username',
                               prefixIcon: const Icon(
                                 Icons.person_outline,
                                 color: RoyalTheme.brightGold,
@@ -631,7 +711,9 @@ class _LoginViewState extends State<LoginView> {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
-                              onPressed: auth.isLoading ? null : _handleLogin,
+                              onPressed: auth.isLoading
+                                  ? null
+                                  : (_isRegisterMode ? _handleRegister : _handleLogin),
                               child: auth.isLoading
                                   ? const SizedBox(
                                       width: 20,
@@ -641,14 +723,28 @@ class _LoginViewState extends State<LoginView> {
                                         color: Colors.black,
                                       ),
                                     )
-                                  : const Text(
-                                      'Sign In to Dynasty',
-                                      style: TextStyle(
+                                  : Text(
+                                      _isRegisterMode ? 'Créer mon Compte Dynastique' : 'Sign In to Dynasty',
+                                      style: const TextStyle(
                                         color: Colors.black,
                                         fontWeight: FontWeight.bold,
                                         fontSize: 14,
                                       ),
                                     ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          TextButton(
+                            onPressed: () => setState(() => _isRegisterMode = !_isRegisterMode),
+                            child: Text(
+                              _isRegisterMode
+                                  ? 'Déjà inscrit ? Se connecter avec mot de passe'
+                                  : 'Nouveau membre ? Créer un compte dynastique',
+                              style: const TextStyle(
+                                color: RoyalTheme.brightGold,
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                         ],

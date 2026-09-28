@@ -160,6 +160,60 @@ class RelationshipSerializer(serializers.ModelSerializer):
         model = Relationship
         fields = '__all__'
 
+    def validate(self, attrs):
+        p1 = attrs.get('person1')
+        p2 = attrs.get('person2')
+        rel_type = (attrs.get('relationship_type') or '').upper()
+        attrs['relationship_type'] = rel_type
+
+        allowed_types = ['PARENT', 'SPOUSE', 'SIBLING', 'ADOPTED', 'STEP']
+        if rel_type not in allowed_types:
+            raise serializers.ValidationError(
+                f"Type de relation '{rel_type}' non reconnu. Types autorisés : {', '.join(allowed_types)}."
+            )
+
+        if p1 and p2:
+            if p1.id == p2.id:
+                raise serializers.ValidationError("Une personne ne peut pas être en relation avec elle-même.")
+            if p1.family_tree_id != p2.family_tree_id:
+                raise serializers.ValidationError("Les deux membres doivent appartenir au même arbre généalogique.")
+
+            # Cycle detection for PARENT relationships
+            if rel_type == 'PARENT':
+                def is_ancestor(ancestor_id, current_person_id, visited=None):
+                    if visited is None:
+                        visited = set()
+                    if current_person_id in visited:
+                        return False
+                    visited.add(current_person_id)
+                    parent_ids = list(Relationship.objects.filter(
+                        person2_id=current_person_id, relationship_type='PARENT'
+                    ).values_list('person1_id', flat=True))
+                    if ancestor_id in parent_ids:
+                        return True
+                    for pid in parent_ids:
+                        if pid not in visited:
+                            if is_ancestor(ancestor_id, pid, visited):
+                                return True
+                    return False
+
+                if is_ancestor(p2.id, p1.id):
+                    raise serializers.ValidationError(
+                        f"Incohérence généalogique : {p2.first_name} est déjà un ascendant de {p1.first_name}."
+                    )
+
+            # Check symmetric relationships (SPOUSE, SIBLING)
+            if rel_type in ('SPOUSE', 'SIBLING'):
+                reverse_exists = Relationship.objects.filter(
+                    person1=p2, person2=p1, relationship_type=rel_type
+                ).exists()
+                if reverse_exists:
+                    raise serializers.ValidationError(
+                        f"Une alliance symétrique {rel_type} existe déjà entre ces deux membres."
+                    )
+
+        return super().validate(attrs)
+
     def to_representation(self, instance):
         ret = super().to_representation(instance)
         ret['source'] = instance.person1_id

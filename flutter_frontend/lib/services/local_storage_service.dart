@@ -53,11 +53,6 @@ class LocalStorageService {
   static const String _keyServerUrl = 'custom_server_host_url';
   static const String _keySavedAccounts = 'saved_accounts_list';
   static const String _keyActiveAccount = 'active_account_username';
-  static const String _keyOfflineTrees = 'offline_trees_cache';
-  static const String _keyPrefixPeople = 'offline_people_tree_';
-  static const String _keyPrefixRels = 'offline_rels_tree_';
-  static const String _keyLastTreeId = 'offline_last_tree_id';
-  static const String _keyLastPersonId = 'offline_last_person_id';
 
   // Singleton pattern
   static final LocalStorageService _instance = LocalStorageService._internal();
@@ -75,6 +70,34 @@ class LocalStorageService {
   Future<String?> getServerUrl() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_keyServerUrl);
+  }
+
+  // --- ACCOUNT SCOPE ---
+
+  Future<String> _getAccountScope([String? explicitUsername]) async {
+    if (explicitUsername != null && explicitUsername.isNotEmpty) {
+      return explicitUsername.trim().toLowerCase();
+    }
+    final prefs = await SharedPreferences.getInstance();
+    final active = prefs.getString(_keyActiveAccount);
+    if (active != null && active.isNotEmpty) {
+      return active.trim().toLowerCase();
+    }
+    return 'guest_preview';
+  }
+
+  Future<void> setActiveAccount(String? username) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (username != null && username.isNotEmpty) {
+      await prefs.setString(_keyActiveAccount, username.trim().toLowerCase());
+    } else {
+      await prefs.remove(_keyActiveAccount);
+    }
+  }
+
+  Future<String?> getActiveAccount() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_keyActiveAccount);
   }
 
   // --- MULTI-ACCOUNT MANAGEMENT ---
@@ -107,7 +130,7 @@ class LocalStorageService {
       }
       final encoded = jsonEncode(accounts.map((a) => a.toJson()).toList());
       await prefs.setString(_keySavedAccounts, encoded);
-      await prefs.setString(_keyActiveAccount, account.username);
+      await setActiveAccount(account.username);
     } catch (e) {
       debugPrint('Error saving account: $e');
     }
@@ -115,32 +138,57 @@ class LocalStorageService {
 
   Future<void> removeAccount(String username) async {
     try {
+      final clean = username.trim().toLowerCase();
       final prefs = await SharedPreferences.getInstance();
       final accounts = await getSavedAccounts();
-      accounts.removeWhere((a) => a.username.toLowerCase() == username.toLowerCase());
+      accounts.removeWhere((a) => a.username.toLowerCase() == clean);
       final encoded = jsonEncode(accounts.map((a) => a.toJson()).toList());
       await prefs.setString(_keySavedAccounts, encoded);
+
+      // Clean privacy-sensitive cache partition for this account
+      await clearAccountCache(clean);
+
+      // If removed account was active, clear active pointer
+      final currentActive = await getActiveAccount();
+      if (currentActive == clean) {
+        await setActiveAccount(null);
+      }
     } catch (e) {
       debugPrint('Error removing account: $e');
     }
   }
 
-  // --- OFFLINE FAMILY TREE DATA STORAGE ---
-
-  Future<void> cacheTrees(List<FamilyTree> trees) async {
+  Future<void> clearAccountCache(String username) async {
     try {
+      final clean = username.trim().toLowerCase();
+      final prefs = await SharedPreferences.getInstance();
+      final keys = prefs.getKeys().where((k) => k.startsWith('acc_${clean}_')).toList();
+      for (final k in keys) {
+        await prefs.remove(k);
+      }
+    } catch (e) {
+      debugPrint('Error clearing account cache: $e');
+    }
+  }
+
+  // --- OFFLINE FAMILY TREE DATA STORAGE (PARTITIONED PER ACCOUNT) ---
+
+  Future<void> cacheTrees(List<FamilyTree> trees, {String? accountScope}) async {
+    try {
+      final scope = await _getAccountScope(accountScope);
       final prefs = await SharedPreferences.getInstance();
       final data = jsonEncode(trees.map((t) => t.toJson()).toList());
-      await prefs.setString(_keyOfflineTrees, data);
+      await prefs.setString('acc_${scope}_trees', data);
     } catch (e) {
       debugPrint('Error caching trees locally: $e');
     }
   }
 
-  Future<List<FamilyTree>> getCachedTrees() async {
+  Future<List<FamilyTree>> getCachedTrees({String? accountScope}) async {
     try {
+      final scope = await _getAccountScope(accountScope);
       final prefs = await SharedPreferences.getInstance();
-      final str = prefs.getString(_keyOfflineTrees);
+      final str = prefs.getString('acc_${scope}_trees');
       if (str == null || str.isEmpty) return [];
       final List decoded = jsonDecode(str);
       return decoded.map((e) => FamilyTree.fromJson(e)).toList();
@@ -150,20 +198,22 @@ class LocalStorageService {
     }
   }
 
-  Future<void> cachePeople(int treeId, List<Person> people) async {
+  Future<void> cachePeople(int treeId, List<Person> people, {String? accountScope}) async {
     try {
+      final scope = await _getAccountScope(accountScope);
       final prefs = await SharedPreferences.getInstance();
       final data = jsonEncode(people.map((p) => p.toJson()).toList());
-      await prefs.setString('$_keyPrefixPeople$treeId', data);
+      await prefs.setString('acc_${scope}_people_$treeId', data);
     } catch (e) {
       debugPrint('Error caching people locally: $e');
     }
   }
 
-  Future<List<Person>> getCachedPeople(int treeId) async {
+  Future<List<Person>> getCachedPeople(int treeId, {String? accountScope}) async {
     try {
+      final scope = await _getAccountScope(accountScope);
       final prefs = await SharedPreferences.getInstance();
-      final str = prefs.getString('$_keyPrefixPeople$treeId');
+      final str = prefs.getString('acc_${scope}_people_$treeId');
       if (str == null || str.isEmpty) return [];
       final List decoded = jsonDecode(str);
       return decoded.map((e) => Person.fromJson(e)).toList();
@@ -173,20 +223,22 @@ class LocalStorageService {
     }
   }
 
-  Future<void> cacheRelationships(int treeId, List<Relationship> rels) async {
+  Future<void> cacheRelationships(int treeId, List<Relationship> rels, {String? accountScope}) async {
     try {
+      final scope = await _getAccountScope(accountScope);
       final prefs = await SharedPreferences.getInstance();
       final data = jsonEncode(rels.map((r) => r.toJson()).toList());
-      await prefs.setString('$_keyPrefixRels$treeId', data);
+      await prefs.setString('acc_${scope}_rels_$treeId', data);
     } catch (e) {
       debugPrint('Error caching relationships locally: $e');
     }
   }
 
-  Future<List<Relationship>> getCachedRelationships(int treeId) async {
+  Future<List<Relationship>> getCachedRelationships(int treeId, {String? accountScope}) async {
     try {
+      final scope = await _getAccountScope(accountScope);
       final prefs = await SharedPreferences.getInstance();
-      final str = prefs.getString('$_keyPrefixRels$treeId');
+      final str = prefs.getString('acc_${scope}_rels_$treeId');
       if (str == null || str.isEmpty) return [];
       final List decoded = jsonDecode(str);
       return decoded.map((e) => Relationship.fromJson(e)).toList();
@@ -196,23 +248,27 @@ class LocalStorageService {
     }
   }
 
-  Future<void> saveLastActiveTreeId(int id) async {
+  Future<void> saveLastActiveTreeId(int id, {String? accountScope}) async {
+    final scope = await _getAccountScope(accountScope);
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_keyLastTreeId, id);
+    await prefs.setInt('acc_${scope}_last_tree_id', id);
   }
 
-  Future<int?> getLastActiveTreeId() async {
+  Future<int?> getLastActiveTreeId({String? accountScope}) async {
+    final scope = await _getAccountScope(accountScope);
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getInt(_keyLastTreeId);
+    return prefs.getInt('acc_${scope}_last_tree_id');
   }
 
-  Future<void> saveLastActivePersonId(int id) async {
+  Future<void> saveLastActivePersonId(int id, {String? accountScope}) async {
+    final scope = await _getAccountScope(accountScope);
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_keyLastPersonId, id);
+    await prefs.setInt('acc_${scope}_last_person_id', id);
   }
 
-  Future<int?> getLastActivePersonId() async {
+  Future<int?> getLastActivePersonId({String? accountScope}) async {
+    final scope = await _getAccountScope(accountScope);
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getInt(_keyLastPersonId);
+    return prefs.getInt('acc_${scope}_last_person_id');
   }
 }

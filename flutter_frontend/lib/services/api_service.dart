@@ -76,29 +76,99 @@ class ApiService {
     return map;
   }
 
+  Future<bool> _tryRefreshToken(String origin) async {
+    if (_refreshToken == null) return false;
+    try {
+      final refresh = await http
+          .post(
+            Uri.parse('$origin/api/auth/token/refresh/'),
+            headers: _headers(requiresAuth: false),
+            body: jsonEncode({'refresh': _refreshToken}),
+          )
+          .timeout(const Duration(seconds: 4));
+      if (refresh.statusCode == 200) {
+        _token = jsonDecode(refresh.body)['access'] as String;
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(_tokenKey, _token!);
+        return true;
+      }
+    } catch (e) {
+      debugPrint('Token refresh failed: $e');
+    }
+    return false;
+  }
+
   Future<http.Response> _getWithAuth(Uri url) async {
     var response = await http
         .get(url, headers: _headers())
-        .timeout(const Duration(seconds: 4));
+        .timeout(const Duration(seconds: 5));
     if (response.statusCode == 401 && _refreshToken != null) {
-      try {
-        final refresh = await http
-            .post(
-              Uri.parse('${url.origin}/api/auth/token/refresh/'),
-              headers: _headers(requiresAuth: false),
-              body: jsonEncode({'refresh': _refreshToken}),
-            )
-            .timeout(const Duration(seconds: 4));
-        if (refresh.statusCode == 200) {
-          _token = jsonDecode(refresh.body)['access'] as String;
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString(_tokenKey, _token!);
-          response = await http
-              .get(url, headers: _headers())
-              .timeout(const Duration(seconds: 4));
-        }
-      } catch (e) {
-        debugPrint('Token refresh failed: $e');
+      final refreshed = await _tryRefreshToken(url.origin);
+      if (refreshed) {
+        response = await http
+            .get(url, headers: _headers())
+            .timeout(const Duration(seconds: 5));
+      }
+    }
+    return response;
+  }
+
+  Future<http.Response> _postWithAuth(Uri url, {Object? body}) async {
+    var response = await http
+        .post(url, headers: _headers(), body: body)
+        .timeout(const Duration(seconds: 5));
+    if (response.statusCode == 401 && _refreshToken != null) {
+      final refreshed = await _tryRefreshToken(url.origin);
+      if (refreshed) {
+        response = await http
+            .post(url, headers: _headers(), body: body)
+            .timeout(const Duration(seconds: 5));
+      }
+    }
+    return response;
+  }
+
+  Future<http.Response> _patchWithAuth(Uri url, {Object? body}) async {
+    var response = await http
+        .patch(url, headers: _headers(), body: body)
+        .timeout(const Duration(seconds: 5));
+    if (response.statusCode == 401 && _refreshToken != null) {
+      final refreshed = await _tryRefreshToken(url.origin);
+      if (refreshed) {
+        response = await http
+            .patch(url, headers: _headers(), body: body)
+            .timeout(const Duration(seconds: 5));
+      }
+    }
+    return response;
+  }
+
+  // ignore: unused_element
+  Future<http.Response> _putWithAuth(Uri url, {Object? body}) async {
+    var response = await http
+        .put(url, headers: _headers(), body: body)
+        .timeout(const Duration(seconds: 5));
+    if (response.statusCode == 401 && _refreshToken != null) {
+      final refreshed = await _tryRefreshToken(url.origin);
+      if (refreshed) {
+        response = await http
+            .put(url, headers: _headers(), body: body)
+            .timeout(const Duration(seconds: 5));
+      }
+    }
+    return response;
+  }
+
+  Future<http.Response> _deleteWithAuth(Uri url) async {
+    var response = await http
+        .delete(url, headers: _headers())
+        .timeout(const Duration(seconds: 5));
+    if (response.statusCode == 401 && _refreshToken != null) {
+      final refreshed = await _tryRefreshToken(url.origin);
+      if (refreshed) {
+        response = await http
+            .delete(url, headers: _headers())
+            .timeout(const Duration(seconds: 5));
       }
     }
     return response;
@@ -151,6 +221,61 @@ class ApiService {
         debugPrint('Login exception on $base: $e');
       }
     }
+    return false;
+  }
+
+  Future<bool> register({
+    required String username,
+    required String email,
+    required String password,
+    String? firstName,
+    String? lastName,
+  }) async {
+    lastAuthError = null;
+    for (final base in ApiConfig.candidateUrls) {
+      final url = Uri.parse('$base/api/register/');
+      try {
+        final response = await http
+            .post(
+              url,
+              headers: {'Content-Type': 'application/json'},
+              body: jsonEncode({
+                'username': username,
+                'email': email,
+                'password': password,
+                if (firstName != null && firstName.isNotEmpty) 'first_name': firstName,
+                if (lastName != null && lastName.isNotEmpty) 'last_name': lastName,
+              }),
+            )
+            .timeout(const Duration(seconds: 5));
+
+        if (response.statusCode == 201 || response.statusCode == 200) {
+          ApiConfig.setBaseUrl(base);
+          // Auto-login upon successful registration
+          return await login(username, password);
+        } else {
+          try {
+            final data = jsonDecode(utf8.decode(response.bodyBytes));
+            if (data is Map) {
+              final msgs = <String>[];
+              data.forEach((k, v) {
+                if (v is List && v.isNotEmpty) {
+                  msgs.add('$k: ${v.first}');
+                } else if (v is String) {
+                  msgs.add(v);
+                }
+              });
+              if (msgs.isNotEmpty) lastAuthError = msgs.join('\n');
+            }
+          } catch (_) {
+            lastAuthError = 'Erreur d\'inscription (${response.statusCode})';
+          }
+        }
+      } catch (e) {
+        debugPrint('Registration exception on $base: $e');
+      }
+    }
+    lastAuthError ??= 'Impossible de contacter le serveur d\'inscription.';
     return false;
   }
 
@@ -283,26 +408,56 @@ class ApiService {
 
   Future<bool> switchToAccount(SavedAccount account) async {
     _isPreviewMode = false;
-    _token = account.token;
-    _refreshToken = account.refreshToken;
+    final previousToken = _token;
+    final previousRefreshToken = _refreshToken;
+    final previousUser = _currentUser;
+
+    // Reset current user so previous identity is NEVER retained on failure
+    _currentUser = null;
+
     final prefs = await SharedPreferences.getInstance();
-    if (_token != null) {
+    if (account.token != null) {
+      _token = account.token;
+      _refreshToken = account.refreshToken;
       await prefs.setString(_tokenKey, _token!);
-    } else {
-      await prefs.remove(_tokenKey);
-    }
-    if (_refreshToken != null) {
-      await prefs.setString(_refreshKey, _refreshToken!);
-    } else {
-      await prefs.remove(_refreshKey);
+      if (_refreshToken != null) {
+        await prefs.setString(_refreshKey, _refreshToken!);
+      }
+      final user = await fetchCurrentUser();
+      if (user != null) {
+        await LocalStorageService().setActiveAccount(user.username);
+        return true;
+      }
+    } else if (account.heritageKey != null) {
+      final success = await loginWithHeritageKey(account.heritageKey!);
+      if (success && _currentUser != null) {
+        await LocalStorageService().setActiveAccount(_currentUser!.username);
+        return true;
+      }
     }
 
-    if (account.token != null) {
-      await fetchCurrentUser();
-    } else if (account.heritageKey != null) {
-      return await loginWithHeritageKey(account.heritageKey!);
+    // Switch failed: revert safely or clear
+    if (previousToken != null) {
+      _token = previousToken;
+      _refreshToken = previousRefreshToken;
+      _currentUser = previousUser;
+      await prefs.setString(_tokenKey, _token!);
+      if (_refreshToken != null) {
+        await prefs.setString(_refreshKey, _refreshToken!);
+      }
+      if (previousUser != null) {
+        await LocalStorageService().setActiveAccount(previousUser.username);
+      }
+    } else {
+      _token = null;
+      _refreshToken = null;
+      _currentUser = null;
+      await prefs.remove(_tokenKey);
+      await prefs.remove(_refreshKey);
+      await prefs.remove(_userKey);
+      await LocalStorageService().setActiveAccount(null);
     }
-    return _currentUser != null;
+    return false;
   }
 
   Future<User?> fetchCurrentUser() async {
@@ -312,14 +467,19 @@ class ApiService {
       final url = Uri.parse('${ApiConfig.baseUrl}/users/me/');
       final res = await _getWithAuth(url);
       if (res.statusCode == 200) {
-        final data = jsonDecode(res.body);
+        final data = jsonDecode(utf8.decode(res.bodyBytes));
         _currentUser = User.fromJson(data);
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString(_userKey, jsonEncode(_currentUser!.toJson()));
         return _currentUser;
+      } else if (res.statusCode == 401 || res.statusCode == 403) {
+        _currentUser = null;
+        return null;
       }
-    } catch (_) {}
-    return _currentUser;
+    } catch (_) {
+      return null;
+    }
+    return null;
   }
 
   // --- HERITAGE KEYS ---
@@ -332,7 +492,7 @@ class ApiService {
         final res = await _getWithAuth(url);
         if (res.statusCode == 200) {
           ApiConfig.setBaseUrl(base);
-          final List data = jsonDecode(res.body);
+          final List data = jsonDecode(utf8.decode(res.bodyBytes));
           return data.map((item) => HeritageKey.fromJson(item)).toList();
         }
       } catch (e) {
@@ -350,16 +510,13 @@ class ApiService {
     for (final base in ApiConfig.candidateUrls) {
       final url = Uri.parse('$base${ApiConfig.heritageKeyGenerateEndpoint}');
       try {
-        final res = await http
-            .post(
-              url,
-              headers: _headers(requiresAuth: true),
-              body: jsonEncode({'name': name, 'role': role}),
-            )
-            .timeout(const Duration(seconds: 4));
+        final res = await _postWithAuth(
+          url,
+          body: jsonEncode({'name': name, 'role': role}),
+        );
         if (res.statusCode == 201 || res.statusCode == 200) {
           ApiConfig.setBaseUrl(base);
-          return HeritageKey.fromJson(jsonDecode(res.body));
+          return HeritageKey.fromJson(jsonDecode(utf8.decode(res.bodyBytes)));
         }
       } catch (e) {
         debugPrint('Error generating heritage key on $base: $e');
@@ -373,13 +530,10 @@ class ApiService {
     for (final base in ApiConfig.candidateUrls) {
       final url = Uri.parse('$base${ApiConfig.heritageKeyRevokeEndpoint}');
       try {
-        final res = await http
-            .post(
-              url,
-              headers: _headers(requiresAuth: true),
-              body: jsonEncode({'key_id': keyId}),
-            )
-            .timeout(const Duration(seconds: 4));
+        final res = await _postWithAuth(
+          url,
+          body: jsonEncode({'key_id': keyId}),
+        );
         if (res.statusCode == 200) {
           ApiConfig.setBaseUrl(base);
           return true;
@@ -428,13 +582,12 @@ class ApiService {
     if (_isPreviewMode) return null;
     final url = Uri.parse('${ApiConfig.baseUrl}${ApiConfig.treesEndpoint}');
     try {
-      final res = await http.post(
+      final res = await _postWithAuth(
         url,
-        headers: _headers(),
         body: jsonEncode({'name': name, 'description': description}),
       );
       if (res.statusCode == 201 || res.statusCode == 200) {
-        return FamilyTree.fromJson(jsonDecode(res.body));
+        return FamilyTree.fromJson(jsonDecode(utf8.decode(res.bodyBytes)));
       }
     } catch (e) {
       debugPrint('Error creating tree: $e');
@@ -515,13 +668,12 @@ class ApiService {
     if (_isPreviewMode) return null;
     final url = Uri.parse('${ApiConfig.baseUrl}${ApiConfig.peopleEndpoint}');
     try {
-      final res = await http.post(
+      final res = await _postWithAuth(
         url,
-        headers: _headers(),
         body: jsonEncode(data),
       );
       if (res.statusCode == 201 || res.statusCode == 200) {
-        return Person.fromJson(jsonDecode(res.body));
+        return Person.fromJson(jsonDecode(utf8.decode(res.bodyBytes)));
       }
     } catch (e) {
       debugPrint('Error creating person: $e');
@@ -535,13 +687,12 @@ class ApiService {
       '${ApiConfig.baseUrl}${ApiConfig.peopleEndpoint}$id/',
     );
     try {
-      final res = await http.patch(
+      final res = await _patchWithAuth(
         url,
-        headers: _headers(),
         body: jsonEncode(data),
       );
       if (res.statusCode == 200) {
-        return Person.fromJson(jsonDecode(res.body));
+        return Person.fromJson(jsonDecode(utf8.decode(res.bodyBytes)));
       }
     } catch (e) {
       debugPrint('Error updating person: $e');
@@ -555,12 +706,35 @@ class ApiService {
       '${ApiConfig.baseUrl}${ApiConfig.peopleEndpoint}$id/',
     );
     try {
-      final res = await http.delete(url, headers: _headers());
+      final res = await _deleteWithAuth(url);
       return res.statusCode == 204 || res.statusCode == 200;
     } catch (e) {
       debugPrint('Error deleting person: $e');
       return false;
     }
+  }
+
+  Future<String?> uploadPersonPhoto(int personId, List<int> bytes, String filename) async {
+    if (_isPreviewMode) return null;
+    final url = Uri.parse('${ApiConfig.baseUrl}${ApiConfig.peopleEndpoint}$personId/');
+    try {
+      final req = http.MultipartRequest('PATCH', url);
+      req.headers.addAll(_headers());
+      req.files.add(http.MultipartFile.fromBytes(
+        'profile_picture',
+        bytes,
+        filename: filename,
+      ));
+      final streamed = await req.send().timeout(const Duration(seconds: 15));
+      final res = await http.Response.fromStream(streamed);
+      if (res.statusCode == 200) {
+        final data = jsonDecode(utf8.decode(res.bodyBytes));
+        return data['profile_picture'] ?? data['avatar'];
+      }
+    } catch (e) {
+      debugPrint('Error uploading photo: $e');
+    }
+    return null;
   }
 
   // --- RELATIONSHIPS ---
@@ -598,7 +772,7 @@ class ApiService {
         final res = await _getWithAuth(url);
         if (res.statusCode == 200) {
           ApiConfig.setBaseUrl(base);
-          final data = jsonDecode(res.body);
+          final data = jsonDecode(utf8.decode(res.bodyBytes));
           final list = (data is List)
               ? data
               : (data['results'] is List ? data['results'] as List : []);
@@ -620,24 +794,25 @@ class ApiService {
   Future<Relationship?> createRelationship(
     int person1Id,
     int person2Id,
-    String type,
-  ) async {
+    String type, {
+    String? notes,
+  }) async {
     if (_isPreviewMode) return null;
     final url = Uri.parse(
       '${ApiConfig.baseUrl}${ApiConfig.relationshipsEndpoint}',
     );
     try {
-      final res = await http.post(
+      final res = await _postWithAuth(
         url,
-        headers: _headers(),
         body: jsonEncode({
           'person1': person1Id,
           'person2': person2Id,
-          'relationship_type': type,
+          'relationship_type': type.toUpperCase(),
+          if (notes != null) 'notes': notes,
         }),
       );
       if (res.statusCode == 201 || res.statusCode == 200) {
-        return Relationship.fromJson(jsonDecode(res.body));
+        return Relationship.fromJson(jsonDecode(utf8.decode(res.bodyBytes)));
       }
     } catch (e) {
       debugPrint('Error creating relationship: $e');
@@ -651,10 +826,39 @@ class ApiService {
       '${ApiConfig.baseUrl}${ApiConfig.relationshipsEndpoint}$id/',
     );
     try {
-      final res = await http.delete(url, headers: _headers());
+      final res = await _deleteWithAuth(url);
       return res.statusCode == 204 || res.statusCode == 200;
     } catch (e) {
       debugPrint('Error deleting relationship: $e');
+      return false;
+    }
+  }
+
+  // --- DATA MANAGEMENT (IMPORT / EXPORT) ---
+
+  Future<Map<String, dynamic>?> exportTreeData({int? treeId}) async {
+    if (_isPreviewMode) return null;
+    final q = treeId != null ? '?tree_id=$treeId' : '';
+    final url = Uri.parse('${ApiConfig.baseUrl}/data/export/$q');
+    try {
+      final res = await _getWithAuth(url);
+      if (res.statusCode == 200) {
+        return jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
+      }
+    } catch (e) {
+      debugPrint('Error exporting tree data: $e');
+    }
+    return null;
+  }
+
+  Future<bool> importTreeData(Map<String, dynamic> data) async {
+    if (_isPreviewMode) return false;
+    final url = Uri.parse('${ApiConfig.baseUrl}/data/import/');
+    try {
+      final res = await _postWithAuth(url, body: jsonEncode(data));
+      return res.statusCode == 200 || res.statusCode == 201;
+    } catch (e) {
+      debugPrint('Error importing tree data: $e');
       return false;
     }
   }

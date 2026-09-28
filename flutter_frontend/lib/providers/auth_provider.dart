@@ -52,6 +52,42 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  Future<bool> register({
+    required String username,
+    required String email,
+    required String password,
+    String? firstName,
+    String? lastName,
+  }) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final success = await _apiService.register(
+        username: username,
+        email: email,
+        password: password,
+        firstName: firstName,
+        lastName: lastName,
+      );
+      if (!success) {
+        _errorMessage = _apiService.lastAuthError ?? 'Échec de l\'inscription.';
+      } else {
+        await fetchHeritageKeys();
+        await loadSavedAccounts();
+      }
+      _isLoading = false;
+      notifyListeners();
+      return success;
+    } catch (e) {
+      _errorMessage = 'Erreur d\'inscription : $e';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<bool> loginWithHeritageKey(String heritageKey) async {
     _isLoading = true;
     _errorMessage = null;
@@ -157,6 +193,7 @@ class AuthProvider extends ChangeNotifier {
   Future<void> logout() async {
     await _apiService.logout();
     _heritageKeys = [];
+    await LocalStorageService().setActiveAccount(null);
     await loadSavedAccounts();
     notifyListeners();
   }

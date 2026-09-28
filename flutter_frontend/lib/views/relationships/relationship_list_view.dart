@@ -126,6 +126,9 @@ class _RelationshipListViewState extends State<RelationshipListView> {
                       items: const [
                         DropdownMenuItem(value: 'PARENT', child: Text('🌱 Parent → Child Lineage')),
                         DropdownMenuItem(value: 'SPOUSE', child: Text('💍 Spousal Matrimony')),
+                        DropdownMenuItem(value: 'SIBLING', child: Text('🤝 Fraternité / Sibling')),
+                        DropdownMenuItem(value: 'ADOPTED', child: Text('⭐ Filiation Adoptive / Fostered')),
+                        DropdownMenuItem(value: 'STEP', child: Text('🌿 Liens Parallèles / Step')),
                       ],
                       onChanged: (v) {
                         if (v != null) setDlgState(() => type = v);
@@ -166,7 +169,9 @@ class _RelationshipListViewState extends State<RelationshipListView> {
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 8),
                             child: Icon(
-                              type == 'SPOUSE' ? Icons.favorite : Icons.arrow_forward,
+                              type == 'SPOUSE'
+                                  ? Icons.favorite
+                                  : (type == 'SIBLING' ? Icons.people_outline : Icons.arrow_forward),
                               size: 16,
                               color: RoyalTheme.brightGold,
                             ),
@@ -184,12 +189,29 @@ class _RelationshipListViewState extends State<RelationshipListView> {
               ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: RoyalTheme.brightGold),
                 onPressed: () async {
-                  Navigator.pop(ctx);
-                  final ok = await treeProvider.addRelationship(person1Id, person2Id, type);
-                  if (context.mounted && ok) {
+                  if (person1Id == person2Id) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Lineage bond established successfully.')),
+                      const SnackBar(content: Text('Cannot establish a relationship with the same person.')),
                     );
+                    return;
+                  }
+                  final ok = await treeProvider.addRelationship(person1Id, person2Id, type);
+                  if (ok) {
+                    if (ctx.mounted) Navigator.pop(ctx);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Lineage bond established successfully.')),
+                      );
+                    }
+                  } else {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          backgroundColor: Colors.redAccent,
+                          content: Text('Failed to establish bond. Verify relationship rules or duplicate entries.'),
+                        ),
+                      );
+                    }
                   }
                 },
                 child: const Text('Confirm Alliance', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),

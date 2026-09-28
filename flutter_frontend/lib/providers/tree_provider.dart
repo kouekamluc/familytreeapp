@@ -431,9 +431,27 @@ class TreeProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<FamilyTree?> createTree(String name, String description) async {
+    try {
+      final tree = await _apiService.createTree(name, description);
+      if (tree != null) {
+        _trees.add(tree);
+        _selectedTree = tree;
+        await LocalStorageService().cacheTrees(_trees);
+        await LocalStorageService().saveLastActiveTreeId(tree.id);
+        await loadData(targetTreeId: tree.id);
+        notifyListeners();
+        return tree;
+      }
+    } catch (e) {
+      debugPrint('Error creating tree in provider: $e');
+    }
+    return null;
+  }
+
   Future<Person?> createRelative({
     required int sourcePersonId,
-    required String role, // 'parent', 'child', 'spouse'
+    required String role, // 'parent', 'child', 'spouse', 'sibling'
     required Map<String, dynamic> personData,
   }) async {
     try {
@@ -442,8 +460,6 @@ class TreeProvider extends ChangeNotifier {
       }
       final newPerson = await _apiService.createPerson(personData);
       if (newPerson != null) {
-        _people.add(newPerson);
-
         int p1Id;
         int p2Id;
         String relType;
@@ -456,13 +472,28 @@ class TreeProvider extends ChangeNotifier {
           p1Id = sourcePersonId;
           p2Id = newPerson.id;
           relType = 'PARENT';
+        } else if (role == 'sibling' || role == 'brother' || role == 'sister') {
+          p1Id = sourcePersonId;
+          p2Id = newPerson.id;
+          relType = 'SIBLING';
         } else {
           p1Id = sourcePersonId;
           p2Id = newPerson.id;
           relType = 'SPOUSE';
         }
 
-        await addRelationship(p1Id, p2Id, relType);
+        final relOk = await addRelationship(p1Id, p2Id, relType);
+        if (!relOk) {
+          // ATOMIC ROLLBACK: delete orphaned person if relationship creation fails
+          debugPrint('Rolling back orphaned person ${newPerson.id} because relationship failed');
+          await _apiService.deletePerson(newPerson.id);
+          return null;
+        }
+
+        _people.add(newPerson);
+        if (_selectedTree != null) {
+          await LocalStorageService().cachePeople(_selectedTree!.id, _people);
+        }
         notifyListeners();
         return newPerson;
       }

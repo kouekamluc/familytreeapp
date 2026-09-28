@@ -21,7 +21,7 @@ class BackupViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['post'])
     def create_backup(self, request):
-        """Create a new backup."""
+        """Create a new complete disaster-recovery backup."""
         try:
             backup_service = BackupService()
             backup = backup_service.create_backup(user=request.user)
@@ -34,7 +34,7 @@ class BackupViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['post'])
     def restore(self, request, pk=None):
-        """Restore data from a backup."""
+        """Restore data and media from a backup."""
         try:
             backup_service = BackupService()
             backup_service.restore_backup(pk)
@@ -47,7 +47,7 @@ class BackupViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['get'])
     def download(self, request, pk=None):
-        """Download a backup file."""
+        """Download a backup file (ZIP with media or legacy JSON)."""
         backup = self.get_object()
         
         if not os.path.exists(backup.file_path):
@@ -57,6 +57,9 @@ class BackupViewSet(viewsets.ModelViewSet):
             )
         
         with open(backup.file_path, 'rb') as f:
-            response = HttpResponse(f.read(), content_type='application/json')
-            response['Content-Disposition'] = f'attachment; filename="{backup.name}.json"'
+            is_zip = backup.file_path.endswith('.zip')
+            content_type = 'application/zip' if is_zip else 'application/json'
+            ext = 'zip' if is_zip else 'json'
+            response = HttpResponse(f.read(), content_type=content_type)
+            response['Content-Disposition'] = f'attachment; filename="{backup.name}.{ext}"'
             return response

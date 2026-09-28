@@ -51,6 +51,8 @@ class KinshipSolver {
     final parentMap = <int, List<int>>{}; // childId -> [parentId]
     final childrenMap = <int, List<int>>{}; // parentId -> [childId]
     final spouseMap = <int, List<int>>{}; // personId -> [spouseId]
+    final siblingMap = <int, List<int>>{}; // personId -> [siblingId]
+    final stepMap = <int, List<int>>{}; // personId -> [stepId]
     final graph = <int, List<Map<String, dynamic>>>{}; // id -> [{ targetId, type }]
 
     for (var r in relationships) {
@@ -73,6 +75,24 @@ class KinshipSolver {
 
         graph[p1]!.add({'targetId': p2, 'type': 'spouse'});
         graph[p2]!.add({'targetId': p1, 'type': 'spouse'});
+      } else if (type == 'SIBLING') {
+        siblingMap.putIfAbsent(p1, () => []).add(p2);
+        siblingMap.putIfAbsent(p2, () => []).add(p1);
+
+        graph[p1]!.add({'targetId': p2, 'type': 'sibling'});
+        graph[p2]!.add({'targetId': p1, 'type': 'sibling'});
+      } else if (type == 'ADOPTED') {
+        parentMap.putIfAbsent(p2, () => []).add(p1);
+        childrenMap.putIfAbsent(p1, () => []).add(p2);
+
+        graph[p1]!.add({'targetId': p2, 'type': 'child'});
+        graph[p2]!.add({'targetId': p1, 'type': 'parent'});
+      } else if (type == 'STEP') {
+        stepMap.putIfAbsent(p1, () => []).add(p2);
+        stepMap.putIfAbsent(p2, () => []).add(p1);
+
+        graph[p1]!.add({'targetId': p2, 'type': 'step'});
+        graph[p2]!.add({'targetId': p1, 'type': 'step'});
       }
     }
 

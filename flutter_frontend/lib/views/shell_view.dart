@@ -10,6 +10,7 @@ import '../providers/theme_provider.dart';
 import '../providers/tree_provider.dart';
 import '../widgets/heritage_key_sheet.dart';
 import '../widgets/royal_button.dart';
+import '../widgets/tree_manager_sheet.dart';
 import '../widgets/user_profile_sheet.dart';
 import 'auth/login_view.dart';
 
@@ -1026,48 +1027,57 @@ class _ShellViewState extends State<ShellView> {
             ),
           ),
 
-          // Active Lineage Badge
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF161A26) : const Color(0xFFF0EBE0),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: RoyalTheme.primaryGold.withValues(alpha: 0.3),
+          // Active Lineage Badge (Clickable to switch dynasties, create tree, or import/export)
+          InkWell(
+            onTap: () => TreeManagerSheet.show(context),
+            borderRadius: BorderRadius.circular(10),
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF161A26) : const Color(0xFFF0EBE0),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: RoyalTheme.primaryGold.withValues(alpha: 0.3),
+                ),
               ),
-            ),
-            child: Row(
-              children: [
-                const Text('👑', style: TextStyle(fontSize: 13)),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        treeProvider.selectedTree?.name ?? 'Royal Lineage',
-                        style: GoogleFonts.cinzel(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: isDark
+              child: Row(
+                children: [
+                  const Text('👑', style: TextStyle(fontSize: 13)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          treeProvider.selectedTree?.name ?? 'Royal Lineage',
+                          style: GoogleFonts.cinzel(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: isDark
                               ? RoyalTheme.lightGold
                               : const Color(0xFF855B14),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        '$memberCount Living & Ancestral Pillars',
-                        style: const TextStyle(
-                          fontSize: 9.5,
-                          color: Colors.grey,
+                        Text(
+                          '$memberCount Pillars • Tap to switch',
+                          style: const TextStyle(
+                            fontSize: 9.5,
+                            color: Colors.grey,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                  const Icon(
+                    Icons.unfold_more_rounded,
+                    size: 16,
+                    color: RoyalTheme.brightGold,
+                  ),
+                ],
+              ),
             ),
           ),
 
@@ -1476,34 +1486,70 @@ class _ShellViewState extends State<ShellView> {
 
     return AppBar(
       titleSpacing: 12,
-      title: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            padding: const EdgeInsets.all(3),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: isDark ? const Color(0xFF141722) : const Color(0xFFF9F5EC),
-              border: Border.all(color: RoyalTheme.brightGold),
-            ),
-            child: Image.asset('assets/logo.png', fit: BoxFit.contain),
-          ),
-          const SizedBox(width: 8),
-          Flexible(
-            child: Text(
-              'KKEVO FAMILY',
-              style: GoogleFonts.cinzel(
-                color: RoyalTheme.brightGold,
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.2,
+      title: InkWell(
+        onTap: () => TreeManagerSheet.show(context),
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                padding: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isDark ? const Color(0xFF141722) : const Color(0xFFF9F5EC),
+                  border: Border.all(color: RoyalTheme.brightGold),
+                ),
+                child: Image.asset('assets/logo.png', fit: BoxFit.contain),
               ),
-              maxLines: 1,
-            ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'KKEVO FAMILY',
+                      style: GoogleFonts.cinzel(
+                        color: RoyalTheme.brightGold,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.1,
+                      ),
+                      maxLines: 1,
+                    ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            treeProvider.selectedTree?.name ?? 'Royal Lineage',
+                            style: GoogleFonts.inter(
+                              color: isDark ? const Color(0xFFC7C1B7) : const Color(0xFF555048),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 2),
+                        const Icon(
+                          Icons.arrow_drop_down,
+                          size: 14,
+                          color: RoyalTheme.brightGold,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
       actions: [
         IconButton(
@@ -1585,7 +1631,9 @@ class _ShellViewState extends State<ShellView> {
             side: const BorderSide(color: RoyalTheme.borderDark),
           ),
           onSelected: (val) {
-            if (val == 'profile') {
+            if (val == 'trees') {
+              TreeManagerSheet.show(context);
+            } else if (val == 'profile') {
               UserProfileSheet.show(context);
             } else if (val == 'vault') {
               _navigateToDashboardIndex(4);
@@ -1597,6 +1645,23 @@ class _ShellViewState extends State<ShellView> {
             }
           },
           itemBuilder: (ctx) => [
+            const PopupMenuItem(
+              value: 'trees',
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.account_tree_outlined,
+                    color: RoyalTheme.brightGold,
+                    size: 18,
+                  ),
+                  SizedBox(width: 10),
+                  Text(
+                    'Dynasties & Import/Export',
+                    style: TextStyle(fontSize: 13),
+                  ),
+                ],
+              ),
+            ),
             const PopupMenuItem(
               value: 'profile',
               child: Row(
