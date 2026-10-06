@@ -7,6 +7,7 @@ from .models import HeritageKey
 User = get_user_model()
 
 class HeritageKeySerializer(serializers.ModelSerializer):
+    key = serializers.SerializerMethodField()
     username = serializers.CharField(source='user.username', read_only=True)
     family_tree_name = serializers.CharField(source='family_tree.name', read_only=True)
     person_name = serializers.SerializerMethodField()
@@ -33,7 +34,10 @@ class HeritageKeySerializer(serializers.ModelSerializer):
         )
         read_only_fields = ('id', 'created_at', 'updated_at', 'last_used_at', 'usage_count', 'family_tree_name', 'person_name')
 
-    def get_person_name(self, obj):
+    def get_key(self, obj):
+        return f'Hidden personal key #{obj.pk}'
+
+    def get_person_name(self, obj) -> str | None:
         return str(obj.person) if obj.person else None
 
 
@@ -44,10 +48,10 @@ class HeritageKeyLoginSerializer(serializers.Serializer):
         cleaned_key = value.strip()
         if not cleaned_key:
             raise serializers.ValidationError("Heritage Key cannot be empty.")
-        
+
         # Case-insensitive lookup
         try:
-            key_obj = HeritageKey.objects.select_related('user').get(key__iexact=cleaned_key)
+            key_obj = HeritageKey.objects.select_related('user').get(key=HeritageKey.verifier(cleaned_key))
         except HeritageKey.DoesNotExist:
             raise serializers.ValidationError("Invalid Heritage Key. Please check the key and try again.")
 
@@ -64,7 +68,7 @@ class HeritageKeyLoginSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         key = attrs.get('key')
-        key_obj = HeritageKey.objects.select_related('user').get(key__iexact=key)
+        key_obj = HeritageKey.objects.select_related('user').get(key=HeritageKey.verifier(key))
         attrs['heritage_key_instance'] = key_obj
         attrs['user'] = key_obj.user
         return attrs
@@ -75,12 +79,11 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'first_name', 'last_name', 'is_staff', 'is_superuser', 'primary_heritage_key')
-        read_only_fields = ('id', 'is_staff', 'is_superuser', 'primary_heritage_key')
+        fields = ('id', 'username', 'email', 'first_name', 'last_name', 'is_staff', 'is_superuser', 'primary_heritage_key', 'email_verified')
+        read_only_fields = ('id', 'is_staff', 'is_superuser', 'primary_heritage_key', 'email_verified')
 
-    def get_primary_heritage_key(self, obj):
-        key_obj = obj.heritage_keys.filter(is_active=True).first()
-        return key_obj.key if key_obj else None
+    def get_primary_heritage_key(self, obj) -> str | None:
+        return None
 
 
 class LoginSerializer(serializers.Serializer):
@@ -110,6 +113,12 @@ class RegisterSerializer(serializers.ModelSerializer):
             'email': {'required': True}
         }
 
+    def validate_email(self, value):
+        value = value.strip().lower()
+        if User.objects.filter(email__iexact=value).exists():
+            raise serializers.ValidationError('An account with this email already exists.')
+        return value
+
     def validate(self, attrs):
         if attrs['password'] != attrs['password2']:
             raise serializers.ValidationError({"password": "Password fields didn't match."})
@@ -118,7 +127,4 @@ class RegisterSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data.pop('password2')
         user = User.objects.create_user(**validated_data)
-        # Ensure user gets a default royal heritage key
-        user.get_or_create_primary_heritage_key()
         return user
- 

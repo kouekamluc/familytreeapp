@@ -5,6 +5,9 @@ class FamilyTree {
   final String? owner;
   final int membersCount;
   final bool isPublic;
+  final bool canEdit;
+  final bool canManage;
+  final int peopleCount;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -15,6 +18,9 @@ class FamilyTree {
     this.owner,
     this.membersCount = 0,
     this.isPublic = false,
+    this.canEdit = false,
+    this.canManage = false,
+    this.peopleCount = 0,
     this.createdAt,
     this.updatedAt,
   });
@@ -30,19 +36,26 @@ class FamilyTree {
     int count = 0;
     if (json['members'] is int) {
       count = json['members'];
-    } else if (json['people'] is List) {
-      count = (json['people'] as List).length;
+    } else if (json['members'] is List) {
+      count = (json['members'] as List).length;
     }
 
     return FamilyTree(
       id: parsedId,
-      name: json['name'] ?? 'Royal Family Tree',
+      name: json['name'] ?? 'Kkevo Family',
       description: json['description'] ?? '',
       owner: json['owner'] is String ? json['owner'] : null,
       membersCount: count,
       isPublic: json['is_public'] == true,
-      createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at'].toString()) : null,
-      updatedAt: json['updated_at'] != null ? DateTime.tryParse(json['updated_at'].toString()) : null,
+      canEdit: json['can_edit'] == true,
+      canManage: json['can_manage'] == true,
+      peopleCount: json['people_count'] is int ? json['people_count'] : 0,
+      createdAt: json['created_at'] != null
+          ? DateTime.tryParse(json['created_at'].toString())
+          : null,
+      updatedAt: json['updated_at'] != null
+          ? DateTime.tryParse(json['updated_at'].toString())
+          : null,
     );
   }
 
@@ -52,6 +65,25 @@ class FamilyTree {
       'name': name,
       'description': description,
       'is_public': isPublic,
+      'owner': owner,
+      'members': membersCount,
+      'people_count': peopleCount,
+      'can_edit': canEdit,
+      'can_manage': canManage,
     };
   }
+
+  FamilyTree withPeopleCount(int count) => FamilyTree(
+    id: id,
+    name: name,
+    description: description,
+    owner: owner,
+    membersCount: membersCount,
+    isPublic: isPublic,
+    canEdit: canEdit,
+    canManage: canManage,
+    peopleCount: count,
+    createdAt: createdAt,
+    updatedAt: updatedAt,
+  );
 }

@@ -2,8 +2,10 @@ import '../models/person.dart';
 import '../models/relationship.dart';
 
 class FamilyKinshipSummary {
-  final String lineageRole; // e.g., "Great-Grandfather", "Father", "Great-Granddaughter"
-  final String culturalRole; // e.g., "Patriarch 👑", "Royal Matron", "4th-Gen Princess"
+  final String
+  lineageRole; // e.g., "Great-Grandfather", "Father", "Great-Granddaughter"
+  final String
+  culturalRole; // e.g., "Patriarch 👑", "Royal Matron", "4th-Gen Princess"
   final Person? father;
   final Person? mother;
   final List<Person> spouses;
@@ -11,6 +13,8 @@ class FamilyKinshipSummary {
   final List<Person> daughters;
   final List<Person> brothers;
   final List<Person> sisters;
+  final List<Person> otherChildren;
+  final List<Person> otherSiblings;
 
   FamilyKinshipSummary({
     required this.lineageRole,
@@ -22,10 +26,12 @@ class FamilyKinshipSummary {
     required this.daughters,
     required this.brothers,
     required this.sisters,
+    this.otherChildren = const [],
+    this.otherSiblings = const [],
   });
 
-  List<Person> get allChildren => [...sons, ...daughters];
-  List<Person> get allSiblings => [...brothers, ...sisters];
+  List<Person> get allChildren => [...sons, ...daughters, ...otherChildren];
+  List<Person> get allSiblings => [...brothers, ...sisters, ...otherSiblings];
 }
 
 class GenealogyHelper {
@@ -51,8 +57,6 @@ class GenealogyHelper {
           father = p;
         } else if (p.isFemale && mother == null) {
           mother = p;
-        } else {
-          father ??= p;
         }
       }
     }
@@ -65,7 +69,10 @@ class GenealogyHelper {
         if (r.person2Id == person.id) spouseIds.add(r.person1Id);
       }
     }
-    final spouses = spouseIds.map((id) => peopleMap[id]).whereType<Person>().toList();
+    final spouses = spouseIds
+        .map((id) => peopleMap[id])
+        .whereType<Person>()
+        .toList();
 
     // Find Children
     final childIds = relationships
@@ -74,95 +81,59 @@ class GenealogyHelper {
         .toList();
     final sons = <Person>[];
     final daughters = <Person>[];
+    final otherChildren = <Person>[];
     for (final cid in childIds) {
       final c = peopleMap[cid];
       if (c != null) {
         if (c.isMale) {
           sons.add(c);
-        } else {
+        } else if (c.isFemale) {
           daughters.add(c);
+        } else {
+          otherChildren.add(c);
         }
       }
     }
 
-    // Find Siblings
-    final brothers = <Person>[];
-    final sisters = <Person>[];
-    if (parentIds.isNotEmpty) {
-      final siblingIds = relationships
-          .where((r) => r.isParent && parentIds.contains(r.person1Id) && r.person2Id != person.id)
-          .map((r) => r.person2Id)
-          .toSet();
-
-      for (final sid in siblingIds) {
-        final s = peopleMap[sid];
-        if (s != null) {
-          if (s.isMale) {
-            brothers.add(s);
-          } else {
-            sisters.add(s);
-          }
-        }
-      }
+    final siblingIds = relationships
+        .where(
+          (r) =>
+              r.isParent &&
+              parentIds.contains(r.person1Id) &&
+              r.person2Id != person.id,
+        )
+        .map((r) => r.person2Id)
+        .toSet();
+    for (final r in relationships.where((r) => r.isSibling)) {
+      if (r.person1Id == person.id) siblingIds.add(r.person2Id);
+      if (r.person2Id == person.id) siblingIds.add(r.person1Id);
     }
+    final siblings = siblingIds
+        .map((id) => peopleMap[id])
+        .whereType<Person>()
+        .toList();
+    final brothers = siblings.where((p) => p.isMale).toList();
+    final sisters = siblings.where((p) => p.isFemale).toList();
+    final otherSiblings = siblings
+        .where((p) => !p.isMale && !p.isFemale)
+        .toList();
 
-    // Calculate Lineage Role & Cultural Role
-    String lineageRole;
-    String culturalRole;
-
-    final isMale = person.isMale;
-    final tier = person.generationTier;
-    final hasChildren = sons.isNotEmpty || daughters.isNotEmpty;
-
-    final trad = (person.traditionalName ?? '').toLowerCase();
-    if (person.traditionalName != null && person.traditionalName!.trim().isNotEmpty) {
-      culturalRole = person.traditionalName!.trim();
-      if (!culturalRole.contains('👑') && !culturalRole.contains('🌱')) {
-        if (tier == 1) {
-          culturalRole = '$culturalRole 👑';
-        } else if (tier >= 4) {
-          culturalRole = '$culturalRole 🌱';
-        }
-      }
-    } else if (trad.contains('fo') || trad.contains('chef')) {
-      culturalRole = 'Fo (Chef Supérieur) 👑';
-    } else if (trad.contains('mafo')) {
-      culturalRole = 'Mafo (Reine Mère) 👑';
-    } else if (trad.contains('tadji')) {
-      culturalRole = 'Tadji (Notable Successeur)';
-    } else if (trad.contains('wamba') || trad.contains('wambo')) {
-      culturalRole = 'Wamba (Grand Dignitaire)';
-    } else if (trad.contains('mefe') || trad.contains('magne')) {
-      culturalRole = 'Mefe / Magne (Reine de Concession)';
-    } else if (trad.contains('nji') || trad.contains('soh')) {
-      culturalRole = 'Prince / Notable de Concession';
-    } else if (tier == 1) {
-      culturalRole = isMale ? 'Patriarche Fondateur 👑' : 'Matriarche Fondatrice 👑';
-    } else if (tier == 2) {
-      culturalRole = isMale
-          ? (hasChildren ? 'Pilier de la Chefferie' : 'Dignitaire de Concession')
-          : (hasChildren ? 'Mère Gardienne du Foyer' : 'Gardienne Coutumière');
-    } else if (tier == 3) {
-      culturalRole = isMale
-          ? (hasChildren ? 'Prince de la Lignée' : 'Jeune Prince Héritier')
-          : (hasChildren ? 'Princesse de la Lignée' : 'Jeune Princesse Héritière');
-    } else if (tier >= 4) {
-      culturalRole = isMale ? 'Prince 4ème Génération 🌱' : 'Princesse 4ème Génération 🌱';
-    } else {
-      culturalRole = 'Membre de la Grande Concession';
-    }
-
-    if (tier == 1) {
-      lineageRole = isMale ? 'Arrière-Grand-Père / Patriarche' : 'Arrière-Grand-Mère / Matriarche';
-    } else if (tier == 2) {
-      lineageRole = isMale ? (hasChildren ? 'Père' : 'Oncle de la Dynastie') : (hasChildren ? 'Mère' : 'Tante de la Dynastie');
-    } else if (tier == 3) {
-      lineageRole = isMale ? (hasChildren ? 'Père / Petit-Fils' : 'Fils / Petit-Fils') : (hasChildren ? 'Mère / Petite-Fille' : 'Fille / Petite-Fille');
-    } else if (tier >= 4) {
-      lineageRole = isMale ? 'Arrière-Petit-Fils' : 'Arrière-Petite-Fille';
-    } else {
-      lineageRole = 'Membre de la Famille';
-    }
+    // Generation numbers alone cannot establish grandparenthood or royal titles.
+    final hasChildren = childIds.isNotEmpty;
+    final lineageRole = hasChildren
+        ? (person.isMale
+              ? 'Father'
+              : person.isFemale
+              ? 'Mother'
+              : 'Parent')
+        : parentIds.isNotEmpty
+        ? 'Child'
+        : siblingIds.isNotEmpty
+        ? 'Siblings'
+        : 'Family member';
+    final culturalRole = (person.traditionalName ?? '').trim().isNotEmpty
+        ? person.traditionalName!.trim()
+        : 'Family member';
 
     return FamilyKinshipSummary(
       lineageRole: lineageRole,
@@ -174,6 +145,8 @@ class GenealogyHelper {
       daughters: daughters,
       brothers: brothers,
       sisters: sisters,
+      otherChildren: otherChildren,
+      otherSiblings: otherSiblings,
     );
   }
 }

@@ -1,11 +1,11 @@
 {
-    "name": "Kkevo Family Tree",
+    "name": "Kkevo Family",
     "short_name": "Kkevo Family",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0C0E14",
-    "theme_color": "#D4AF37",
-    "description": "Kkevo Family Royal Lineage & Heritage Archive",
+    "background_color": "#FAFBF7",
+    "theme_color": "#167A52",
+    "description": "Votre famille, ses liens et ses histoires.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

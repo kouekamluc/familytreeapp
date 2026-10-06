@@ -2,11 +2,14 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/family_tree.dart';
+import '../config/api_config.dart';
+import 'credential_storage.dart';
 import '../models/person.dart';
 import '../models/relationship.dart';
 
 class SavedAccount {
   final int userId;
+  final String serverUrl;
   final String username;
   final String displayName;
   final String? token;
@@ -17,6 +20,7 @@ class SavedAccount {
 
   SavedAccount({
     required this.userId,
+    String? serverUrl,
     required this.username,
     required this.displayName,
     this.token,
@@ -24,35 +28,44 @@ class SavedAccount {
     this.heritageKey,
     this.role,
     DateTime? lastUsed,
-  }) : lastUsed = lastUsed ?? DateTime.now();
+  }) : serverUrl = serverUrl ?? ApiConfig.baseUrl,
+       lastUsed = lastUsed ?? DateTime.now();
 
   Map<String, dynamic> toJson() => {
-        'user_id': userId,
-        'username': username,
-        'display_name': displayName,
-        'token': token,
-        'refresh_token': refreshToken,
-        'heritage_key': heritageKey,
-        'role': role,
-        'last_used': lastUsed.toIso8601String(),
-      };
+    'user_id': userId,
+    'server_url': serverUrl,
+    'username': username,
+    'display_name': displayName,
+    'token': token,
+    'refresh_token': refreshToken,
+    'role': role,
+    'last_used': lastUsed.toIso8601String(),
+  };
 
   factory SavedAccount.fromJson(Map<String, dynamic> json) => SavedAccount(
-        userId: json['user_id'] is int ? json['user_id'] : int.tryParse(json['user_id']?.toString() ?? '0') ?? 0,
-        username: json['username'] ?? '',
-        displayName: json['display_name'] ?? json['username'] ?? 'Membre',
-        token: json['token'],
-        refreshToken: json['refresh_token'],
-        heritageKey: json['heritage_key'],
-        role: json['role'] ?? 'FAMILY_MEMBER',
-        lastUsed: json['last_used'] != null ? DateTime.tryParse(json['last_used']) : null,
-      );
+    userId: json['user_id'] is int
+        ? json['user_id']
+        : int.tryParse(json['user_id']?.toString() ?? '0') ?? 0,
+    serverUrl: json['server_url'] ?? '',
+    username: json['username'] ?? '',
+    displayName: json['display_name'] ?? json['username'] ?? 'Membre',
+    token: json['token'],
+    refreshToken: json['refresh_token'],
+    heritageKey: null,
+    role: json['role'] ?? 'FAMILY_MEMBER',
+    lastUsed: json['last_used'] != null
+        ? DateTime.tryParse(json['last_used'])
+        : null,
+  );
 }
 
 class LocalStorageService {
   static const String _keyServerUrl = 'custom_server_host_url';
-  static const String _keySavedAccounts = 'saved_accounts_list';
-  static const String _keyActiveAccount = 'active_account_username';
+  String get _serverScope => base64Url.encode(
+    utf8.encode(ApiConfig.baseUrl.replaceAll(RegExp(r'/+$'), '')),
+  );
+  String get _keySavedAccounts => 'saved_accounts_v2_$_serverScope';
+  String get _keyActiveAccount => 'active_account_v2_$_serverScope';
 
   // Singleton pattern
   static final LocalStorageService _instance = LocalStorageService._internal();
@@ -74,25 +87,32 @@ class LocalStorageService {
 
   // --- ACCOUNT SCOPE ---
 
-  Future<String> _getAccountScope([String? explicitUsername]) async {
-    if (explicitUsername != null && explicitUsername.isNotEmpty) {
-      return explicitUsername.trim().toLowerCase();
-    }
+  Future<String> _getAccountScope([String? explicitScope]) async {
+    if (explicitScope != null) return explicitScope;
     final prefs = await SharedPreferences.getInstance();
-    final active = prefs.getString(_keyActiveAccount);
-    if (active != null && active.isNotEmpty) {
-      return active.trim().toLowerCase();
-    }
-    return 'guest_preview';
+    return prefs.getString('cache_identity_$_serverScope') ??
+        'v2_${_serverScope}_guest';
   }
+
+  Future<String> get cacheScope => _getAccountScope();
 
   Future<void> setActiveAccount(String? username) async {
     final prefs = await SharedPreferences.getInstance();
-    if (username != null && username.isNotEmpty) {
-      await prefs.setString(_keyActiveAccount, username.trim().toLowerCase());
-    } else {
+    if (username == null) {
       await prefs.remove(_keyActiveAccount);
+      await prefs.remove('cache_identity_$_serverScope');
+      return;
     }
+    final accounts = await getSavedAccounts();
+    final matches = accounts.where(
+      (a) => a.username == username && a.serverUrl == ApiConfig.baseUrl,
+    );
+    if (matches.isEmpty) return;
+    await prefs.setString(_keyActiveAccount, username);
+    await prefs.setString(
+      'cache_identity_$_serverScope',
+      'v2_${_serverScope}_${matches.first.userId}',
+    );
   }
 
   Future<String?> getActiveAccount() async {
@@ -104,8 +124,9 @@ class LocalStorageService {
 
   Future<List<SavedAccount>> getSavedAccounts() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final str = prefs.getString(_keySavedAccounts);
+      final server = ApiConfig.baseUrl;
+      final str = await CredentialStorage().read(_keySavedAccounts);
+      if (server != ApiConfig.baseUrl) return [];
       if (str == null || str.isEmpty) return [];
       final List decoded = jsonDecode(str);
       return decoded.map((e) => SavedAccount.fromJson(e)).toList();
@@ -117,19 +138,23 @@ class LocalStorageService {
 
   Future<void> saveAccount(SavedAccount account) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      if (account.serverUrl != ApiConfig.baseUrl) return;
+      final key = _keySavedAccounts;
       final accounts = await getSavedAccounts();
       // Remove existing entry for same username or key
-      accounts.removeWhere((a) =>
-          a.username.toLowerCase() == account.username.toLowerCase() ||
-          (account.heritageKey != null && a.heritageKey == account.heritageKey));
+      accounts.removeWhere(
+        (a) =>
+            a.userId == account.userId ||
+            (account.heritageKey != null &&
+                a.heritageKey == account.heritageKey),
+      );
       accounts.insert(0, account);
       // Keep up to 6 saved accounts
       if (accounts.length > 6) {
         accounts.removeRange(6, accounts.length);
       }
       final encoded = jsonEncode(accounts.map((a) => a.toJson()).toList());
-      await prefs.setString(_keySavedAccounts, encoded);
+      await CredentialStorage().write(key, encoded);
       await setActiveAccount(account.username);
     } catch (e) {
       debugPrint('Error saving account: $e');
@@ -139,18 +164,23 @@ class LocalStorageService {
   Future<void> removeAccount(String username) async {
     try {
       final clean = username.trim().toLowerCase();
-      final prefs = await SharedPreferences.getInstance();
+      final key = _keySavedAccounts;
       final accounts = await getSavedAccounts();
+      final accountsBefore = List<SavedAccount>.from(accounts);
       accounts.removeWhere((a) => a.username.toLowerCase() == clean);
       final encoded = jsonEncode(accounts.map((a) => a.toJson()).toList());
-      await prefs.setString(_keySavedAccounts, encoded);
+      await CredentialStorage().write(key, encoded);
 
       // Clean privacy-sensitive cache partition for this account
-      await clearAccountCache(clean);
+      for (final account in accountsBefore.where(
+        (a) => a.username.toLowerCase() == clean,
+      )) {
+        await clearAccountCache('v2_${_serverScope}_${account.userId}');
+      }
 
       // If removed account was active, clear active pointer
       final currentActive = await getActiveAccount();
-      if (currentActive == clean) {
+      if (currentActive?.toLowerCase() == clean) {
         await setActiveAccount(null);
       }
     } catch (e) {
@@ -160,9 +190,12 @@ class LocalStorageService {
 
   Future<void> clearAccountCache(String username) async {
     try {
-      final clean = username.trim().toLowerCase();
+      final clean = username;
       final prefs = await SharedPreferences.getInstance();
-      final keys = prefs.getKeys().where((k) => k.startsWith('acc_${clean}_')).toList();
+      final keys = prefs
+          .getKeys()
+          .where((k) => k.startsWith('acc_${clean}_'))
+          .toList();
       for (final k in keys) {
         await prefs.remove(k);
       }
@@ -171,13 +204,78 @@ class LocalStorageService {
     }
   }
 
+  Future<void> cacheSnapshot(
+    List<FamilyTree> trees,
+    int treeId,
+    List<Person> people,
+    List<Relationship> relationships, {
+    required String accountScope,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = 'acc_${accountScope}_graphs';
+    final previous = prefs.getString(key);
+    final snapshot = previous == null
+        ? <String, dynamic>{}
+        : jsonDecode(previous) as Map<String, dynamic>;
+    final graphs = Map<String, dynamic>.from(snapshot['graphs'] ?? {});
+    graphs['$treeId'] = {
+      'people': people.map((p) => p.toJson()).toList(),
+      'relationships': relationships.map((r) => r.toJson()).toList(),
+    };
+    final validIds = trees.map((t) => '${t.id}').toSet();
+    graphs.removeWhere((id, _) => !validIds.contains(id));
+    await prefs.setString(
+      key,
+      jsonEncode({
+        'trees': trees.map((t) => t.toJson()).toList(),
+        'graphs': graphs,
+        'selected': treeId,
+      }),
+    );
+  }
+
+  Future<Map<String, dynamic>?> _snapshot(String scope) async {
+    final prefs = await SharedPreferences.getInstance();
+    final encoded = prefs.getString('acc_${scope}_graphs');
+    return encoded == null ? null : jsonDecode(encoded) as Map<String, dynamic>;
+  }
+
   // --- OFFLINE FAMILY TREE DATA STORAGE (PARTITIONED PER ACCOUNT) ---
 
-  Future<void> cacheTrees(List<FamilyTree> trees, {String? accountScope}) async {
+  Future<void> cacheTrees(
+    List<FamilyTree> trees, {
+    String? accountScope,
+  }) async {
     try {
       final scope = await _getAccountScope(accountScope);
       final prefs = await SharedPreferences.getInstance();
       final data = jsonEncode(trees.map((t) => t.toJson()).toList());
+      final previous = await _snapshot(scope);
+      if (previous != null && trees.isNotEmpty) {
+        final ids = trees.map((t) => '${t.id}').toSet();
+        final graphs = Map<String, dynamic>.from(previous['graphs'] ?? {});
+        graphs.removeWhere((id, _) => !ids.contains(id));
+        final selected = ids.contains('${previous['selected']}')
+            ? previous['selected']
+            : null;
+        await prefs.setString(
+          'acc_${scope}_graphs',
+          jsonEncode({
+            'trees': trees.map((t) => t.toJson()).toList(),
+            'graphs': graphs,
+            'selected': selected,
+          }),
+        );
+        if (selected == null) await prefs.remove('acc_${scope}_last_tree_id');
+      }
+      if (trees.isEmpty) {
+        await prefs.setString(
+          'acc_${scope}_graphs',
+          jsonEncode({'trees': [], 'graphs': {}, 'selected': null}),
+        );
+        await prefs.remove('acc_${scope}_last_tree_id');
+        await prefs.remove('acc_${scope}_last_person_id');
+      }
       await prefs.setString('acc_${scope}_trees', data);
     } catch (e) {
       debugPrint('Error caching trees locally: $e');
@@ -188,6 +286,12 @@ class LocalStorageService {
     try {
       final scope = await _getAccountScope(accountScope);
       final prefs = await SharedPreferences.getInstance();
+      final snapshot = await _snapshot(scope);
+      if (snapshot != null) {
+        return (snapshot['trees'] as List)
+            .map((item) => FamilyTree.fromJson(item))
+            .toList();
+      }
       final str = prefs.getString('acc_${scope}_trees');
       if (str == null || str.isEmpty) return [];
       final List decoded = jsonDecode(str);
@@ -198,7 +302,11 @@ class LocalStorageService {
     }
   }
 
-  Future<void> cachePeople(int treeId, List<Person> people, {String? accountScope}) async {
+  Future<void> cachePeople(
+    int treeId,
+    List<Person> people, {
+    String? accountScope,
+  }) async {
     try {
       final scope = await _getAccountScope(accountScope);
       final prefs = await SharedPreferences.getInstance();
@@ -209,10 +317,19 @@ class LocalStorageService {
     }
   }
 
-  Future<List<Person>> getCachedPeople(int treeId, {String? accountScope}) async {
+  Future<List<Person>> getCachedPeople(
+    int treeId, {
+    String? accountScope,
+  }) async {
     try {
       final scope = await _getAccountScope(accountScope);
       final prefs = await SharedPreferences.getInstance();
+      final snapshot = await _snapshot(scope);
+      if (snapshot != null) {
+        return ((snapshot['graphs']['$treeId']?['people'] ?? []) as List)
+            .map((item) => Person.fromJson(item))
+            .toList();
+      }
       final str = prefs.getString('acc_${scope}_people_$treeId');
       if (str == null || str.isEmpty) return [];
       final List decoded = jsonDecode(str);
@@ -223,7 +340,11 @@ class LocalStorageService {
     }
   }
 
-  Future<void> cacheRelationships(int treeId, List<Relationship> rels, {String? accountScope}) async {
+  Future<void> cacheRelationships(
+    int treeId,
+    List<Relationship> rels, {
+    String? accountScope,
+  }) async {
     try {
       final scope = await _getAccountScope(accountScope);
       final prefs = await SharedPreferences.getInstance();
@@ -234,10 +355,19 @@ class LocalStorageService {
     }
   }
 
-  Future<List<Relationship>> getCachedRelationships(int treeId, {String? accountScope}) async {
+  Future<List<Relationship>> getCachedRelationships(
+    int treeId, {
+    String? accountScope,
+  }) async {
     try {
       final scope = await _getAccountScope(accountScope);
       final prefs = await SharedPreferences.getInstance();
+      final snapshot = await _snapshot(scope);
+      if (snapshot != null) {
+        return ((snapshot['graphs']['$treeId']?['relationships'] ?? []) as List)
+            .map((item) => Relationship.fromJson(item))
+            .toList();
+      }
       final str = prefs.getString('acc_${scope}_rels_$treeId');
       if (str == null || str.isEmpty) return [];
       final List decoded = jsonDecode(str);

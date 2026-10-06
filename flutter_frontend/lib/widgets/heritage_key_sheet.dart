@@ -1,3 +1,4 @@
+import '../l10n/app_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -177,7 +178,7 @@ class _HeritageKeySheetState extends State<HeritageKeySheet> {
 
               const SizedBox(height: 16),
 
-              Text(
+              AppText(
                 'Unlock Dynasty Vault',
                 style: GoogleFonts.cinzel(
                   fontSize: 20,
@@ -191,10 +192,10 @@ class _HeritageKeySheetState extends State<HeritageKeySheet> {
 
               const SizedBox(height: 4),
 
-              Text(
+              AppText(
                 'Enter your sacred Heritage Passkey for instant passwordless lineage access',
                 textAlign: TextAlign.center,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.nunito(
                   fontSize: 12,
                   color: isDark ? Colors.grey[400] : const Color(0xFF64748B),
                 ),
@@ -226,7 +227,7 @@ class _HeritageKeySheetState extends State<HeritageKeySheet> {
                       ),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: Text(
+                        child: AppText(
                           _localError ?? auth.errorMessage!,
                           style: const TextStyle(
                             color: Colors.redAccent,
@@ -242,9 +243,9 @@ class _HeritageKeySheetState extends State<HeritageKeySheet> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
+                  AppText(
                     'HERITAGE PASSKEY',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.nunito(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 0.8,
@@ -268,9 +269,9 @@ class _HeritageKeySheetState extends State<HeritageKeySheet> {
                             color: RoyalTheme.brightGold,
                           ),
                           const SizedBox(width: 4),
-                          Text(
+                          AppText(
                             'Paste',
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.nunito(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                               color: RoyalTheme.brightGold,
@@ -295,7 +296,7 @@ class _HeritageKeySheetState extends State<HeritageKeySheet> {
                   color: isDark ? Colors.white : const Color(0xFF0F172A),
                 ),
                 decoration: InputDecoration(
-                  hintText: 'Votre clé personnelle',
+                  hintText: context.tr('Your personal key'),
                   hintStyle: TextStyle(
                     color: isDark ? Colors.grey[600] : Colors.grey[400],
                     letterSpacing: 0.5,
@@ -354,8 +355,8 @@ class _HeritageKeySheetState extends State<HeritageKeySheet> {
               // Quick Preset Key Chips
               const Align(
                 alignment: Alignment.centerLeft,
-                child: Text(
-                  'Cette clé ouvre votre compte personnel. Ne la partagez pas.',
+                child: AppText(
+                  'This key opens your personal account. Keep it private.',
                 ),
               ),
 
@@ -391,9 +392,9 @@ class _HeritageKeySheetState extends State<HeritageKeySheet> {
 
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: Text(
+                child: AppText(
                   'Dismiss',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.nunito(
                     fontSize: 13,
                     color: isDark ? Colors.grey[400] : Colors.grey[600],
                   ),

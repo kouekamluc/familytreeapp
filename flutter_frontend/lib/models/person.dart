@@ -1,5 +1,6 @@
 class Person {
   final int id;
+  final int revision;
   final int? familyTreeId;
   final String firstName;
   final String lastName;
@@ -22,6 +23,7 @@ class Person {
 
   Person({
     required this.id,
+    this.revision = 1,
     this.familyTreeId,
     required this.firstName,
     required this.lastName,
@@ -45,7 +47,7 @@ class Person {
 
   String get fullName {
     final name = '$firstName $lastName'.trim();
-    return name.isNotEmpty ? name : 'Unnamed Member';
+    return name.isNotEmpty ? name : 'Unnamed member';
   }
 
   String get initials {
@@ -54,13 +56,15 @@ class Person {
     return '$f$l'.isEmpty ? '?' : '$f$l';
   }
 
-  bool get isMale => gender.toUpperCase() == 'M' || gender.toLowerCase() == 'male';
-  bool get isFemale => gender.toUpperCase() == 'F' || gender.toLowerCase() == 'female';
+  bool get isMale =>
+      gender.toUpperCase() == 'M' || gender.toLowerCase() == 'male';
+  bool get isFemale =>
+      gender.toUpperCase() == 'F' || gender.toLowerCase() == 'female';
 
   String get genderLabel {
     if (isFemale) return 'Female';
     if (isMale) return 'Male';
-    return 'Other';
+    return 'Not specified';
   }
 
   String get birthYear {
@@ -86,12 +90,12 @@ class Person {
       return '${birthYear.isNotEmpty ? birthYear : '?'} - $deathYear';
     }
     if (birthYear.isNotEmpty) {
-      return 'b. $birthYear';
+      return 'Born in $birthYear';
     }
     return '';
   }
 
-  bool get isAncestor => !isLiving || generationTier >= 3;
+  bool get isAncestor => !isLiving;
 
   factory Person.fromJson(Map<String, dynamic> json) {
     int parsedId = 0;
@@ -126,13 +130,17 @@ class Person {
 
     bool living = true;
     if (json['is_living'] != null) {
-      living = json['is_living'] == true || json['is_living'] == 'true' || json['is_living'] == 1;
+      living =
+          json['is_living'] == true ||
+          json['is_living'] == 'true' ||
+          json['is_living'] == 1;
     } else if (json['date_of_death'] != null || json['deathDate'] != null) {
       living = false;
     }
 
     return Person(
       id: parsedId,
+      revision: json['revision'] as int? ?? 1,
       familyTreeId: treeId,
       firstName: json['first_name'] ?? json['firstName'] ?? '',
       lastName: json['last_name'] ?? json['lastName'] ?? '',
@@ -142,7 +150,10 @@ class Person {
       birthPlace: json['birth_place'] ?? json['birthPlace'],
       currentLocation: json['current_location'] ?? json['currentLocation'],
       traditionalName: json['traditional_name'] ?? json['traditionalName'],
-      villageOfOrigin: json['village_of_origin'] ?? json['villageOfOrigin'] ?? json['village'],
+      villageOfOrigin:
+          json['village_of_origin'] ??
+          json['villageOfOrigin'] ??
+          json['village'],
       clanTotem: json['clan_totem'] ?? json['clanTotem'] ?? json['totem'],
       generationTier: tier,
       biography: json['biography'] ?? '',
@@ -158,6 +169,7 @@ class Person {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'revision': revision,
       if (familyTreeId != null) 'family_tree': familyTreeId,
       'first_name': firstName,
       'last_name': lastName,
@@ -196,6 +208,7 @@ class Person {
   }) {
     return Person(
       id: id ?? this.id,
+      revision: revision,
       familyTreeId: familyTreeId ?? this.familyTreeId,
       firstName: firstName ?? this.firstName,
       lastName: lastName ?? this.lastName,

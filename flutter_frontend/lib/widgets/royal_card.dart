@@ -38,17 +38,19 @@ class RoyalCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: isSelected
-                  ? RoyalTheme.brightGold
+                  ? Theme.of(context).colorScheme.primary
                   : (isDark ? RoyalTheme.borderDark : RoyalTheme.borderLight),
               width: isSelected ? 2.0 : 1.2,
             ),
             boxShadow: [
               BoxShadow(
                 color: isSelected
-                    ? RoyalTheme.brightGold.withValues(alpha: 0.25)
-                    : (isDark ? Colors.black38 : Colors.black12),
-                blurRadius: isSelected ? 16 : 8,
-                offset: const Offset(0, 4),
+                    ? Theme.of(
+                        context,
+                      ).colorScheme.primary.withValues(alpha: 0.25)
+                    : (isDark ? RoyalTheme.borderDark : RoyalTheme.borderLight),
+                blurRadius: 0,
+                offset: const Offset(0, 3),
               ),
             ],
           ),

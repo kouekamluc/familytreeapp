@@ -17,17 +17,32 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
+from django.http import JsonResponse
+from django.db import connection
 from family.media_access import serve_signed_media
+from users.views import ThrottledTokenObtainPairView
+from users.deletion_resource import deletion_resource
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
 
+def health(request):
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute('SELECT 1')
+        return JsonResponse({'service': 'familytree', 'status': 'ok'})
+    except Exception:
+        return JsonResponse({'service': 'familytree', 'status': 'unavailable'}, status=503)
+
+
 urlpatterns = [
+    path('account/deletion/', deletion_resource, name='account_deletion_resource'),
+    path('api/health/', health, name='health'),
     path('api/files/', serve_signed_media, name='signed_media'),
     path('admin/', admin.site.urls),
-    path('api/auth/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/auth/token/', ThrottledTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh_short'),
     path('api/auth/', include('users.urls')),

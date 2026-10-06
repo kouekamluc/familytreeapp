@@ -12,6 +12,7 @@ enum TreeScope { extendedDynasty, immediateFamily }
 class TreeProvider extends ChangeNotifier {
   final ApiService _apiService;
 
+  final Set<String> _pendingWrites = {};
   List<FamilyTree> _trees = [];
   FamilyTree? _selectedTree;
   List<Person> _people = [];
@@ -30,7 +31,62 @@ class TreeProvider extends ChangeNotifier {
   bool _isOfflineMode = false;
   int _loadVersion = 0;
 
-  TreeProvider(this._apiService);
+  late String _identity;
+  TreeProvider(this._apiService) {
+    _identity = _apiService.identity;
+    _apiService.addListener(_identityChanged);
+  }
+  void _identityChanged() {
+    if (_identity != _apiService.identity) {
+      _identity = _apiService.identity;
+      clearData();
+    }
+  }
+
+  @override
+  void dispose() {
+    _apiService.removeListener(_identityChanged);
+    super.dispose();
+  }
+
+  String? get lastSaveError => _apiService.lastError;
+  bool get lastRevisionConflict => _apiService.lastRevisionConflict;
+  bool get canReportSelectedTree =>
+      _apiService.isAuthenticated &&
+      !_apiService.isPreviewMode &&
+      !_isOfflineMode &&
+      _selectedTree != null;
+  String get contextKey => '${_apiService.identity}:${_selectedTree?.id}';
+  bool get canEditSelectedTree =>
+      !_apiService.isPreviewMode &&
+      !_isOfflineMode &&
+      !_isLoading &&
+      _selectedTree != null &&
+      (_selectedTree!.canEdit ||
+          _selectedTree!.owner == _apiService.currentUser?.username);
+  bool get canManageSelectedTree =>
+      canEditSelectedTree &&
+      (_selectedTree!.canManage ||
+          _selectedTree!.owner == _apiService.currentUser?.username);
+
+  Future<void> _cacheSnapshot() async {
+    final scope = _apiService.cacheScope;
+    final current = _selectedTree;
+    if (current == null) return;
+    final tree = current.withPeopleCount(_people.length);
+    _selectedTree = tree;
+    _trees = _trees.map((t) => t.id == tree.id ? tree : t).toList();
+    if (scope == null) return;
+    final local = LocalStorageService();
+    await local.cacheSnapshot(
+      List.of(_trees),
+      tree.id,
+      List.of(_people),
+      List.of(_relationships),
+      accountScope: scope,
+    );
+    await local.saveLastActiveTreeId(tree.id, accountScope: scope);
+  }
 
   List<FamilyTree> get trees => _trees;
   FamilyTree? get selectedTree => _selectedTree;
@@ -157,17 +213,16 @@ class TreeProvider extends ChangeNotifier {
   }
 
   List<Person> getSiblingsOf(int personId) {
-    final parents = getParentsOf(personId);
-    if (parents.isEmpty) return [];
-    final parentIds = parents.map((p) => p.id).toSet();
-
+    final parentIds = getParentsOf(personId).map((p) => p.id).toSet();
     final siblingIds = <int>{};
-    for (var r in _relationships) {
+    for (final r in _relationships) {
       if (r.isParent &&
           parentIds.contains(r.person1Id) &&
           r.person2Id != personId) {
         siblingIds.add(r.person2Id);
       }
+      if (r.isSibling && r.person1Id == personId) siblingIds.add(r.person2Id);
+      if (r.isSibling && r.person2Id == personId) siblingIds.add(r.person1Id);
     }
     return _people.where((p) => siblingIds.contains(p.id)).toList();
   }
@@ -214,113 +269,96 @@ class TreeProvider extends ChangeNotifier {
 
   Future<void> loadData({int? targetTreeId, int? targetPersonId}) async {
     final version = ++_loadVersion;
+    final identity = _apiService.identity;
+    final scope = _apiService.cacheScope;
+    bool active() =>
+        version == _loadVersion && identity == _apiService.identity;
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
-
     final local = LocalStorageService();
-
-    // 1. Immediately hydrate from local phone cache so app works instantly offline
-    if (_trees.isEmpty) {
-      try {
-        final cachedTrees = await local.getCachedTrees();
-        if (cachedTrees.isNotEmpty && version == _loadVersion) {
-          _trees = cachedTrees;
-          final targetId = targetTreeId ?? await local.getLastActiveTreeId();
-          _selectedTree = _trees.firstWhere(
-            (t) => t.id == targetId,
-            orElse: () => _trees.first,
-          );
-          final cachedPeople = await local.getCachedPeople(_selectedTree!.id);
-          final cachedRels = await local.getCachedRelationships(_selectedTree!.id);
-          if (cachedPeople.isNotEmpty) {
-            _people = cachedPeople;
-            _relationships = cachedRels;
-            final lastPid = targetPersonId ?? await local.getLastActivePersonId();
-            if (lastPid != null) {
-              final match = _people.where((p) => p.id == lastPid).toList();
-              if (match.isNotEmpty) {
-                _selectedPerson = match.first;
-                _focusPersonId = match.first.id;
-              }
-            }
-            _isOfflineMode = true;
-            notifyListeners();
-          }
-        }
-      } catch (e) {
-        debugPrint('Error loading offline phone cache: $e');
-      }
-    }
-
     try {
-      final previousTreeId = _selectedTree?.id;
-      final previousPersonId = _selectedPerson?.id;
-      final treesList = await _apiService.getTrees();
-      if (version != _loadVersion) return;
-      _trees = treesList;
-
-      if (_trees.isEmpty) {
+      if (_trees.isEmpty && scope != null) {
+        final trees = await local.getCachedTrees(accountScope: scope);
+        final savedId =
+            targetTreeId ??
+            await local.getLastActiveTreeId(accountScope: scope);
+        if (!active()) return;
+        if (trees.isNotEmpty) {
+          final tree = trees.firstWhere(
+            (t) => t.id == savedId,
+            orElse: () => trees.first,
+          );
+          final people = await local.getCachedPeople(
+            tree.id,
+            accountScope: scope,
+          );
+          final relations = await local.getCachedRelationships(
+            tree.id,
+            accountScope: scope,
+          );
+          if (!active()) return;
+          _trees = trees;
+          _selectedTree = tree;
+          _people = people;
+          _relationships = relations;
+          _isOfflineMode = true;
+          notifyListeners();
+        }
+      }
+      final trees = await _apiService.getTrees();
+      if (!active()) return;
+      _trees = trees;
+      if (_selectedTree != null &&
+          !trees.any((t) => t.id == _selectedTree!.id)) {
         _selectedTree = null;
         _people = [];
         _relationships = [];
         _selectedPerson = null;
         _focusPersonId = null;
-      } else if (targetTreeId != null) {
-        final matched = _trees.where((t) => t.id == targetTreeId).toList();
-        if (matched.isNotEmpty) {
-          _selectedTree = matched.first;
-        } else {
-          _selectedTree = _trees.first;
-        }
-      } else if (_selectedTree == null ||
-          !_trees.any((t) => t.id == _selectedTree!.id)) {
-        _selectedTree = _trees.first;
+        _isOfflineMode = false;
       }
-
-      if (_selectedTree == null) return;
-      local.saveLastActiveTreeId(_selectedTree!.id);
-
-      final peopleList = await _apiService.getPeople(treeId: _selectedTree!.id);
-      if (version != _loadVersion) return;
-      final relsList = await _apiService.getRelationships(
-        treeId: _selectedTree!.id,
+      // A successful access check is authoritative even if graph loading fails.
+      if (scope != null) await local.cacheTrees(trees, accountScope: scope);
+      if (!active()) return;
+      if (trees.isEmpty) {
+        _trees = [];
+        _selectedTree = null;
+        _people = [];
+        _relationships = [];
+        _selectedPerson = null;
+        _focusPersonId = null;
+        _isOfflineMode = false;
+        if (scope != null) await local.cacheTrees([], accountScope: scope);
+        return;
+      }
+      final desired = targetTreeId ?? _selectedTree?.id;
+      final tree = trees.firstWhere(
+        (t) => t.id == desired,
+        orElse: () => trees.first,
       );
-      if (version != _loadVersion) return;
-
-      _people = peopleList;
-      _relationships = relsList;
+      final people = await _apiService.getPeople(treeId: tree.id);
+      final relationships = await _apiService.getRelationships(treeId: tree.id);
+      if (!active()) return;
+      final selectedId = targetPersonId ?? _selectedPerson?.id;
+      _trees = trees;
+      _selectedTree = tree;
+      _people = people;
+      _relationships = relationships;
+      final matches = people.where((p) => p.id == selectedId);
+      _selectedPerson = matches.isEmpty ? null : matches.first;
+      _focusPersonId = _selectedPerson?.id;
       _isOfflineMode = false;
-      _errorMessage = null;
-
-      if (targetPersonId != null) {
-        final invitedPerson = _people
-            .where((p) => p.id == targetPersonId)
-            .toList();
-        if (invitedPerson.isNotEmpty) {
-          _selectedPerson = invitedPerson.first;
-          _focusPersonId = targetPersonId;
-          local.saveLastActivePersonId(targetPersonId);
-        }
-      } else if (previousTreeId == _selectedTree?.id && previousPersonId != null) {
-        final matches = _people.where((p) => p.id == previousPersonId);
-        if (matches.isNotEmpty) {
-          _selectedPerson = matches.first;
-        }
-      }
+      await _cacheSnapshot();
     } catch (e) {
-      if (version == _loadVersion) {
-        // If we already have people in memory (from phone local cache), KEEP THEM!
-        if (_people.isNotEmpty) {
-          _isOfflineMode = true;
-          _errorMessage = null; // Do not block the UI with an error screen
-          debugPrint('Network unavailable - running in offline mode with ${_people.length} local records');
-        } else {
-          _errorMessage = 'Mode hors-ligne : Aucune archive locale trouvée. Connectez-vous au serveur ou utilisez le mode Découverte.';
-        }
+      if (active()) {
+        _isOfflineMode = _selectedTree != null;
+        _errorMessage = _selectedTree == null
+            ? 'Unable to load this tree. Check the connection and sign in again if needed.'
+            : 'Offline: showing the last saved snapshot of ${_selectedTree!.name}.';
       }
     } finally {
-      if (version == _loadVersion) {
+      if (active()) {
         _isLoading = false;
         notifyListeners();
       }
@@ -329,32 +367,47 @@ class TreeProvider extends ChangeNotifier {
 
   void selectTree(FamilyTree tree) {
     if (_selectedTree?.id == tree.id) return;
-    _selectedTree = tree;
+    _selectedTree = null;
+    _people = [];
+    _relationships = [];
     _selectedPerson = null;
     _focusPersonId = null;
+    _generationFilter = null;
+    _searchQuery = '';
+    _peopleFilterTab = 'all';
+    _isOfflineMode = false;
     loadData(targetTreeId: tree.id);
   }
 
   Future<bool> addPerson(Map<String, dynamic> data) async {
+    if (!_pendingWrites.add('addPerson')) return false;
+    final version = _loadVersion;
     try {
       if (_selectedTree != null) {
         data['family_tree'] = _selectedTree!.id;
       }
       final newPerson = await _apiService.createPerson(data);
+      if (version != _loadVersion) return false;
       if (newPerson != null) {
         _people.add(newPerson);
+        await _cacheSnapshot();
         notifyListeners();
         return true;
       }
     } catch (e) {
       debugPrint('Error adding person: $e');
+    } finally {
+      _pendingWrites.remove('addPerson');
     }
     return false;
   }
 
   Future<bool> updatePerson(int id, Map<String, dynamic> data) async {
+    if (!_pendingWrites.add('updatePerson')) return false;
+    final version = _loadVersion;
     try {
       final updated = await _apiService.updatePerson(id, data);
+      if (version != _loadVersion) return false;
       if (updated != null) {
         final idx = _people.indexWhere((p) => p.id == id);
         if (idx != -1) {
@@ -363,18 +416,36 @@ class TreeProvider extends ChangeNotifier {
         if (_selectedPerson?.id == id) {
           _selectedPerson = updated;
         }
+        await _cacheSnapshot();
         notifyListeners();
         return true;
       }
     } catch (e) {
       debugPrint('Error updating person: $e');
+    } finally {
+      _pendingWrites.remove('updatePerson');
     }
     return false;
   }
 
+  Future<bool> uploadPortrait(int id, List<int> bytes, String filename) async {
+    final version = _loadVersion;
+    final updated = await _apiService.uploadPersonPhoto(id, bytes, filename);
+    if (updated == null || version != _loadVersion) return false;
+    final index = _people.indexWhere((p) => p.id == id);
+    if (index >= 0) _people[index] = updated;
+    if (_selectedPerson?.id == id) _selectedPerson = updated;
+    await _cacheSnapshot();
+    notifyListeners();
+    return true;
+  }
+
   Future<bool> deletePerson(int id) async {
+    if (!_pendingWrites.add('deletePerson')) return false;
+    final version = _loadVersion;
     try {
       final success = await _apiService.deletePerson(id);
+      if (version != _loadVersion) return false;
       if (success) {
         _people.removeWhere((p) => p.id == id);
         _relationships.removeWhere(
@@ -383,34 +454,58 @@ class TreeProvider extends ChangeNotifier {
         if (_selectedPerson?.id == id) {
           _selectedPerson = _people.isNotEmpty ? _people.first : null;
         }
+        if (_focusPersonId == id) _focusPersonId = null;
+        await _cacheSnapshot();
         notifyListeners();
         return true;
       }
     } catch (e) {
       debugPrint('Error deleting person: $e');
+    } finally {
+      _pendingWrites.remove('deletePerson');
     }
     return false;
   }
 
-  Future<bool> addRelationship(int p1Id, int p2Id, String type) async {
+  Future<bool> addRelationship(
+    int p1Id,
+    int p2Id,
+    String type, {
+    Map<String, dynamic>? details,
+  }) async {
+    if (!_pendingWrites.add('addRelationship')) return false;
+    final version = _loadVersion;
     try {
-      final rel = await _apiService.createRelationship(p1Id, p2Id, type);
+      final rel = await _apiService.createRelationship(
+        p1Id,
+        p2Id,
+        type,
+        details: details,
+      );
+      if (version != _loadVersion) return false;
       if (rel != null) {
-        _relationships.add(rel);
+        if (!_relationships.any((r) => r.id == rel.id)) _relationships.add(rel);
+        await _cacheSnapshot();
         notifyListeners();
         return true;
       }
     } catch (e) {
       debugPrint('Error adding relationship: $e');
+    } finally {
+      _pendingWrites.remove('addRelationship');
     }
     return false;
   }
 
   Future<bool> deleteRelationship(int id) async {
+    if (!_pendingWrites.add('deleteRelationship')) return false;
+    final version = _loadVersion;
     try {
       final success = await _apiService.deleteRelationship(id);
+      if (version != _loadVersion) return false;
       if (success) {
         _relationships.removeWhere((r) => r.id == id);
+        await _cacheSnapshot();
         notifyListeners();
         return true;
       }
@@ -418,6 +513,73 @@ class TreeProvider extends ChangeNotifier {
     } catch (e) {
       debugPrint('Error deleting relationship: $e');
       return false;
+    } finally {
+      _pendingWrites.remove('deleteRelationship');
+    }
+  }
+
+  Future<bool> updateRelationship(int id, Map<String, dynamic> data) async {
+    if (!_pendingWrites.add('updateRelationship')) return false;
+    final version = _loadVersion;
+    try {
+      final updated = await _apiService.updateRelationship(id, data);
+      if (updated == null || version != _loadVersion) return false;
+      final index = _relationships.indexWhere((r) => r.id == id);
+      if (index < 0) return false;
+      _relationships[index] = updated;
+      await _cacheSnapshot();
+      notifyListeners();
+      return true;
+    } finally {
+      _pendingWrites.remove('updateRelationship');
+    }
+  }
+
+  Future<bool> updateTree(int id, Map<String, dynamic> data) async {
+    if (!_pendingWrites.add('updateTree')) return false;
+    final version = _loadVersion;
+    try {
+      final updated = await _apiService.updateTree(id, data);
+      if (updated == null || version != _loadVersion) return false;
+      final index = _trees.indexWhere((t) => t.id == id);
+      if (index < 0) return false;
+      _trees[index] = updated;
+      if (_selectedTree?.id == id) _selectedTree = updated;
+      await _cacheSnapshot();
+      notifyListeners();
+      return true;
+    } finally {
+      _pendingWrites.remove('updateTree');
+    }
+  }
+
+  Future<bool> deleteTree(int id) async {
+    if (!_pendingWrites.add('deleteTree')) return false;
+    final version = _loadVersion;
+    try {
+      if (!await _apiService.deleteTree(id) || version != _loadVersion) {
+        return false;
+      }
+      _trees.removeWhere((t) => t.id == id);
+      if (_selectedTree?.id == id) {
+        _selectedTree = null;
+        _people = [];
+        _relationships = [];
+        _selectedPerson = null;
+        _focusPersonId = null;
+        _searchQuery = '';
+        _generationFilter = null;
+        _peopleFilterTab = 'all';
+      }
+      // Invalidate the deleted graph before attempting a network reload.
+      final scope = _apiService.cacheScope;
+      if (scope != null) {
+        await LocalStorageService().cacheTrees(_trees, accountScope: scope);
+      }
+      await loadData();
+      return true;
+    } finally {
+      _pendingWrites.remove('deleteTree');
     }
   }
 
@@ -428,17 +590,28 @@ class TreeProvider extends ChangeNotifier {
     _people = [];
     _relationships = [];
     _selectedPerson = null;
+    _focusPersonId = null;
+    _generationFilter = null;
+    _searchQuery = "";
+    _peopleFilterTab = "all";
+    _isLoading = false;
+    _isOfflineMode = false;
+    _errorMessage = null;
     notifyListeners();
   }
 
   Future<FamilyTree?> createTree(String name, String description) async {
+    final version = _loadVersion;
     try {
       final tree = await _apiService.createTree(name, description);
+      if (version != _loadVersion) return null;
       if (tree != null) {
         _trees.add(tree);
         _selectedTree = tree;
-        await LocalStorageService().cacheTrees(_trees);
-        await LocalStorageService().saveLastActiveTreeId(tree.id);
+        _people = [];
+        _relationships = [];
+        _selectedPerson = null;
+        _focusPersonId = null;
         await loadData(targetTreeId: tree.id);
         notifyListeners();
         return tree;
@@ -453,54 +626,42 @@ class TreeProvider extends ChangeNotifier {
     required int sourcePersonId,
     required String role, // 'parent', 'child', 'spouse', 'sibling'
     required Map<String, dynamic> personData,
+    int? existingPersonId,
+    int? coParentId,
+    String? relationshipNotes,
+    String? relationshipType,
   }) async {
+    final version = _loadVersion;
     try {
-      if (_selectedTree != null) {
-        personData['family_tree'] = _selectedTree!.id;
+      final result = await _apiService.createRelative(
+        sourcePersonId,
+        role,
+        personData,
+        existingPersonId: existingPersonId,
+        coParentId: coParentId,
+        relationshipNotes: relationshipNotes,
+        relationshipType: relationshipType,
+      );
+      if (result == null || version != _loadVersion) return null;
+      final person = Person.fromJson(result['person']);
+      final relationship = Relationship.fromJson(result['relationship']);
+      if (!_people.any((p) => p.id == person.id)) _people.add(person);
+      if (!_relationships.any((r) => r.id == relationship.id)) {
+        _relationships.add(relationship);
       }
-      final newPerson = await _apiService.createPerson(personData);
-      if (newPerson != null) {
-        int p1Id;
-        int p2Id;
-        String relType;
-
-        if (role == 'parent' || role == 'father' || role == 'mother') {
-          p1Id = newPerson.id;
-          p2Id = sourcePersonId;
-          relType = 'PARENT';
-        } else if (role == 'child') {
-          p1Id = sourcePersonId;
-          p2Id = newPerson.id;
-          relType = 'PARENT';
-        } else if (role == 'sibling' || role == 'brother' || role == 'sister') {
-          p1Id = sourcePersonId;
-          p2Id = newPerson.id;
-          relType = 'SIBLING';
-        } else {
-          p1Id = sourcePersonId;
-          p2Id = newPerson.id;
-          relType = 'SPOUSE';
+      for (final data in (result['additional_relationships'] as List? ?? [])) {
+        final link = Relationship.fromJson(data);
+        if (!_relationships.any((r) => r.id == link.id)) {
+          _relationships.add(link);
         }
-
-        final relOk = await addRelationship(p1Id, p2Id, relType);
-        if (!relOk) {
-          // ATOMIC ROLLBACK: delete orphaned person if relationship creation fails
-          debugPrint('Rolling back orphaned person ${newPerson.id} because relationship failed');
-          await _apiService.deletePerson(newPerson.id);
-          return null;
-        }
-
-        _people.add(newPerson);
-        if (_selectedTree != null) {
-          await LocalStorageService().cachePeople(_selectedTree!.id, _people);
-        }
-        notifyListeners();
-        return newPerson;
       }
+      await _cacheSnapshot();
+      notifyListeners();
+      return person;
     } catch (e) {
       debugPrint('Error creating relative: $e');
+      return null;
     }
-    return null;
   }
 
   Future<bool> linkExistingRelative({
@@ -523,7 +684,9 @@ class TreeProvider extends ChangeNotifier {
     } else {
       p1Id = sourcePersonId;
       p2Id = targetPersonId;
-      relType = 'SPOUSE';
+      relType = ['sibling', 'brother', 'sister'].contains(role)
+          ? 'SIBLING'
+          : 'SPOUSE';
     }
 
     return await addRelationship(p1Id, p2Id, relType);

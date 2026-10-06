@@ -7,11 +7,7 @@ import 'package:flutter_frontend/utils/kinship_solver.dart';
 void main() {
   testWidgets('App smoke test', (WidgetTester tester) async {
     await tester.pumpWidget(
-      const MaterialApp(
-        home: Scaffold(
-          body: Text('Royal Ancestry'),
-        ),
-      ),
+      const MaterialApp(home: Scaffold(body: Text('Royal Ancestry'))),
     );
 
     expect(find.text('Royal Ancestry'), findsOneWidget);
@@ -55,11 +51,36 @@ void main() {
 
     final people = [father, mother, son, daughter];
     final relationships = [
-      Relationship(id: 1, person1Id: 1, person2Id: 2, relationshipType: 'SPOUSE'),
-      Relationship(id: 2, person1Id: 1, person2Id: 3, relationshipType: 'PARENT'),
-      Relationship(id: 3, person1Id: 2, person2Id: 3, relationshipType: 'PARENT'),
-      Relationship(id: 4, person1Id: 1, person2Id: 4, relationshipType: 'PARENT'),
-      Relationship(id: 5, person1Id: 2, person2Id: 4, relationshipType: 'PARENT'),
+      Relationship(
+        id: 1,
+        person1Id: 1,
+        person2Id: 2,
+        relationshipType: 'SPOUSE',
+      ),
+      Relationship(
+        id: 2,
+        person1Id: 1,
+        person2Id: 3,
+        relationshipType: 'PARENT',
+      ),
+      Relationship(
+        id: 3,
+        person1Id: 2,
+        person2Id: 3,
+        relationshipType: 'PARENT',
+      ),
+      Relationship(
+        id: 4,
+        person1Id: 1,
+        person2Id: 4,
+        relationshipType: 'PARENT',
+      ),
+      Relationship(
+        id: 5,
+        person1Id: 2,
+        person2Id: 4,
+        relationshipType: 'PARENT',
+      ),
     ];
 
     test('Identifies spouse relationship', () {
@@ -70,7 +91,7 @@ void main() {
         relationships: relationships,
       );
       expect(res, isNotNull);
-      expect(res!.relationship, contains('Épouse'));
+      expect(res!.relationship, contains('Wife'));
     });
 
     test('Identifies parent-child relationship', () {
@@ -81,7 +102,7 @@ void main() {
         relationships: relationships,
       );
       expect(resChildToFather, isNotNull);
-      expect(resChildToFather!.title, contains('Père'));
+      expect(resChildToFather!.title, contains('Father'));
 
       final resFatherToChild = KinshipSolver.calculateKinship(
         personAId: 1,
@@ -90,7 +111,7 @@ void main() {
         relationships: relationships,
       );
       expect(resFatherToChild, isNotNull);
-      expect(resFatherToChild!.title, equals('Fils'));
+      expect(resFatherToChild!.title, equals('Son'));
     });
 
     test('Identifies sibling relationship', () {
@@ -101,7 +122,7 @@ void main() {
         relationships: relationships,
       );
       expect(res, isNotNull);
-      expect(res!.relationship, contains('Sœur'));
+      expect(res!.relationship, contains('Sister'));
     });
   });
 }

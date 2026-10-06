@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Person, Relationship, Event, Media
+from .models import Person, Relationship, Event, Media, ContentReport
 
 @admin.register(Person)
 class PersonAdmin(admin.ModelAdmin):
@@ -29,3 +29,12 @@ class MediaAdmin(admin.ModelAdmin):
     search_fields = ('title', 'description', 'location')
     date_hierarchy = 'date_taken'
     filter_horizontal = ('people',)
+
+
+@admin.register(ContentReport)
+class ContentReportAdmin(admin.ModelAdmin):
+    list_display = ('id', 'reason', 'status', 'created_at', 'updated_at')
+    list_filter = ('status', 'reason')
+    readonly_fields = ('reporter', 'tree', 'person', 'reason', 'details', 'request_key', 'created_at', 'updated_at')
+    def has_add_permission(self, request):
+        return False

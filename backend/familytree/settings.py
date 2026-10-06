@@ -63,7 +63,6 @@ INSTALLED_APPS = [
     # Local apps
     'users',
     'family',
-    'media',
     'tags',
     'data_management',
     'backup',
@@ -157,7 +156,14 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
 # Media files
 MEDIA_URL = 'media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_ROOT = os.getenv('MEDIA_ROOT', os.path.join(BASE_DIR, 'media'))
+BACKUP_ROOT = os.getenv('BACKUP_ROOT')
+# Private launch: legacy flags remain stored but grant no anonymous access.
+ALLOW_PUBLIC_FAMILY_READS = False
+PUBLIC_BASE_URL = os.getenv('PUBLIC_BASE_URL', '')
+SUPPORT_EMAIL = os.getenv('SUPPORT_EMAIL', '')
+PRIVACY_POLICY_URL = os.getenv('PRIVACY_POLICY_URL', '')
+ACCOUNT_DELETION_POLICY_VERSION = os.getenv('ACCOUNT_DELETION_POLICY_VERSION', '')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
@@ -217,6 +223,8 @@ REST_FRAMEWORK = {
     'UNAUTHENTICATED_USER': None,
     'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler',
 }
+
+REST_FRAMEWORK.setdefault('DEFAULT_THROTTLE_RATES', {})['family_join'] = '60/min'
 
 # API Documentation settings
 SPECTACULAR_SETTINGS = {
@@ -288,7 +296,29 @@ CORS_ALLOW_HEADERS = [
     'user-agent',
     'x-csrftoken',
     'x-requested-with',
+    'idempotency-key',
 ]
 
 # Custom user model
 AUTH_USER_MODEL = 'users.User'
+
+# Production HTTPS policy. Trust forwarded headers only behind a configured proxy.
+SECURE_SSL_REDIRECT = not DEBUG
+SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0
+SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
+SECURE_HSTS_PRELOAD = False
+if os.getenv('TRUST_PROXY_SSL_HEADER', 'False').lower() == 'true':
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Account recovery secrets travel by email only, never through API responses.
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'localhost')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
+EMAIL_TIMEOUT = 10
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'Kkevo Family <noreply@localhost>')
+SIMPLE_JWT = {'CHECK_REVOKE_TOKEN': True, 'TOKEN_REFRESH_SERIALIZER': 'users.account_views.SecureRefreshSerializer'}
+REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'].update(account_action='15/min', account_recovery='6/min')
+REST_FRAMEWORK['DEFAULT_THROTTLE_RATES']['content_report'] = '15/min'

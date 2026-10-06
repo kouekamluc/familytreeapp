@@ -1,6 +1,37 @@
 # Family Tree: end-to-end repair plan
 
-Audit date: 25 September 2026. Scope: Django API, Flutter client, local startup, data protection, genealogy, backup and test coverage. This is an implementation plan; application behavior has not been changed.
+Audit date: 25 September 2026. Scope: Django API, Flutter client, local startup, data protection, genealogy, backup and test coverage. The original audit below is retained as a baseline; see the implementation review for current status.
+
+
+## Implementation review — 28 September 2026
+
+Reviewed commit `cadb2cf` against actual client/server calls. It adds account-scoped caches, write-token refresh, registration and tree-management UI, portraits, relationship checks and ZIP media packaging. These are partial improvements, not completion of all acceptance criteria.
+
+### Gaps closed in this follow-up
+
+- Registration now calls the mounted `/api/auth/register/` route (the previous URL duplicated `/api` and omitted `/auth`).
+- Import/export uses the application's authenticated API service instead of constructing an empty session. Import sends the multipart file expected by Django and explicitly selects the current destination tree.
+- Relative creation now runs through a backend transaction. A rejected relationship rolls back the new person. Client-side compensating deletion was not atomic. Existing sibling links now use SIBLING rather than SPOUSE.
+- Both shell add-person forms stay open on failure, submit empty traditional names correctly, and no longer invent surname/village values. Surname remains required by the backend; missing required values produce a failed save rather than invented history.
+- Startup restores the saved endpoint. Requests no longer fall back to unrelated servers; native development defaults to localhost and requires configuring a phone-accessible server explicitly. HTTPS web defaults to the same origin.
+- Removed the untracked upload directory from Django installed apps, declared missing JWT/PostgreSQL dependencies, and corrected database configuration documentation.
+
+### Verified evidence
+
+- Existing backend suite: 31 tests passed against an isolated SQLite test database.
+- New relative-creation suite: 4 tests passed, covering parent direction, source-tree binding, unauthorized access, invalid roles and rollback after relationship failure.
+- Flutter suite: 7 tests passed, including new registration-route and authenticated multipart-import checks.
+- Final Dart analysis: no issues found.
+- No live browser journey, fresh dependency installation, production deployment, or restore rehearsal was performed.
+
+### Still open (do not mark complete)
+
+- F01/F02: cache scopes use usernames rather than server plus immutable user ID; saved credentials lack server binding; pending requests and account transitions need stronger isolation. Explicit endpoint selection alone does not resolve this.
+- F04/F09: single-flight refresh, structured field errors, write idempotency, tree-list pagination, consistent graph switching and mutation-cache persistence remain incomplete. Relative creation is atomic but not idempotent after an ambiguous timeout.
+- F07/F08: relationship PATCH validation, shared import/admin integrity checks, full date validation, neutral kinship labels and temporal relationship semantics still need work.
+- F10/F11/F12: recovery/profile/tree rename/delete, invitation memberships and roles, event UI, media lifecycle and import preview remain incomplete. JSON import/export is connected but not fully round-trip certified.
+- F13: ZIP packaging alone does not make disaster recovery safe. Account/key coverage, strict archive validation, file staging/rollback, checksums and isolated restore rehearsal remain release blockers.
+- F14–F16: dependency security review, CI, production configuration, live accessibility review and measured scale acceptance remain outstanding.
 
 ## Evidence and limits
 

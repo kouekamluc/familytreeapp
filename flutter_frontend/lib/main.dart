@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'l10n/app_strings.dart';
+import 'providers/language_provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'config/royal_theme.dart';
@@ -9,8 +13,9 @@ import 'providers/tree_provider.dart';
 import 'services/api_service.dart';
 import 'views/shell_view.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  GoogleFonts.config.allowRuntimeFetching = false;
 
   // Modern Android Edge-to-Edge display mode & transparent system bars
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
@@ -29,6 +34,8 @@ void main() async {
   final authProvider = AuthProvider(apiService);
   final treeProvider = TreeProvider(apiService);
   final accessibilityProvider = AccessibilityProvider();
+  final languageProvider = LanguageProvider();
+  await languageProvider.load();
 
   // Asynchronously trigger data load without blocking initial frame rendering
   treeProvider.loadData();
@@ -37,8 +44,9 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider.value(value: languageProvider),
         ChangeNotifierProvider.value(value: accessibilityProvider),
-        Provider<ApiService>.value(value: apiService),
+        ChangeNotifierProvider<ApiService>.value(value: apiService),
         ChangeNotifierProvider.value(value: authProvider),
         ChangeNotifierProvider.value(value: treeProvider),
       ],
@@ -56,8 +64,19 @@ class RoyalAncestryApp extends StatelessWidget {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final accessibility = Provider.of<AccessibilityProvider>(context);
 
+    final language = context.watch<LanguageProvider?>();
     return MaterialApp(
-      title: 'Royal Ancestry - African Dynasty Tree',
+      locale:
+          language?.locale ??
+          (language?.choice == 'system' ? null : const Locale('en')),
+      supportedLocales: AppStrings.supportedLocales,
+      localizationsDelegates: const [
+        AppStrings.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      title: 'Kkevo Family',
       debugShowCheckedModeBanner: false,
       theme: RoyalTheme.lightTheme,
       darkTheme: RoyalTheme.darkTheme,
@@ -70,11 +89,22 @@ class RoyalAncestryApp extends StatelessWidget {
           2.2,
         );
 
-        return MediaQuery(
-          data: MediaQuery.of(
-            context,
-          ).copyWith(textScaler: TextScaler.linear(effectiveScale)),
-          child: child!,
+        final dark = Theme.of(context).brightness == Brightness.dark;
+        return AnnotatedRegion<SystemUiOverlayStyle>(
+          value: SystemUiOverlayStyle(
+            statusBarColor: Colors.transparent,
+            statusBarIconBrightness: dark ? Brightness.light : Brightness.dark,
+            systemNavigationBarColor: Colors.transparent,
+            systemNavigationBarIconBrightness: dark
+                ? Brightness.light
+                : Brightness.dark,
+          ),
+          child: MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: TextScaler.linear(effectiveScale)),
+            child: child!,
+          ),
         );
       },
       home: const ShellView(),

@@ -2,10 +2,13 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 import secrets
 import string
+import hashlib
+import re
 
 class User(AbstractUser):
     """Custom user model for the family tree application."""
     email = models.EmailField(unique=True)
+    email_verified = models.BooleanField(default=False)
     first_name = models.CharField(max_length=30)
     last_name = models.CharField(max_length=30)
     bio = models.TextField(blank=True)
@@ -36,6 +39,7 @@ class User(AbstractUser):
     class Meta:
         db_table = 'auth_user'
         swappable = 'AUTH_USER_MODEL'
+        constraints = [models.UniqueConstraint(models.functions.Lower('email'), name='unique_user_email_casefold')]
 
 
 class HeritageKey(models.Model):
@@ -90,7 +94,17 @@ class HeritageKey(models.Model):
         verbose_name_plural = 'Heritage Keys'
 
     def __str__(self):
-        return f"{self.name} ({self.key}) - {self.user.username}"
+        return f"{self.name} (#{self.pk})"
+
+    @staticmethod
+    def verifier(secret):
+        return hashlib.sha256(secret.strip().upper().encode()).hexdigest()
+
+    def save(self, *args, **kwargs):
+        # Preserve existing credentials while removing readable secrets at rest.
+        if self.key and not re.fullmatch(r'[0-9a-f]{64}', self.key):
+            self.key = self.verifier(self.key)
+        super().save(*args, **kwargs)
 
     @classmethod
     def generate_royal_key_string(cls, prefix="KKEVO-ROYAL"):
@@ -100,8 +114,28 @@ class HeritageKey(models.Model):
         part2 = ''.join(secrets.choice(alphabet) for _ in range(8))
         candidate = f"{prefix}-{part1}-{part2}"
         # Ensure unique
-        while cls.objects.filter(key=candidate).exists():
+        while cls.objects.filter(key=cls.verifier(candidate)).exists():
             part1 = ''.join(secrets.choice(alphabet) for _ in range(8))
             part2 = ''.join(secrets.choice(alphabet) for _ in range(8))
             candidate = f"{prefix}-{part1}-{part2}"
         return candidate
+
+
+class EmailAction(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    purpose = models.CharField(max_length=12)
+    digest = models.CharField(max_length=64, unique=True)
+    account_stamp = models.CharField(max_length=64)
+    expires_at = models.DateTimeField()
+    used_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class AccountDeletionRequest(models.Model):
+    user = models.OneToOneField(User, on_delete=models.SET_NULL, null=True)
+    status = models.CharField(max_length=12, default='PENDING',
+        choices=[('PENDING', 'Pending review'), ('CANCELLED', 'Cancelled'), ('COMPLETED', 'Completed')])
+    requested_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    # Operator records the reviewed disposition, not an automatic family deletion.
+    review_notes = models.TextField(blank=True)

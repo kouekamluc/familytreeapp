@@ -3,7 +3,7 @@ from rest_framework import views, status, viewsets
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.decorators import action
-from django.http import HttpResponse
+from django.http import HttpResponse, FileResponse
 from .models import Backup
 from .services import BackupService
 from .serializers import BackupSerializer
@@ -50,16 +50,9 @@ class BackupViewSet(viewsets.ModelViewSet):
         """Download a backup file (ZIP with media or legacy JSON)."""
         backup = self.get_object()
         
-        if not os.path.exists(backup.file_path):
-            return Response(
-                {'error': 'Backup file not found'},
-                status=status.HTTP_404_NOT_FOUND
-            )
-        
-        with open(backup.file_path, 'rb') as f:
-            is_zip = backup.file_path.endswith('.zip')
-            content_type = 'application/zip' if is_zip else 'application/json'
-            ext = 'zip' if is_zip else 'json'
-            response = HttpResponse(f.read(), content_type=content_type)
-            response['Content-Disposition'] = f'attachment; filename="{backup.name}.{ext}"'
-            return response
+        try:
+            stream = BackupService().open_backup(backup)
+        except Exception:
+            return Response({'error': 'Backup file unavailable.'}, status=status.HTTP_404_NOT_FOUND)
+        return FileResponse(stream, as_attachment=True, filename=f'{backup.name}.zip',
+                            content_type='application/zip')

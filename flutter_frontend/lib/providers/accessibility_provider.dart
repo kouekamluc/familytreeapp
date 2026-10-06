@@ -19,7 +19,8 @@ class AccessibilityProvider extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       _isSeniorMode = prefs.getBool(_seniorModeKey) ?? false;
-      _fontScale = prefs.getDouble(_fontScaleKey) ?? (_isSeniorMode ? 1.22 : 1.0);
+      _fontScale =
+          prefs.getDouble(_fontScaleKey) ?? (_isSeniorMode ? 1.22 : 1.0);
       notifyListeners();
     } catch (_) {}
   }

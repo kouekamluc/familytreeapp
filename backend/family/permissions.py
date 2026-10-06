@@ -1,16 +1,33 @@
 from rest_framework import permissions
-from .models import FamilyTree, Media
+from django.conf import settings
+from django.db.models import Q
+from .models import FamilyTree, Media, TreeMembership
+
+
+def readable_trees(user):
+    """One boundary for list and detail access, including legacy public flags."""
+    public = Q(is_public=True) if settings.ALLOW_PUBLIC_FAMILY_READS else Q(pk__in=[])
+    if not user or not user.is_authenticated:
+        return FamilyTree.objects.filter(public)
+    if user.is_superuser:
+        return FamilyTree.objects.all()
+    return FamilyTree.objects.filter(Q(owner=user) | Q(members=user) | public).distinct()
 
 
 def can_access_tree(user, tree, write=False):
     if tree is None:
         return False
-    if not write and tree.is_public:
+    if not write and tree.is_public and settings.ALLOW_PUBLIC_FAMILY_READS:
         return True
     if not user or not user.is_authenticated:
         return False
-    return (user.is_superuser or tree.owner_id == user.id or
-            tree.members.filter(id=user.id).exists())
+    if user.is_superuser or tree.owner_id == user.id:
+        return True
+    if not tree.members.filter(id=user.id).exists():
+        return False
+    # Legacy approved members keep editing rights until an explicit role exists.
+    membership = TreeMembership.objects.filter(tree=tree, user=user).first()
+    return not write or membership is None or membership.role == 'EDITOR'
 
 
 def object_trees(obj):
@@ -61,17 +78,17 @@ class IsTreeEditor(permissions.BasePermission):
             return True
 
         if isinstance(obj, FamilyTree):
-            return obj.owner == request.user or obj.members.filter(id=request.user.id).exists()
+            return can_access_tree(request.user, obj, write=True)
 
         tree = getattr(obj, 'family_tree', None)
         if tree:
-            return tree.owner == request.user or tree.members.filter(id=request.user.id).exists()
+            return can_access_tree(request.user, tree, write=True)
 
         # For Relationship objects with person1 and person2
         p1 = getattr(obj, 'person1', None)
         if p1 and p1.family_tree:
             tree = p1.family_tree
-            return tree.owner == request.user or tree.members.filter(id=request.user.id).exists()
+            return can_access_tree(request.user, tree, write=True)
 
         return False
 

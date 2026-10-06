@@ -1,0 +1,57 @@
+name: Validate existing app
+on: [push, pull_request]
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test-only-password
+          POSTGRES_DB: familytree_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s
+          --health-timeout 5s --health-retries 10
+    env:
+      DEBUG: 'True'
+      DB_ENGINE: django.db.backends.postgresql
+      DB_NAME: familytree_ci
+      DB_USER: postgres
+      DB_PASSWORD: test-only-password
+      DB_HOST: 127.0.0.1
+      DB_PORT: '5432'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: backend/requirements-lock.txt
+      - run: pip install -r backend/requirements-lock.txt
+      - run: python manage.py makemigrations --check --dry-run
+        working-directory: backend
+      - run: python manage.py test family users backup data_management tags --noinput
+        working-directory: backend
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.35.4'
+          cache: true
+      - run: flutter pub get
+        working-directory: flutter_frontend
+      - run: flutter analyze
+        working-directory: flutter_frontend
+      - run: flutter test test
+        working-directory: flutter_frontend
+      - run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - run: flutter build apk --debug --flavor audit --dart-define=API_BASE_URL=http://127.0.0.1:18000/api
+        working-directory: flutter_frontend

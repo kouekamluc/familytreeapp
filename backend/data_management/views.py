@@ -1,5 +1,10 @@
+from rest_framework import exceptions
+from drf_spectacular.utils import extend_schema
+from drf_spectacular.types import OpenApiTypes
 import json
+import hashlib
 from datetime import datetime
+import logging
 from django.http import HttpResponse
 from django.db import models, transaction
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -8,7 +13,8 @@ from rest_framework import views, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 
-from family.models import FamilyTree, Person, Relationship, Event, Media
+from family.models import FamilyTree, Person, Relationship, Event, Media, MutationReceipt
+logger = logging.getLogger(__name__)
 
 class ExportDataView(views.APIView):
     """
@@ -16,6 +22,7 @@ class ExportDataView(views.APIView):
     """
     permission_classes = [IsAuthenticated]
     
+    @extend_schema(responses=OpenApiTypes.OBJECT)
     def get(self, request, format=None):
         user = request.user
         tree_id = request.query_params.get('tree_id')
@@ -30,6 +37,8 @@ class ExportDataView(views.APIView):
         if tree_id:
             try:
                 tree = FamilyTree.objects.get(id=tree_id)
+            except (ValueError, TypeError):
+                return Response({'error': 'Choose a valid family.'}, status=status.HTTP_400_BAD_REQUEST)
             except FamilyTree.DoesNotExist:
                 return Response({'error': 'Family tree not found.'}, status=status.HTTP_404_NOT_FOUND)
                 
@@ -76,9 +85,12 @@ class ExportDataView(views.APIView):
             response['Content-Disposition'] = f'attachment; filename="{filename}"'
             return response
             
-        except Exception as e:
+        except exceptions.APIException:
+            raise
+        except Exception:
+            logger.error('Family export failed unexpectedly.')
             return Response(
-                {'error': str(e)},
+                {'error': 'Unable to export right now. Try again.'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
@@ -89,6 +101,7 @@ class ImportDataView(views.APIView):
     """
     permission_classes = [IsAuthenticated]
     
+    @extend_schema(request={"multipart/form-data": OpenApiTypes.OBJECT}, responses=OpenApiTypes.OBJECT)
     def post(self, request, format=None):
         if 'file' not in request.FILES:
             return Response(
@@ -102,6 +115,8 @@ class ImportDataView(views.APIView):
         if tree_id:
             try:
                 target_tree = FamilyTree.objects.get(id=tree_id)
+            except (ValueError, TypeError):
+                return Response({'error': 'Choose a valid family.'}, status=status.HTTP_400_BAD_REQUEST)
             except FamilyTree.DoesNotExist:
                 return Response({'error': 'Target family tree not found.'}, status=status.HTTP_404_NOT_FOUND)
             
@@ -117,7 +132,12 @@ class ImportDataView(views.APIView):
             file = request.FILES['file']
             if file.size > 10 * 1024 * 1024:
                 return Response({'error': 'Import file exceeds 10 MB.'}, status=status.HTTP_400_BAD_REQUEST)
-            import_data = json.loads(file.read())
+            content = file.read()
+            import_data = json.loads(content)
+            key = request.headers.get('Idempotency-Key')
+            if key and len(key) > 80:
+                raise ValueError('Invalid import request key.')
+            digest = hashlib.sha256(str(tree_id or 'default').encode() + b':import:' + content).hexdigest()
             
             if (not isinstance(import_data, dict) or
                 not all(isinstance(import_data.get(key), list) for key in ('people', 'relationships'))):
@@ -131,10 +151,33 @@ class ImportDataView(views.APIView):
             if not isinstance(import_data.get('events', []), list):
                 return Response({'error': 'Invalid events section.'}, status=status.HTTP_400_BAD_REQUEST)
             
+            for section, model in [('people', 'family.person'), ('relationships', 'family.relationship'), ('events', 'family.event')]:
+                seen = set()
+                for entry in import_data.get(section, []):
+                    if (not isinstance(entry, dict) or entry.get('model', model) != model or
+                            not isinstance(entry.get('fields'), dict) or
+                            not isinstance(entry.get('pk'), int) or isinstance(entry.get('pk'), bool)):
+                        raise ValueError(f'Invalid {section} entry, model or ID.')
+                    if entry['pk'] in seen:
+                        raise ValueError(f'Duplicate ID in {section}.')
+                    seen.add(entry['pk'])
+
             # Transactionally import people and relationships scoped to target_tree
             with transaction.atomic():
+                # Serializes same-account replays, including creation of a default tree.
+                from django.contrib.auth import get_user_model
+                get_user_model().objects.select_for_update().get(pk=user.pk)
+                if key:
+                    receipt = MutationReceipt.objects.filter(user=user, key=key).first()
+                    if receipt:
+                        if receipt.request_hash != digest:
+                            return Response({'error': 'This request key was already used for different data.'}, status=409)
+                        return Response(receipt.response, status=status.HTTP_201_CREATED)
                 if target_tree is None:
                     target_tree = FamilyTree.objects.create(name=f"{user.username}'s Lineage", owner=user)
+                target_tree = FamilyTree.objects.select_for_update().get(pk=target_tree.pk)
+                if target_tree.owner_id != user.pk and not user.is_superuser:
+                    raise exceptions.PermissionDenied('Only the tree owner can import data into this family tree.')
                 imported_people_count = 0
                 imported_rel_count = 0
                 imported_event_count = 0
@@ -150,7 +193,7 @@ class ImportDataView(views.APIView):
                         family_tree=target_tree,
                         first_name=fields.get('first_name', ''),
                         last_name=fields.get('last_name', ''),
-                        gender=fields.get('gender', 'M'),
+                        gender=fields.get('gender', 'O'),
                         traditional_name=fields.get('traditional_name', ''),
                         birth_place=fields.get('birth_place', ''),
                         current_location=fields.get('current_location', ''),
@@ -214,22 +257,22 @@ class ImportDataView(views.APIView):
                     event.save()
                     imported_event_count += 1
 
-            return Response({
-                'message': 'Import completed successfully',
-                'target_tree': {
-                    'id': target_tree.id,
-                    'name': target_tree.name,
-                },
-                'results': {
-                    'people_created': imported_people_count,
-                    'relationships_created': imported_rel_count,
-                    'events_created': imported_event_count,
+                result = {
+                    'message': 'Import completed successfully',
+                    'target_tree': {'id': target_tree.id, 'name': target_tree.name},
+                    'results': {'people_created': imported_people_count, 'relationships_created': imported_rel_count, 'events_created': imported_event_count},
                 }
-            }, status=status.HTTP_201_CREATED)
+                if key:
+                    MutationReceipt.objects.create(user=user, family_tree=target_tree, key=key, request_hash=digest, response=result)
+
+            return Response(result, status=status.HTTP_201_CREATED)
             
         except json.JSONDecodeError:
             return Response({'error': 'Invalid JSON file.'}, status=status.HTTP_400_BAD_REQUEST)
         except (ValueError, DjangoValidationError) as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except exceptions.APIException:
+            raise
+        except Exception:
+            logger.error('Family import failed unexpectedly.')
+            return Response({'error': 'Unable to import right now. Your records have not been added.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

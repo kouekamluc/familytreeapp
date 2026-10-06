@@ -8,6 +8,9 @@ __pycache__/
 
 # Python virtual environments
 .venv/
+.verification-venv/
+.verification-standard-venv/
+.runtime-venv/
 env/
 venv/
 ENV/
@@ -21,6 +24,8 @@ db.sqlite3-journal
 backups/
 backend/backups/
 backend/media/
+backend/db.sqlite3
+backend/dump_backup.json
 
 
 # Flutter / Dart
@@ -54,4 +59,14 @@ Thumbs.db
 .env
 *.env
 backend/.env
+
+
+# Isolated phone test database and media
+backend/.device-test/
+.dev-logs/
+backend/staticfiles/
+flutter_frontend/android/key.properties
+*.jks
+*.keystore
+tmp/
 

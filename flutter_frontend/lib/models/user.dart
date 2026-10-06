@@ -7,6 +7,7 @@ class User {
   final String? profilePicture;
   final String? primaryHeritageKey;
   final bool isStaff;
+  final bool emailVerified;
 
   User({
     required this.id,
@@ -17,6 +18,7 @@ class User {
     this.profilePicture,
     this.primaryHeritageKey,
     this.isStaff = false,
+    this.emailVerified = false,
   });
 
   String get displayName {
@@ -26,13 +28,16 @@ class User {
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      id: json['id'] is int ? json['id'] : int.tryParse(json['id'].toString()) ?? 0,
+      id: json['id'] is int
+          ? json['id']
+          : int.tryParse(json['id'].toString()) ?? 0,
       username: json['username'] ?? '',
       email: json['email'] ?? '',
       firstName: json['first_name'] ?? json['firstName'],
       lastName: json['last_name'] ?? json['lastName'],
       profilePicture: json['profile_picture'] ?? json['avatar'],
-      primaryHeritageKey: json['primary_heritage_key'],
+      primaryHeritageKey: null,
+      emailVerified: json['email_verified'] == true,
       isStaff: json['is_staff'] ?? false,
     );
   }
@@ -45,7 +50,7 @@ class User {
       'first_name': firstName,
       'last_name': lastName,
       'profile_picture': profilePicture,
-      'primary_heritage_key': primaryHeritageKey,
+      'email_verified': emailVerified,
       'is_staff': isStaff,
     };
   }

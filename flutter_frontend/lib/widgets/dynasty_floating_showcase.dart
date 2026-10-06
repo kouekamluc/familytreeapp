@@ -1,3 +1,4 @@
+import '../l10n/app_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -15,7 +16,8 @@ class DynastyFloatingShowcase extends StatefulWidget {
   });
 
   @override
-  State<DynastyFloatingShowcase> createState() => _DynastyFloatingShowcaseState();
+  State<DynastyFloatingShowcase> createState() =>
+      _DynastyFloatingShowcaseState();
 }
 
 class _DynastyFloatingShowcaseState extends State<DynastyFloatingShowcase> {
@@ -66,8 +68,8 @@ class _DynastyFloatingShowcaseState extends State<DynastyFloatingShowcase> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'ARCHIVES ORALES & VISAGES DU SANG',
+                    AppText(
+                      'EXEMPLE DE PORTRAITS FAMILIAUX',
                       style: GoogleFonts.cinzel(
                         fontSize: isCompact ? 11.5 : 13.5,
                         fontWeight: FontWeight.bold,
@@ -75,8 +77,8 @@ class _DynastyFloatingShowcaseState extends State<DynastyFloatingShowcase> {
                         color: RoyalTheme.brightGold,
                       ),
                     ),
-                    Text(
-                      'Visages réels des aïeux et transmissions orales numérisées',
+                    AppText(
+                      'Personnages fictifs pour découvrir la présentation',
                       style: GoogleFonts.inter(
                         fontSize: isCompact ? 10.5 : 11.5,
                         color: isDark ? Colors.grey[400] : Colors.grey[600],
@@ -101,20 +103,13 @@ class _DynastyFloatingShowcaseState extends State<DynastyFloatingShowcase> {
             if (isCompact) {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  leftInfo,
-                  const SizedBox(height: 12),
-                  chips,
-                ],
+                children: [leftInfo, const SizedBox(height: 12), chips],
               );
             }
 
             return Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                leftInfo,
-                chips,
-              ],
+              children: [leftInfo, chips],
             );
           },
         ),
@@ -186,7 +181,9 @@ class _DynastyFloatingShowcaseState extends State<DynastyFloatingShowcase> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: RoyalTheme.brightGold.withValues(alpha: isDark ? 0.08 : 0.06),
+            color: RoyalTheme.brightGold.withValues(
+              alpha: isDark ? 0.08 : 0.06,
+            ),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: RoyalTheme.brightGold.withValues(alpha: 0.25),
@@ -194,15 +191,17 @@ class _DynastyFloatingShowcaseState extends State<DynastyFloatingShowcase> {
           ),
           child: Row(
             children: [
-              const Text('🎧', style: TextStyle(fontSize: 16)),
+              const AppText('📖', style: TextStyle(fontSize: 16)),
               const SizedBox(width: 10),
               Expanded(
-                child: Text(
-                  'Touchez un souverain pour écouter son chant sacré et découvrir son proverbe de chefferie.',
+                child: AppText(
+                  'Touchez un portrait pour lire un exemple de récit familial.',
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: isDark ? RoyalTheme.lightGold : const Color(0xFF6B4508),
+                    color: isDark
+                        ? RoyalTheme.lightGold
+                        : const Color(0xFF6B4508),
                   ),
                 ),
               ),
@@ -210,8 +209,12 @@ class _DynastyFloatingShowcaseState extends State<DynastyFloatingShowcase> {
                 const SizedBox(width: 8),
                 TextButton.icon(
                   onPressed: widget.onExploreDetails,
-                  icon: const Icon(Icons.arrow_forward_rounded, size: 14, color: RoyalTheme.brightGold),
-                  label: Text(
+                  icon: const Icon(
+                    Icons.arrow_forward_rounded,
+                    size: 14,
+                    color: RoyalTheme.brightGold,
+                  ),
+                  label: AppText(
                     'Arbre Vivant',
                     style: GoogleFonts.inter(
                       fontSize: 11.5,
@@ -242,8 +245,8 @@ class _DynastyFloatingShowcaseState extends State<DynastyFloatingShowcase> {
           color: isSelected
               ? RoyalTheme.brightGold
               : (Theme.of(context).brightness == Brightness.dark
-                  ? const Color(0xFF161925)
-                  : const Color(0xFFEDE8DD)),
+                    ? const Color(0xFF161925)
+                    : const Color(0xFFEDE8DD)),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected
@@ -261,7 +264,7 @@ class _DynastyFloatingShowcaseState extends State<DynastyFloatingShowcase> {
                 ]
               : null,
         ),
-        child: Text(
+        child: AppText(
           label,
           style: GoogleFonts.inter(
             fontSize: 11,

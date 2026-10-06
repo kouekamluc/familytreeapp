@@ -1,765 +1,393 @@
+import '../../l10n/app_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import '../../config/royal_theme.dart';
 import '../../models/heritage_key.dart';
 import '../../providers/auth_provider.dart';
-import '../../widgets/royal_button.dart';
+import '../../services/api_service.dart';
 
 class HeritageVaultView extends StatefulWidget {
   const HeritageVaultView({super.key});
-
   @override
   State<HeritageVaultView> createState() => _HeritageVaultViewState();
 }
 
 class _HeritageVaultViewState extends State<HeritageVaultView> {
-  String? _copiedKey;
-
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<AuthProvider>(context, listen: false).fetchHeritageKeys();
+      if (mounted) context.read<AuthProvider>().fetchHeritageKeys();
     });
   }
 
-  void _copyToClipboard(String key) {
-    Clipboard.setData(ClipboardData(text: key));
-    HapticFeedback.mediumImpact();
-    setState(() => _copiedKey = key);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: const Color(0xFF1E212B),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-          side: const BorderSide(color: RoyalTheme.brightGold, width: 1),
+  Future<void> _copy(String key) async {
+    await Clipboard.setData(ClipboardData(text: key));
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: AppText('Personal key copied. Keep it private.'),
         ),
-        content: Row(
-          children: [
-            const Icon(
-              Icons.check_circle_rounded,
-              color: RoyalTheme.brightGold,
-              size: 20,
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                'Clé personnelle copiée. Ne la partagez pas.',
-                style: GoogleFonts.inter(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
+      );
+    }
+  }
+
+  Future<void> _generate() async {
+    final name = TextEditingController();
+    final form = GlobalKey<FormState>();
+    final auth = context.read<AuthProvider>();
+    final api = context.read<ApiService>();
+    final identity = api.identity;
+    String role = 'FAMILY_MEMBER';
+    String? error;
+    bool saving = false;
+    String? issued;
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, update) => PopScope(
+          canPop: !saving,
+          child: AlertDialog(
+            title: const AppText('Create a personal key'),
+            scrollable: true,
+            content: SizedBox(
+              width: 440,
+              child: Form(
+                key: form,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const AppText(
+                      'This key signs in to your account with all your current permissions. It does not create limited access for another person.',
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: name,
+                      enabled: !saving,
+                      decoration: InputDecoration(
+                        labelText: context.tr('Key name *'),
+                        hintText: context.tr('e.g. My phone'),
+                      ),
+                      validator: localizeValidator(
+                        context,
+                        (v) => v == null || v.trim().isEmpty
+                            ? 'Give this key a name.'
+                            : v.trim().length > 100
+                            ? 'Maximum 100 characters.'
+                            : null,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      initialValue: role,
+                      isExpanded: true,
+                      decoration: InputDecoration(
+                        labelText: context.tr('Descriptive category'),
+                      ),
+                      items: const [
+                        DropdownMenuItem(
+                          value: 'FAMILY_MEMBER',
+                          child: AppText('Family member'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'ROYAL_PATRIARCH',
+                          child: AppText('Family elder'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'CURATOR',
+                          child: AppText('Editor'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'GUEST_VIEWER',
+                          child: AppText('Viewer'),
+                        ),
+                      ],
+                      onChanged: saving ? null : (v) => update(() => role = v!),
+                    ),
+                    const SizedBox(height: 8),
+                    const AppText(
+                      'The category does not change sign-in permissions.',
+                    ),
+                    if (error != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 14),
+                        child: Semantics(
+                          liveRegion: true,
+                          child: AppText(
+                            error!,
+                            style: TextStyle(
+                              color: Theme.of(ctx).colorScheme.error,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ),
+            actions: [
+              TextButton(
+                onPressed: saving ? null : () => Navigator.pop(ctx),
+                child: const AppText('Cancel'),
+              ),
+              FilledButton(
+                onPressed: saving
+                    ? null
+                    : () async {
+                        if (!form.currentState!.validate()) return;
+                        if (api.identity != identity) {
+                          update(
+                            () => error =
+                                'The account has changed. Close this form.',
+                          );
+                          return;
+                        }
+                        update(() {
+                          saving = true;
+                          error = null;
+                        });
+                        final created = await auth.generateHeritageKey(
+                          name: name.text.trim(),
+                          role: role,
+                        );
+                        if (!ctx.mounted) return;
+                        if (created != null) {
+                          issued = created.key;
+                          Navigator.pop(ctx);
+                        } else {
+                          update(() {
+                            saving = false;
+                            error =
+                                auth.keyError ?? 'Unable to create. Try again.';
+                          });
+                        }
+                      },
+                child: AppText(saving ? 'Creating…' : 'Create key'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    Future.delayed(const Duration(milliseconds: 400), name.dispose);
+    if (!mounted || issued == null || api.identity != identity) return;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: const AppText('Save your personal key'),
+        scrollable: true,
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const AppText(
+              'This secret is shown once. Save it securely; it will not appear in your key list.',
+            ),
+            const SizedBox(height: 16),
+            Consumer<ApiService>(
+              builder: (ctx, session, _) => session.identity == identity
+                  ? SelectableText(issued!)
+                  : const AppText('The account has changed. Close this form.'),
+            ),
           ],
         ),
-        duration: const Duration(seconds: 2),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              if (api.identity != identity) return;
+              try {
+                await _copy(issued!);
+              } catch (_) {
+                if (ctx.mounted) {
+                  ScaffoldMessenger.of(ctx).showSnackBar(
+                    const SnackBar(
+                      content: AppText(
+                        'Unable to copy. Select the code to copy it.',
+                      ),
+                    ),
+                  );
+                }
+              }
+            },
+            child: const AppText('Copy'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const AppText('Done'),
+          ),
+        ],
       ),
     );
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) setState(() => _copiedKey = null);
-    });
   }
 
-  void _showGenerateKeyModal() {
-    final nameCtrl = TextEditingController(text: 'Nouvelle Clé de Famille');
-    String selectedRole = 'FAMILY_MEMBER';
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    showModalBottomSheet(
+  Future<void> _revoke(HeritageKey key) async {
+    final auth = context.read<AuthProvider>();
+    final api = context.read<ApiService>();
+    final identity = api.identity;
+    final confirm = await showDialog<bool>(
       context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      showDragHandle: true,
-      backgroundColor: isDark ? const Color(0xFF141722) : Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModalState) => Padding(
-          padding: EdgeInsets.only(
-            left: 24,
-            right: 24,
-            top: 10,
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: RoyalTheme.brightGold.withValues(alpha: 0.15),
-                        border: Border.all(
-                          color: RoyalTheme.brightGold.withValues(alpha: 0.5),
-                        ),
-                      ),
-                      child: const Icon(
-                        Icons.vpn_key_rounded,
-                        color: RoyalTheme.brightGold,
-                        size: 22,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Générer une Clé d\'Héritage',
-                            style: GoogleFonts.cinzel(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: isDark
-                                  ? RoyalTheme.lightGold
-                                  : const Color(0xFF1C1917),
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          Text(
-                            'Accès sécurisé sans mot de passe pour la famille',
-                            style: TextStyle(
-                              fontSize: 11.5,
-                              color: isDark
-                                  ? Colors.grey[400]
-                                  : Colors.grey[600],
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  'INTITULÉ DE LA CLÉ',
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.8,
-                    color: RoyalTheme.brightGold,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                TextField(
-                  controller: nameCtrl,
-                  decoration: InputDecoration(
-                    hintText: 'Ex: Branche Jean Kkevo - Douala',
-                    filled: true,
-                    fillColor: isDark
-                        ? const Color(0xFF0B0D13)
-                        : const Color(0xFFF8FAFC),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide(
-                        color: isDark ? Colors.white12 : Colors.black12,
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(
-                        color: RoyalTheme.brightGold,
-                        width: 2,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'RÔLE ATTRIBUÉ',
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.8,
-                    color: RoyalTheme.brightGold,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                DropdownButtonFormField<String>(
-                  initialValue: selectedRole,
-                  isExpanded: true,
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: isDark
-                        ? const Color(0xFF0B0D13)
-                        : const Color(0xFFF8FAFC),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide(
-                        color: isDark ? Colors.white12 : Colors.black12,
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(
-                        color: RoyalTheme.brightGold,
-                        width: 2,
-                      ),
-                    ),
-                  ),
-                  dropdownColor: isDark
-                      ? const Color(0xFF1A1C26)
-                      : Colors.white,
-                  items: const [
-                    DropdownMenuItem(
-                      value: 'FAMILY_MEMBER',
-                      child: Text(
-                        '👤 Membre de la Famille (Consultation)',
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    DropdownMenuItem(
-                      value: 'ROYAL_PATRIARCH',
-                      child: Text(
-                        '🏛️ Patriarche / Ancien (Sagesse)',
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    DropdownMenuItem(
-                      value: 'CURATOR',
-                      child: Text(
-                        '👑 Curateur / Administrateur (Gestion)',
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                  onChanged: (val) {
-                    if (val != null) setModalState(() => selectedRole = val);
-                  },
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: RoyalButton(
-                    label: 'Créer la Clé',
-                    icon: const Icon(
-                      Icons.add_circle_outline_rounded,
-                      color: Colors.black,
-                      size: 20,
-                    ),
-                    variant: RoyalButtonVariant.gold,
-                    onPressed: () async {
-                      HapticFeedback.mediumImpact();
-                      Navigator.pop(ctx);
-                      final auth = Provider.of<AuthProvider>(
-                        context,
-                        listen: false,
-                      );
-                      final created = await auth.generateHeritageKey(
-                        name: nameCtrl.text.trim().isEmpty
-                            ? 'Clé Royale'
-                            : nameCtrl.text.trim(),
-                        role: selectedRole,
-                      );
-                      if (created != null && mounted) {
-                        _copyToClipboard(created.key);
-                      }
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
+      builder: (ctx) => AlertDialog(
+        title: AppText('Revoke “${key.name}”?'),
+        content: const AppText(
+          'This key will no longer allow new sign-ins. Existing sessions remain active.',
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const AppText('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const AppText('Revoke'),
+          ),
+        ],
       ),
     );
+    if (confirm == true && mounted && identity == api.identity) {
+      await auth.revokeHeritageKey(key.id);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final auth = Provider.of<AuthProvider>(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final keys = auth.heritageKeys;
-
-    // Primary active key
+    final auth = context.watch<AuthProvider>();
     if (auth.isPreviewMode) {
-      return const Scaffold(
-        body: Center(
-          child: Padding(
-            padding: EdgeInsets.all(32),
-            child: Text(
-              'Mode découverte : les clés personnelles sont disponibles après connexion.',
-            ),
-          ),
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: AppText('Explore mode: sign in to manage your personal keys.'),
         ),
       );
     }
-    final usableKeys = keys
-        .where(
-          (k) =>
-              k.isActive &&
-              (k.expiresAt == null || k.expiresAt!.isAfter(DateTime.now())),
-        )
-        .toList();
-    final HeritageKey? activeKey = usableKeys.isEmpty ? null : usableKeys.first;
-
     return Scaffold(
       body: RefreshIndicator(
-        color: RoyalTheme.brightGold,
-        backgroundColor: isDark ? const Color(0xFF141722) : Colors.white,
-        onRefresh: () async {
-          HapticFeedback.lightImpact();
-          await auth.fetchHeritageKeys();
-        },
+        onRefresh: auth.fetchHeritageKeys,
         child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(
-            parent: BouncingScrollPhysics(),
-          ),
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16),
           children: [
-            // Banner Card
-            if (activeKey != null)
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(24),
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: isDark
-                        ? [const Color(0xFF202330), const Color(0xFF11131A)]
-                        : [const Color(0xFFFFFDF8), const Color(0xFFF3EDE2)],
-                  ),
-                  border: Border.all(
-                    color: RoyalTheme.brightGold.withValues(alpha: 0.5),
-                    width: 1.5,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: RoyalTheme.brightGold.withValues(
-                        alpha: isDark ? 0.2 : 0.1,
-                      ),
-                      blurRadius: 20,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: RoyalTheme.brightGold,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.star_rounded,
-                                color: Colors.black,
-                                size: 14,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                activeKey.roleDisplay.toUpperCase(),
-                                style: GoogleFonts.inter(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w900,
-                                  color: Colors.black,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.green.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: Colors.green.withValues(alpha: 0.4),
-                            ),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              CircleAvatar(
-                                radius: 3.5,
-                                backgroundColor: Colors.greenAccent,
-                              ),
-                              SizedBox(width: 6),
-                              Text(
-                                'Active & Valide',
-                                style: TextStyle(
-                                  color: Colors.greenAccent,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-                    Text(
-                      activeKey.name,
-                      style: GoogleFonts.cinzel(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: isDark
-                            ? RoyalTheme.lightGold
-                            : const Color(0xFF1E293B),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-
-                    // The Key Token Badge
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? Colors.black.withValues(alpha: 0.6)
-                            : Colors.white,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: RoyalTheme.brightGold.withValues(alpha: 0.4),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              activeKey.key,
-                              style: GoogleFonts.jetBrainsMono(
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 1.2,
-                                color: RoyalTheme.brightGold,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          IconButton(
-                            icon: Icon(
-                              _copiedKey == activeKey.key
-                                  ? Icons.check_rounded
-                                  : Icons.copy_rounded,
-                              color: RoyalTheme.brightGold,
-                              size: 20,
-                            ),
-                            tooltip: 'Copier la clé',
-                            onPressed: () => _copyToClipboard(activeKey.key),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 14),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Utilisée ${activeKey.usageCount} fois',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: isDark ? Colors.grey[400] : Colors.grey[600],
-                          ),
-                        ),
-                        const Flexible(
-                          child: Text(
-                            'Clé personnelle : ne la partagez pas.',
-                            textAlign: TextAlign.end,
-                            style: TextStyle(fontSize: 11),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-
-            const SizedBox(height: 24),
-
-            // Header for Registered Keys
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    'CLÉS ENREGISTRÉES (${keys.length})',
-                    style: GoogleFonts.cinzel(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.0,
-                      color: isDark
-                          ? RoyalTheme.lightGold
-                          : const Color(0xFF1E293B),
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                TextButton.icon(
-                  onPressed: _showGenerateKeyModal,
-                  icon: const Icon(
-                    Icons.add_circle_outline,
-                    size: 16,
-                    color: RoyalTheme.brightGold,
-                  ),
-                  label: Text(
-                    'Nouvelle Clé',
-                    style: GoogleFonts.inter(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      color: RoyalTheme.brightGold,
-                    ),
-                  ),
-                ),
-              ],
+            AppText(
+              'Personal keys',
+              style: Theme.of(context).textTheme.headlineSmall,
             ),
-
             const SizedBox(height: 12),
-
+            const AppText(
+              'A key opens your account with the same permissions as your password. Keep it private. Revoke a lost key below.',
+            ),
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              onPressed: auth.isSavingKey ? null : _generate,
+              icon: const Icon(Icons.add),
+              label: const AppText('Create a personal key'),
+            ),
             if (auth.isLoadingKeys)
-              const Center(
+              const Padding(
+                padding: EdgeInsets.all(24),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+            if (auth.keyError != null)
+              Card(
                 child: Padding(
-                  padding: EdgeInsets.all(32),
-                  child: CircularProgressIndicator(
-                    color: RoyalTheme.brightGold,
-                  ),
-                ),
-              )
-            else if (keys.isEmpty)
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(32),
+                  padding: const EdgeInsets.all(16),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(
-                        Icons.key_off_outlined,
-                        size: 48,
-                        color: Colors.grey.withValues(alpha: 0.5),
+                      Semantics(
+                        liveRegion: true,
+                        child: AppText(
+                          auth.keyError!,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
                       ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'Aucune clé active.',
-                        style: TextStyle(color: Colors.grey),
+                      TextButton(
+                        onPressed: auth.isLoadingKeys
+                            ? null
+                            : auth.fetchHeritageKeys,
+                        child: const AppText('Try again'),
                       ),
                     ],
                   ),
                 ),
-              )
-            else
-              ...keys.map((k) => _buildKeyCard(k, isDark, auth)),
+              ),
+            if (!auth.isLoadingKeys &&
+                auth.heritageKeys.isEmpty &&
+                auth.keyError == null)
+              const Padding(
+                padding: EdgeInsets.all(24),
+                child: AppText(
+                  'No personal keys yet. Create one to sign in without typing your password.',
+                ),
+              ),
+            for (final key in auth.heritageKeys) _card(key, auth),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: RoyalTheme.brightGold,
-        foregroundColor: Colors.black,
-        elevation: 6,
-        icon: const Icon(Icons.add_rounded, size: 22),
-        label: Text(
-          'Créer Clé',
-          style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13),
-        ),
-        onPressed: () {
-          HapticFeedback.mediumImpact();
-          _showGenerateKeyModal();
-        },
       ),
     );
   }
 
-  Widget _buildKeyCard(HeritageKey keyItem, bool isDark, AuthProvider auth) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF151822) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: keyItem.isActive
-              ? RoyalTheme.brightGold.withValues(alpha: 0.3)
-              : Colors.red.withValues(alpha: 0.3),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    keyItem.isActive
-                        ? Icons.vpn_key_rounded
-                        : Icons.key_off_rounded,
-                    color: keyItem.isActive
-                        ? RoyalTheme.brightGold
-                        : Colors.grey,
-                    size: 18,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    keyItem.name,
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : const Color(0xFF1E293B),
-                    ),
-                  ),
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: keyItem.isActive
-                      ? Colors.green.withValues(alpha: 0.15)
-                      : Colors.red.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  keyItem.isActive ? 'Active' : 'Révoquée',
-                  style: TextStyle(
-                    color: keyItem.isActive
-                        ? Colors.greenAccent
-                        : Colors.redAccent,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: isDark
-                  ? Colors.black.withValues(alpha: 0.4)
-                  : const Color(0xFFF1F5F9),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
+  Widget _card(HeritageKey key, AuthProvider auth) {
+    final expired =
+        key.expiresAt != null && !key.expiresAt!.isAfter(DateTime.now());
+    final usable = key.isActive && !expired;
+    final status = !key.isActive
+        ? 'Revoked'
+        : expired
+        ? 'Expired'
+        : 'Active';
+    return Card(
+      margin: const EdgeInsets.only(top: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              spacing: 8,
+              runSpacing: 8,
               children: [
-                Expanded(
-                  child: Text(
-                    keyItem.key,
-                    style: GoogleFonts.jetBrainsMono(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white70 : const Color(0xFF0F172A),
-                    ),
-                  ),
-                ),
-                InkWell(
-                  onTap: () => _copyToClipboard(keyItem.key),
-                  child: Padding(
-                    padding: const EdgeInsets.all(4),
-                    child: Icon(
-                      _copiedKey == keyItem.key
-                          ? Icons.check_circle_rounded
-                          : Icons.copy_rounded,
-                      size: 16,
-                      color: RoyalTheme.brightGold,
-                    ),
-                  ),
+                Text(key.name, style: Theme.of(context).textTheme.titleMedium),
+                Chip(
+                  label: AppText(status),
+                  avatar: Icon(usable ? Icons.key : Icons.key_off, size: 18),
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '${keyItem.roleDisplay} • ${keyItem.usageCount} utilisations',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: isDark ? Colors.grey[400] : Colors.grey[600],
-                ),
+            const SizedBox(height: 8),
+            SelectableText(
+              context.tr('Secret hidden. Create a replacement if needed.'),
+              style: const TextStyle(
+                fontFamily: 'monospace',
+                fontWeight: FontWeight.bold,
               ),
-              if (keyItem.isActive)
-                TextButton(
-                  onPressed: () async {
-                    HapticFeedback.lightImpact();
-                    final confirm = await showDialog<bool>(
-                      context: context,
-                      builder: (ctx) => AlertDialog(
-                        backgroundColor: isDark
-                            ? const Color(0xFF1A1C26)
-                            : Colors.white,
-                        title: const Text('Révoquer cette clé ?'),
-                        content: Text(
-                          'Cette clé personnelle ne permettra plus de vous connecter.',
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(ctx, false),
-                            child: const Text('Annuler'),
-                          ),
-                          TextButton(
-                            onPressed: () => Navigator.pop(ctx, true),
-                            child: const Text(
-                              'Révoquer',
-                              style: TextStyle(color: Colors.redAccent),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                    if (confirm == true) {
-                      await auth.revokeHeritageKey(keyItem.id);
-                    }
-                  },
-                  style: TextButton.styleFrom(
-                    padding: EdgeInsets.zero,
-                    minimumSize: const Size(50, 24),
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            const SizedBox(height: 8),
+            AppText('${key.roleDisplay} · ${key.usageCount} uses'),
+            if (key.expiresAt != null)
+              AppText(
+                'Expiration: ${key.expiresAt!.toLocal().toString().split('.').first}',
+              ),
+            Wrap(
+              spacing: 8,
+              children: [
+                if (key.isActive)
+                  TextButton.icon(
+                    onPressed: auth.isRevokingKey(key.id)
+                        ? null
+                        : () => _revoke(key),
+                    icon: const Icon(Icons.key_off),
+                    label: AppText(
+                      auth.isRevokingKey(key.id) ? 'Revoking…' : 'Revoke',
+                    ),
                   ),
-                  child: const Text(
-                    'Désactiver',
-                    style: TextStyle(color: Colors.redAccent, fontSize: 11),
-                  ),
-                ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

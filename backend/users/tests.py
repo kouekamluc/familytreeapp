@@ -10,6 +10,31 @@ from .models import HeritageKey
 
 User = get_user_model()
 
+class SessionEndpointTests(TestCase):
+    def setUp(self):
+        cache.clear()
+        self.client = APIClient()
+        self.user = User.objects.create_user(username='session-owner',email='session@example.test',password='Test-password-123')
+
+    def test_mounted_token_endpoint_is_throttled(self):
+        for _ in range(10):
+            response = self.client.post('/api/auth/token/',{'username':'session-owner','password':'wrong'},format='json')
+            self.assertEqual(response.status_code,401)
+        response = self.client.post('/api/auth/token/',{'username':'session-owner','password':'wrong'},format='json')
+        self.assertEqual(response.status_code,429)
+
+    def test_logout_revokes_refresh_after_access_expiry(self):
+        from rest_framework_simplejwt.tokens import RefreshToken
+        token = RefreshToken.for_user(self.user)
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer expired-access')
+        response = self.client.post('/api/auth/logout/',{'refresh':str(token)},format='json')
+        self.assertEqual(response.status_code,200)
+        self.client.credentials()
+        response = self.client.post('/api/auth/token/refresh/',{'refresh':str(token)},format='json')
+        self.assertEqual(response.status_code,401)
+        response = self.client.post('/api/auth/logout/',{'refresh':'forged'},format='json')
+        self.assertEqual(response.status_code,400)
+
 class HeritageKeyAuthTests(TestCase):
     def setUp(self):
         cache.clear()
@@ -48,7 +73,8 @@ class HeritageKeyAuthTests(TestCase):
         self.assertIn('refresh', response.data)
         self.assertIn('user', response.data)
         self.assertEqual(response.data['user']['username'], 'dynastycurator')
-        self.assertEqual(response.data['heritage_key']['key'], 'KKEVO-ROYAL-TEST-9999')
+        self.assertNotIn('TEST-9999', response.data['heritage_key']['key'])
+        self.assertIsNone(response.data['user']['primary_heritage_key'])
 
         # Check that last_used_at and usage_count were updated
         self.heritage_key.refresh_from_db()

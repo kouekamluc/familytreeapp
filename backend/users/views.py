@@ -1,3 +1,5 @@
+from drf_spectacular.utils import extend_schema
+from drf_spectacular.types import OpenApiTypes
 from django.shortcuts import render
 from django.utils import timezone
 from django.db.models import F
@@ -9,6 +11,7 @@ from rest_framework.throttling import ScopedRateThrottle
 from django.contrib.auth import authenticate
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenObtainPairView
 from .models import HeritageKey
 from .serializers import (
     UserSerializer,
@@ -29,55 +32,19 @@ class LoginView(APIView):
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = 'login'
     
+    @extend_schema(responses=OpenApiTypes.OBJECT, request=LoginSerializer)
     def post(self, request):
-        logger.debug("Received authentication request")
         serializer = LoginSerializer(data=request.data)
-        
-        if not serializer.is_valid():
-            logger.error(f"Login validation errors: {serializer.errors}")
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        username = serializer.validated_data['username']
-        password = serializer.validated_data['password']
-        logger.debug(f"Attempting to authenticate user: {username}")
-        
-        # First check if user exists
-        try:
-            user = User.objects.get(username=username)
-            logger.debug(f"User found: {user.username}")
-            logger.debug(f"User is active: {user.is_active}")
-            logger.debug(f"User is staff: {user.is_staff}")
-            logger.debug(f"User is superuser: {user.is_superuser}")
-            
-            # Try authentication
-            user = authenticate(request, username=username, password=password)
-            if user is None:
-                logger.warning(f"Authentication failed for user: {username}")
-                return Response({
-                    'error': 'Invalid username or password.'
-                }, status=status.HTTP_401_UNAUTHORIZED)
-            
-            if not user.is_active:
-                logger.warning(f"Login attempt for disabled user: {username}")
-                return Response({
-                    'error': 'User account is disabled.'
-                }, status=status.HTTP_401_UNAUTHORIZED)
-            
-            # Generate JWT tokens
-            refresh = RefreshToken.for_user(user)
-            logger.debug(f"User {username} logged in successfully")
-            return Response({
-                'user': UserSerializer(user).data,
-                'access': str(refresh.access_token),
-                'refresh': str(refresh),
-                'message': 'Login successful'
-            })
-            
-        except User.DoesNotExist:
-            logger.warning(f"User {username} does not exist")
-            return Response({
-                'error': 'Invalid username or password.'
-            }, status=status.HTTP_401_UNAUTHORIZED)
+        serializer.is_valid(raise_exception=True)
+        # The authentication backend performs its dummy hash for unknown users.
+        # Do not perform a faster existence lookup or log submitted identities.
+        user = authenticate(request, username=serializer.validated_data['username'],
+                            password=serializer.validated_data['password'])
+        if user is None:
+            return Response({'error': 'Invalid username or password.'}, status=401)
+        refresh = RefreshToken.for_user(user)
+        return Response({'user': UserSerializer(user).data, 'access': str(refresh.access_token),
+                         'refresh': str(refresh), 'message': 'Login successful'})
 
 
 class HeritageKeyLoginView(APIView):
@@ -88,6 +55,7 @@ class HeritageKeyLoginView(APIView):
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = 'heritage_login'
 
+    @extend_schema(responses=OpenApiTypes.OBJECT, request=OpenApiTypes.OBJECT)
     def post(self, request):
         # Support either 'key' or 'heritage_key' in request payload
         key_value = request.data.get('heritage_key') or request.data.get('key')
@@ -152,12 +120,19 @@ class HeritageKeyLoginView(APIView):
         }, status=status.HTTP_200_OK)
 
 
+class HeritageKeyLoginAliasView(HeritageKeyLoginView):
+    @extend_schema(exclude=True)
+    def post(self, request):
+        return super().post(request)
+
+
 class HeritageKeyMeView(APIView):
     """
     Get all active and past Heritage Keys for the authenticated user.
     """
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(responses=HeritageKeySerializer(many=True))
     def get(self, request):
         keys = request.user.heritage_keys.all()
         return Response(HeritageKeySerializer(keys, many=True).data)
@@ -169,6 +144,7 @@ class HeritageKeyGenerateView(APIView):
     """
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(responses=HeritageKeySerializer, request=OpenApiTypes.OBJECT)
     def post(self, request):
         name = request.data.get('name', 'Royal Dynasty Passkey')
         role = request.data.get('role', 'CURATOR' if request.user.is_staff else 'FAMILY_MEMBER')
@@ -208,7 +184,9 @@ class HeritageKeyGenerateView(APIView):
             person_id=person_id,
             is_active=True
         )
-        return Response(HeritageKeySerializer(new_key).data, status=status.HTTP_201_CREATED)
+        data = HeritageKeySerializer(new_key).data
+        data['key'] = new_key_str  # Delivered once, never in subsequent lists/login responses.
+        return Response(data, status=status.HTTP_201_CREATED)
 
 
 class HeritageKeyRevokeView(APIView):
@@ -217,6 +195,7 @@ class HeritageKeyRevokeView(APIView):
     """
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(responses=OpenApiTypes.OBJECT, request=OpenApiTypes.OBJECT)
     def post(self, request):
         key_id = request.data.get('key_id')
         key_str = request.data.get('key')
@@ -225,7 +204,7 @@ class HeritageKeyRevokeView(APIView):
         if key_id:
             key_obj = queryset.filter(id=key_id).first()
         elif key_str:
-            key_obj = queryset.filter(key__iexact=key_str).first()
+            key_obj = queryset.filter(key=HeritageKey.verifier(key_str)).first()
         else:
             return Response({'error': 'Please specify key_id or key.'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -238,8 +217,12 @@ class HeritageKeyRevokeView(APIView):
 
 
 class LogoutView(APIView):
-    permission_classes = [IsAuthenticated]
+    # Possession of a valid signed refresh token authorizes its revocation,
+    # including after the short-lived access token has expired.
+    permission_classes = [AllowAny]
+    authentication_classes = []
     
+    @extend_schema(responses=OpenApiTypes.OBJECT, request=OpenApiTypes.OBJECT)
     def post(self, request):
         try:
             refresh_token = request.data["refresh"]
@@ -248,9 +231,9 @@ class LogoutView(APIView):
             return Response({
                 'message': 'Logout successful'
             })
-        except Exception as e:
+        except Exception:
             return Response({
-                'error': str(e)
+                'error': 'Invalid refresh token.'
             }, status=status.HTTP_400_BAD_REQUEST)
 
 class RegisterView(generics.CreateAPIView):
@@ -260,5 +243,11 @@ class RegisterView(generics.CreateAPIView):
 class UserView(APIView):
     permission_classes = [IsAuthenticated]
     
+    @extend_schema(responses=UserSerializer)
     def get(self, request):
         return Response(UserSerializer(request.user).data)
+
+
+class ThrottledTokenObtainPairView(TokenObtainPairView):
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'login'

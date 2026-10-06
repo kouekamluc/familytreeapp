@@ -1,3 +1,4 @@
+import '../l10n/app_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../config/royal_theme.dart';
@@ -21,7 +22,6 @@ class LandingView extends StatefulWidget {
 }
 
 class _LandingViewState extends State<LandingView> {
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -36,7 +36,10 @@ class _LandingViewState extends State<LandingView> {
             // =========================================================
             Container(
               width: double.infinity,
-              padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 24, vertical: isMobile ? 40 : 68),
+              padding: EdgeInsets.symmetric(
+                horizontal: isMobile ? 16 : 24,
+                vertical: isMobile ? 40 : 68,
+              ),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
@@ -70,11 +73,18 @@ class _LandingViewState extends State<LandingView> {
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: isDark ? const Color(0xFF141722) : const Color(0xFFF9F5EC),
-                          border: Border.all(color: RoyalTheme.brightGold.withValues(alpha: 0.8), width: 2),
+                          color: isDark
+                              ? const Color(0xFF141722)
+                              : const Color(0xFFF9F5EC),
+                          border: Border.all(
+                            color: RoyalTheme.brightGold.withValues(alpha: 0.8),
+                            width: 2,
+                          ),
                           boxShadow: [
                             BoxShadow(
-                              color: RoyalTheme.brightGold.withValues(alpha: isDark ? 0.35 : 0.2),
+                              color: RoyalTheme.brightGold.withValues(
+                                alpha: isDark ? 0.35 : 0.2,
+                              ),
                               blurRadius: 28,
                               spreadRadius: 2,
                             ),
@@ -90,9 +100,14 @@ class _LandingViewState extends State<LandingView> {
 
                       // Prestigious Pill Badge
                       Container(
-                        padding: EdgeInsets.symmetric(horizontal: isMobile ? 12 : 18, vertical: 6),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isMobile ? 12 : 18,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF181A22) : Colors.white,
+                          color: isDark
+                              ? const Color(0xFF181A22)
+                              : Colors.white,
                           borderRadius: BorderRadius.circular(30),
                           border: Border.all(
                             color: RoyalTheme.brightGold.withValues(alpha: 0.8),
@@ -100,7 +115,9 @@ class _LandingViewState extends State<LandingView> {
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: RoyalTheme.brightGold.withValues(alpha: 0.2),
+                              color: RoyalTheme.brightGold.withValues(
+                                alpha: 0.2,
+                              ),
                               blurRadius: 16,
                               offset: const Offset(0, 4),
                             ),
@@ -109,13 +126,17 @@ class _LandingViewState extends State<LandingView> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Text('👑', style: TextStyle(fontSize: 13)),
+                            const AppText('👑', style: TextStyle(fontSize: 13)),
                             const SizedBox(width: 6),
                             Flexible(
-                              child: Text(
-                                isMobile ? 'KKEVO ROYAL HERITAGE' : 'KKEVO ROYAL HERITAGE & LIVING LINEAGE',
+                              child: AppText(
+                                isMobile
+                                    ? 'KKEVO ROYAL HERITAGE'
+                                    : 'KKEVO ROYAL HERITAGE & LIVING LINEAGE',
                                 style: GoogleFonts.cinzel(
-                                  color: isDark ? RoyalTheme.lightGold : const Color(0xFF7A520C),
+                                  color: isDark
+                                      ? RoyalTheme.lightGold
+                                      : const Color(0xFF7A520C),
                                   fontSize: isMobile ? 10.5 : 12,
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: isMobile ? 1.0 : 1.8,
@@ -130,7 +151,7 @@ class _LandingViewState extends State<LandingView> {
                       const SizedBox(height: 22),
 
                       // Main Title
-                      Text(
+                      AppText(
                         'Honor Your Ancestors.',
                         textAlign: TextAlign.center,
                         style: GoogleFonts.cinzel(
@@ -138,14 +159,20 @@ class _LandingViewState extends State<LandingView> {
                           fontWeight: FontWeight.w900,
                           letterSpacing: isMobile ? 0.6 : 1.2,
                           height: 1.15,
-                          color: isDark ? const Color(0xFFFDFBF7) : const Color(0xFF1C1917),
+                          color: isDark
+                              ? const Color(0xFFFDFBF7)
+                              : const Color(0xFF1C1917),
                         ),
                       ),
                       ShaderMask(
                         shaderCallback: (bounds) => const LinearGradient(
-                          colors: [Color(0xFFB8860B), Color(0xFFD4AF37), Color(0xFFC5A059)],
+                          colors: [
+                            Color(0xFFB8860B),
+                            Color(0xFFD4AF37),
+                            Color(0xFFC5A059),
+                          ],
                         ).createShader(bounds),
-                        child: Text(
+                        child: AppText(
                           'Unite Every Generation.',
                           textAlign: TextAlign.center,
                           style: GoogleFonts.cinzel(
@@ -162,13 +189,15 @@ class _LandingViewState extends State<LandingView> {
                       // Subtitle
                       ConstrainedBox(
                         constraints: const BoxConstraints(maxWidth: 740),
-                        child: Text(
-                          'The digital sanctuary for the Kkevo Family. Securely archive ancestral trees with museum-grade precision, calculate customary kinship across generations, preserve sacred oral lore, and pass down your royal bloodline.',
+                        child: AppText(
+                          'The digital sanctuary for the Kkevo Family. Securely archive ancestral trees with museum-grade precision, calculate customary kinship across generations, preserve family biographies, and pass down your royal bloodline.',
                           textAlign: TextAlign.center,
                           style: GoogleFonts.inter(
                             fontSize: isMobile ? 13.5 : 16,
                             height: 1.55,
-                            color: isDark ? const Color(0xFFC7BFB5) : const Color(0xFF57534E),
+                            color: isDark
+                                ? const Color(0xFFC7BFB5)
+                                : const Color(0xFF57534E),
                           ),
                         ),
                       ),
@@ -182,29 +211,53 @@ class _LandingViewState extends State<LandingView> {
                         children: [
                           if (widget.onExploreDemo != null)
                             RoyalButton(
-                              label: isMobile ? 'Explore Dynasty Vault' : 'Explore Dynasty Vault (Instant Demo)',
-                              icon: const Icon(Icons.flash_on_rounded, color: Colors.black, size: 16),
+                              label: isMobile
+                                  ? 'Explore Dynasty Vault'
+                                  : 'Explore Dynasty Vault (Instant Demo)',
+                              icon: const Icon(
+                                Icons.flash_on_rounded,
+                                color: Colors.black,
+                                size: 16,
+                              ),
                               variant: RoyalButtonVariant.gold,
                               height: isMobile ? 44 : 52,
-                              padding: EdgeInsets.symmetric(horizontal: isMobile ? 18 : 26),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: isMobile ? 18 : 26,
+                              ),
                               fontSize: isMobile ? 13 : 15,
                               onPressed: widget.onExploreDemo,
                             ),
                           RoyalButton(
                             label: 'Sign In to Private Vault',
-                            icon: Icon(Icons.lock_open_rounded, size: 16, color: isDark ? RoyalTheme.lightGold : RoyalTheme.darkGold),
+                            icon: Icon(
+                              Icons.lock_open_rounded,
+                              size: 16,
+                              color: isDark
+                                  ? RoyalTheme.lightGold
+                                  : RoyalTheme.darkGold,
+                            ),
                             variant: RoyalButtonVariant.outline,
                             height: isMobile ? 44 : 52,
-                            padding: EdgeInsets.symmetric(horizontal: isMobile ? 18 : 24),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: isMobile ? 18 : 24,
+                            ),
                             fontSize: isMobile ? 13 : 15,
                             onPressed: widget.onSignIn,
                           ),
                           RoyalButton(
                             label: 'Join Dynasty Registry',
-                            icon: Icon(Icons.how_to_reg_rounded, size: 16, color: isDark ? RoyalTheme.lightGold : RoyalTheme.darkGold),
+                            icon: Icon(
+                              Icons.how_to_reg_rounded,
+                              size: 16,
+                              color: isDark
+                                  ? RoyalTheme.lightGold
+                                  : RoyalTheme.darkGold,
+                            ),
                             variant: RoyalButtonVariant.outline,
                             height: isMobile ? 44 : 52,
-                            padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 22),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: isMobile ? 16 : 22,
+                            ),
                             fontSize: isMobile ? 13 : 15,
                             onPressed: widget.onJoin,
                           ),
@@ -218,10 +271,16 @@ class _LandingViewState extends State<LandingView> {
                         spacing: 20,
                         runSpacing: 8,
                         children: [
-                          _buildTrustBullet('End-to-End Privacy Protection', isDark),
-                          _buildTrustBullet('African Royal Titles & Totems', isDark),
-                          _buildTrustBullet('Sacred Oral Lore Encryption', isDark),
-                          _buildTrustBullet('Printable Lineage Heirlooms', isDark),
+                          _buildTrustBullet(
+                            'Authenticated Family Access',
+                            isDark,
+                          ),
+                          _buildTrustBullet(
+                            'African Royal Titles & Totems',
+                            isDark,
+                          ),
+                          _buildTrustBullet('Biographies & Portraits', isDark),
+                          _buildTrustBullet('Family Data Export', isDark),
                         ],
                       ),
                     ],
@@ -251,7 +310,9 @@ class _LandingViewState extends State<LandingView> {
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: isDark ? 0.6 : 0.08),
+                          color: Colors.black.withValues(
+                            alpha: isDark ? 0.6 : 0.08,
+                          ),
                           blurRadius: 30,
                           offset: const Offset(0, 10),
                         ),
@@ -271,11 +332,18 @@ class _LandingViewState extends State<LandingView> {
 
                         // Showcase Bottom Privacy Lock Strip
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
                           decoration: BoxDecoration(
                             color: RoyalTheme.brightGold.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: RoyalTheme.brightGold.withValues(alpha: 0.3)),
+                            border: Border.all(
+                              color: RoyalTheme.brightGold.withValues(
+                                alpha: 0.3,
+                              ),
+                            ),
                           ),
                           child: LayoutBuilder(
                             builder: (context, c) {
@@ -285,15 +353,20 @@ class _LandingViewState extends State<LandingView> {
                                   children: [
                                     Row(
                                       children: [
-                                        const Text('🔒', style: TextStyle(fontSize: 16)),
+                                        const AppText(
+                                          '🔒',
+                                          style: TextStyle(fontSize: 16),
+                                        ),
                                         const SizedBox(width: 8),
                                         Expanded(
-                                          child: Text(
+                                          child: AppText(
                                             'Protected family records. Sign in to view live tree.',
                                             style: GoogleFonts.inter(
                                               fontSize: 12,
                                               fontWeight: FontWeight.w600,
-                                              color: isDark ? RoyalTheme.lightGold : const Color(0xFF6B4508),
+                                              color: isDark
+                                                  ? RoyalTheme.lightGold
+                                                  : const Color(0xFF6B4508),
                                             ),
                                           ),
                                         ),
@@ -314,20 +387,26 @@ class _LandingViewState extends State<LandingView> {
                                 );
                               }
                               return Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Expanded(
                                     child: Row(
                                       children: [
-                                        const Text('🔒', style: TextStyle(fontSize: 18)),
+                                        const AppText(
+                                          '🔒',
+                                          style: TextStyle(fontSize: 18),
+                                        ),
                                         const SizedBox(width: 12),
                                         Expanded(
-                                          child: Text(
+                                          child: AppText(
                                             'Family Lineage records are strictly protected. Authenticate to view your live interactive tree.',
                                             style: GoogleFonts.inter(
                                               fontSize: 13.5,
                                               fontWeight: FontWeight.w600,
-                                              color: isDark ? RoyalTheme.lightGold : const Color(0xFF6B4508),
+                                              color: isDark
+                                                  ? RoyalTheme.lightGold
+                                                  : const Color(0xFF6B4508),
                                             ),
                                           ),
                                         ),
@@ -361,9 +440,13 @@ class _LandingViewState extends State<LandingView> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 36),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF10121A) : const Color(0xFFFAF6ED),
+                color: isDark
+                    ? const Color(0xFF10121A)
+                    : const Color(0xFFFAF6ED),
                 border: Border.symmetric(
-                  horizontal: BorderSide(color: RoyalTheme.primaryGold.withValues(alpha: 0.25)),
+                  horizontal: BorderSide(
+                    color: RoyalTheme.primaryGold.withValues(alpha: 0.25),
+                  ),
                 ),
               ),
               child: Center(
@@ -374,7 +457,7 @@ class _LandingViewState extends State<LandingView> {
                     children: [
                       _buildCounterItem('4+', 'Generations Charted'),
                       _buildCounterItem('16+', 'Verified Kinship Links'),
-                      _buildCounterItem('100%', 'End-to-End Privacy'),
+                      _buildCounterItem('JSON', 'Family Data Export'),
                       _buildCounterItem('1-Click', 'Relative Addition'),
                       _buildCounterItem('Global', 'Diaspora Connected'),
                     ],
@@ -396,13 +479,18 @@ class _LandingViewState extends State<LandingView> {
                   child: Column(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
                           color: RoyalTheme.brightGold.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: RoyalTheme.brightGold.withValues(alpha: 0.4)),
+                          border: Border.all(
+                            color: RoyalTheme.brightGold.withValues(alpha: 0.4),
+                          ),
                         ),
-                        child: Text(
+                        child: AppText(
                           'SIMPLICITY FOR ELDERS • INTUITIVE FOR YOUTH',
                           style: GoogleFonts.cinzel(
                             fontSize: 11,
@@ -413,19 +501,24 @@ class _LandingViewState extends State<LandingView> {
                         ),
                       ),
                       const SizedBox(height: 14),
-                      Text(
+                      AppText(
                         'How the Royal Platform Works',
                         style: GoogleFonts.cinzel(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : const Color(0xFF1C1917),
+                          color: isDark
+                              ? Colors.white
+                              : const Color(0xFF1C1917),
                         ),
                       ),
                       const SizedBox(height: 8),
-                      Text(
+                      AppText(
                         'Building your family archive requires no technical expertise. Follow our simple, respectful 3-step pathway.',
                         textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(fontSize: 14, color: Colors.grey),
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          color: Colors.grey,
+                        ),
                       ),
                       const SizedBox(height: 48),
                       Row(
@@ -435,7 +528,8 @@ class _LandingViewState extends State<LandingView> {
                             child: _buildStepCard(
                               number: '1',
                               title: 'Anchor Patriarch Roots',
-                              description: 'Start with your earliest known elders. Enter honorary titles (e.g. Tadji, Fo, Ma), clan totems, and ancestral villages to ground your lineage.',
+                              description:
+                                  'Start with your earliest known elders. Enter honorary titles (e.g. Tadji, Fo, Ma), clan totems, and ancestral villages to ground your lineage.',
                               tag: '👑 Customary Title Preservation',
                               isDark: isDark,
                             ),
@@ -445,7 +539,8 @@ class _LandingViewState extends State<LandingView> {
                             child: _buildStepCard(
                               number: '2',
                               title: 'Weave Living Lineages',
-                              description: 'Link spouses and children with 1-click bond modals. Calculate multi-generational kinship automatically with African cultural honorifics.',
+                              description:
+                                  'Link spouses and children with 1-click bond modals. Calculate multi-generational kinship automatically with African cultural honorifics.',
                               tag: '💍 Matrimonial & Child Links',
                               isDark: isDark,
                             ),
@@ -455,7 +550,8 @@ class _LandingViewState extends State<LandingView> {
                             child: _buildStepCard(
                               number: '3',
                               title: 'Safeguard Imperial Lore',
-                              description: 'Store oral histories, biographical traditions, and export beautiful heirloom pedigrees to pass down to future generations across the diaspora.',
+                              description:
+                                  'Save biographies and portraits, and export family records as JSON for safekeeping or transfer.',
                               tag: '📜 Museum-Grade Dynasty Archiving',
                               isDark: isDark,
                             ),
@@ -480,7 +576,7 @@ class _LandingViewState extends State<LandingView> {
                   constraints: const BoxConstraints(maxWidth: 1100),
                   child: Column(
                     children: [
-                      Text(
+                      AppText(
                         'FOUR PILLARS OF IMPERIAL LINEAGE',
                         style: GoogleFonts.cinzel(
                           fontSize: 12,
@@ -490,12 +586,14 @@ class _LandingViewState extends State<LandingView> {
                         ),
                       ),
                       const SizedBox(height: 10),
-                      Text(
+                      AppText(
                         'Engineered for Heritage & Continuity',
                         style: GoogleFonts.cinzel(
                           fontSize: 30,
                           fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : const Color(0xFF1C1917),
+                          color: isDark
+                              ? Colors.white
+                              : const Color(0xFF1C1917),
                         ),
                       ),
                       const SizedBox(height: 38),
@@ -510,25 +608,29 @@ class _LandingViewState extends State<LandingView> {
                           _buildPillarCard(
                             icon: Icons.account_tree_outlined,
                             title: 'Vector Pedigree Engine',
-                            description: 'Interactive dual-orientation tree canvas with smooth vector curves, matrimonial rings, and generation grouping.',
+                            description:
+                                'Interactive tree with pedigree and generation layouts, zoom, search, and family links.',
                             isDark: isDark,
                           ),
                           _buildPillarCard(
                             icon: Icons.hub_outlined,
                             title: 'Customary Kinship Solver',
-                            description: 'Calculates exact biological degrees and customary titles (Ma, Tadji, Fo, Reine-Mère) between any two living members.',
+                            description:
+                                'Finds recorded family paths and kinship descriptions between two members.',
                             isDark: isDark,
                           ),
                           _buildPillarCard(
                             icon: Icons.book_outlined,
                             title: 'Sacred Customary Vault',
-                            description: 'Safeguards village of origin, clan totems, noble titles, and generation tiers for diaspora descendants.',
+                            description:
+                                'Safeguards village of origin, clan totems, noble titles, and generation tiers for diaspora descendants.',
                             isDark: isDark,
                           ),
                           _buildPillarCard(
                             icon: Icons.mic_external_on_outlined,
-                            title: 'Oral Histories & Memoirs',
-                            description: 'Records oral interviews, archival photos, and biographical folklore to safeguard imperial memories.',
+                            title: 'Portraits & Biographies',
+                            description:
+                                'Preserves portraits, biographical notes, ancestral villages, and customary names.',
                             isDark: isDark,
                           ),
                         ],
@@ -554,7 +656,7 @@ class _LandingViewState extends State<LandingView> {
                     children: [
                       Row(
                         children: [
-                          Text(
+                          AppText(
                             'KKEVO FAMILY',
                             style: GoogleFonts.cinzel(
                               fontSize: 14,
@@ -564,15 +666,21 @@ class _LandingViewState extends State<LandingView> {
                             ),
                           ),
                           const SizedBox(width: 14),
-                          Text(
+                          AppText(
                             '•  Preserving our royal heritage, roots, and stories for generations to come.',
-                            style: GoogleFonts.inter(fontSize: 12, color: Colors.grey),
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
                           ),
                         ],
                       ),
-                      Text(
+                      AppText(
                         '© 2026 Kkevo Royal Lineage • All Rights Reserved',
-                        style: GoogleFonts.inter(fontSize: 11, color: Colors.grey),
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          color: Colors.grey,
+                        ),
                       ),
                     ],
                   ),
@@ -589,9 +697,16 @@ class _LandingViewState extends State<LandingView> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Text('✓', style: TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.bold, fontSize: 13)),
+        const AppText(
+          '✓',
+          style: TextStyle(
+            color: Color(0xFF10B981),
+            fontWeight: FontWeight.bold,
+            fontSize: 13,
+          ),
+        ),
         const SizedBox(width: 6),
-        Text(
+        AppText(
           text,
           style: GoogleFonts.inter(
             fontSize: 12.5,
@@ -603,8 +718,6 @@ class _LandingViewState extends State<LandingView> {
     );
   }
 
-
-
   Widget _buildCounterItem(String value, String label) {
     return Column(
       children: [
@@ -612,7 +725,7 @@ class _LandingViewState extends State<LandingView> {
           shaderCallback: (bounds) => const LinearGradient(
             colors: [Color(0xFFB8860B), Color(0xFFD4AF37), Color(0xFFC5A059)],
           ).createShader(bounds),
-          child: Text(
+          child: AppText(
             value,
             style: GoogleFonts.cinzel(
               fontSize: 32,
@@ -622,7 +735,7 @@ class _LandingViewState extends State<LandingView> {
           ),
         ),
         const SizedBox(height: 4),
-        Text(
+        AppText(
           label.toUpperCase(),
           style: GoogleFonts.inter(
             fontSize: 10.5,
@@ -647,7 +760,9 @@ class _LandingViewState extends State<LandingView> {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF161822) : Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: RoyalTheme.primaryGold.withValues(alpha: 0.35)),
+        border: Border.all(
+          color: RoyalTheme.primaryGold.withValues(alpha: 0.35),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
@@ -669,14 +784,18 @@ class _LandingViewState extends State<LandingView> {
               borderRadius: BorderRadius.circular(10),
             ),
             child: Center(
-              child: Text(
+              child: AppText(
                 number,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Colors.black,
+                ),
               ),
             ),
           ),
           const SizedBox(height: 18),
-          Text(
+          AppText(
             title,
             style: GoogleFonts.cinzel(
               fontSize: 16,
@@ -685,7 +804,7 @@ class _LandingViewState extends State<LandingView> {
             ),
           ),
           const SizedBox(height: 10),
-          Text(
+          AppText(
             description,
             style: GoogleFonts.inter(
               fontSize: 13,
@@ -694,7 +813,7 @@ class _LandingViewState extends State<LandingView> {
             ),
           ),
           const SizedBox(height: 16),
-          Text(
+          AppText(
             tag,
             style: GoogleFonts.inter(
               fontSize: 11,
@@ -718,7 +837,9 @@ class _LandingViewState extends State<LandingView> {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF171A24) : Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: RoyalTheme.primaryGold.withValues(alpha: 0.3)),
+        border: Border.all(
+          color: RoyalTheme.primaryGold.withValues(alpha: 0.3),
+        ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -737,7 +858,7 @@ class _LandingViewState extends State<LandingView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(
+                AppText(
                   title,
                   style: GoogleFonts.cinzel(
                     fontSize: 15,
@@ -746,7 +867,7 @@ class _LandingViewState extends State<LandingView> {
                   ),
                 ),
                 const SizedBox(height: 6),
-                Text(
+                AppText(
                   description,
                   style: GoogleFonts.inter(
                     fontSize: 12,

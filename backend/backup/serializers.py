@@ -1,3 +1,4 @@
+from datetime import timedelta
 from rest_framework import serializers
 from .models import Backup
 
@@ -18,5 +19,5 @@ class BackupSerializer(serializers.ModelSerializer):
             'completed_at', 'error_message'
         ]
     
-    def get_duration(self, obj):
+    def get_duration(self, obj) -> timedelta | None:
         return obj.duration 
