@@ -153,6 +153,9 @@ void main() {
         'Their story',
         'Chaque dimanche, nous préparons ensemble les recettes de grand-mère.',
       );
+      // Settle the real Android keyboard before scrolling to the save action.
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
       await tap('Save this memory');
       await waitFor(
         () => find.byType(StoryEditor).evaluate().isEmpty,

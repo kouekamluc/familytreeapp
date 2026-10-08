@@ -40,6 +40,8 @@ flutter_frontend/.flutter-plugins-dependencies
 flutter_frontend/.pub-cache/
 flutter_frontend/.pub/
 flutter_frontend/build/
+*.apk
+*.aab
 flutter_frontend/.idea/
 flutter_frontend/*.iml
 
@@ -49,6 +51,8 @@ chrome-temp-profile/
 flutter_frontend/*.png
 
 # Editor & OS files
+.idea/
+*.iml
 .DS_Store
 Thumbs.db
 .vscode/
@@ -69,4 +73,3 @@ flutter_frontend/android/key.properties
 *.jks
 *.keystore
 tmp/
-

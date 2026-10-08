@@ -1,0 +1,7 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Kkevo Family - PC emulator" type="FlutterRunConfigurationType" factoryName="Flutter">
+    <option name="filePath" value="$PROJECT_DIR$/lib/main.dart" />
+    <option name="additionalArgs" value="--flavor audit --dart-define=API_BASE_URL=http://10.0.2.2:18000/api" />
+    <method />
+  </configuration>
+</component>

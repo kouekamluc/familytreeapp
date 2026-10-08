@@ -18,6 +18,9 @@ void main() {
   testWidgets('phone tree: readable cards, zoom focal point, pan and profile', (
     tester,
   ) async {
+    // A separate native journey must not inherit the previous Navigator.
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
     GoogleFonts.config.allowRuntimeFetching = false;
     final api = ApiService();
     await api.init();

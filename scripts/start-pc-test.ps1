@@ -9,6 +9,7 @@ $flutter = Join-Path $env:USERPROFILE 'dev/flutter/bin/flutter.bat'
 $python = Join-Path $projectRoot '.runtime-venv/Scripts/python.exe'
 $logs = Join-Path $projectRoot '.dev-logs'
 $frontend = Join-Path $projectRoot 'flutter_frontend'
+. (Join-Path $PSScriptRoot 'android-build-cache.ps1')
 $serial = 'emulator-5554'
 $avdName = 'familytree_pc_test_api35'
 $package = 'com.kkevo.familytree.audit'
@@ -105,7 +106,12 @@ if ($LASTEXITCODE) { throw 'The virtual phone could not reach the PC test backen
 Push-Location $frontend
 try {
     $apk = Join-Path $frontend 'build/pc-test-results/app-pc-audit-debug.apk'
-    $buildApp = $RunChecks -or $Rebuild -or !(Test-Path -LiteralPath $apk)
+    $stamp = "$apk.build.json"
+    $apiBaseUrl = 'http://127.0.0.1:18000/api'
+    $fingerprint = Get-MobileBuildFingerprint -Frontend $frontend
+    $cached = Test-MobileBuildCache -Apk $apk -Stamp $stamp -Fingerprint $fingerprint -ApiBaseUrl $apiBaseUrl
+    $buildApp = $RunChecks -or $Rebuild -or !$cached
+    if (!$cached) { Write-Host 'The installed build cache is missing or outdated. Building the current mobile app...' }
     if ($buildApp) {
         # Regenerate native plugin registration, including the integration-test
         # plugin which a preceding release/web build may have excluded.
@@ -118,11 +124,18 @@ try {
         if ($LASTEXITCODE) { throw 'The PC app journey failed. The test output identifies the failing step.' }
     }
     if ($buildApp) {
+        $fingerprint = Get-MobileBuildFingerprint -Frontend $frontend
         & $flutter build apk --debug --flavor audit --target-platform android-x64 --no-pub --dart-define=API_BASE_URL=http://127.0.0.1:18000/api
         if ($LASTEXITCODE) { throw 'The current Android test app did not build.' }
+        if ((Get-MobileBuildFingerprint -Frontend $frontend) -ne $fingerprint) {
+            throw 'Mobile source files changed during the build. Run the launcher again to build that version.'
+        }
         New-Item -ItemType Directory -Force -Path (Split-Path $apk -Parent) | Out-Null
         # Keep the interactive app separate from the journey-test APK.
         Copy-Item -LiteralPath (Join-Path $frontend 'build/app/outputs/flutter-apk/app-audit-debug.apk') -Destination $apk -Force
+        @{ schema = 1; sourcesSha256 = $fingerprint; apiBaseUrl = $apiBaseUrl;
+            apkSha256 = (Get-FileHash -LiteralPath $apk -Algorithm SHA256).Hash
+        } | ConvertTo-Json | Set-Content -LiteralPath $stamp -Encoding UTF8
     }
     & $adb -s $serial install -r $apk
     if ($LASTEXITCODE) { throw 'The app could not be installed on the PC virtual phone.' }

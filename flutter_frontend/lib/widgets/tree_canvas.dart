@@ -387,88 +387,90 @@ class _TreeCanvasState extends State<TreeCanvas>
                   _animController.stop();
                 }
               },
-              child: GestureDetector(
-                behavior: HitTestBehavior.translucent,
-                onDoubleTapDown: (details) {
-                  // The detector is inside the transformed canvas. Zoom needs
-                  // its focal point in viewport coordinates, not scene space.
-                  _lastDoubleTapFocalPoint = MatrixUtils.transformPoint(
-                    _transformController.value,
-                    details.localPosition,
-                  );
-                },
-                onDoubleTap: () {
-                  final currentScale = _transformController.value
-                      .getMaxScaleOnAxis();
-                  if (currentScale < 0.85) {
-                    final focal =
-                        _lastDoubleTapFocalPoint ??
-                        Offset(size.width / 2, size.height / 2);
-                    _animateToZoom(1.6, focal);
-                  } else {
-                    fitToScreen(
-                      layout.totalWidth,
-                      layout.totalHeight,
-                      animated: true,
-                    );
-                  }
-                },
-                child: RepaintBoundary(
-                  child: Container(
-                    width: layout.totalWidth,
-                    height: layout.totalHeight,
-                    decoration: BoxDecoration(
-                      color: isDark ? RoyalTheme.obsidianDark : Colors.white,
-                    ),
-                    child: Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        // Infinite Sacred Constellation & Dot-Grid Matrix
-                        if (!isMobile)
-                          Positioned.fill(
-                            child: CustomPaint(
-                              painter: _InfiniteSacredCanvasPainter(
-                                isDark: isDark,
-                              ),
-                            ),
-                          ),
-
-                        // Generational Guideline Watermarks on the left
-                        if (!isMobile &&
-                            widget.layoutMode == TreeLayoutMode.pedigree)
-                          _buildGenerationalBackdrops(layout),
-
-                        // Vector Lines Painter (Draws Branches, "💍 Married", "🌿 Children / Lineage" Badges)
+              child: RepaintBoundary(
+                child: Container(
+                  width: layout.totalWidth,
+                  height: layout.totalHeight,
+                  decoration: BoxDecoration(
+                    color: isDark ? RoyalTheme.obsidianDark : Colors.white,
+                  ),
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      // Infinite Sacred Constellation & Dot-Grid Matrix
+                      if (!isMobile)
                         Positioned.fill(
                           child: CustomPaint(
-                            painter: _PedigreeBranchPainter(
-                              positions: layout.positions,
-                              spouseConnectors: layout.spouseConnectors,
-                              familyForks: layout.familyForks,
-                              lineageStems: layout.lineageStems,
-                              peopleMap: {for (var p in widget.people) p.id: p},
-                              relationships: widget.relationships,
-                              selectedPersonId: widget.selectedPerson?.id,
-                              hoveredPersonId: _hoveredPersonId,
+                            painter: _InfiniteSacredCanvasPainter(
                               isDark: isDark,
-                              locale: Localizations.localeOf(context),
-                              cardW: cardWidth,
-                              cardH: cardHeight,
-                              compact: isMobile,
                             ),
                           ),
                         ),
 
-                        // Family Member Cards with Explicit Genealogical Roles
-                        for (final person in widget.people)
-                          if (layout.positions.containsKey(person.id))
-                            Positioned(
-                              left: layout.positions[person.id]!.dx,
-                              top: layout.positions[person.id]!.dy,
-                              child: _buildPersonCard(person, isDark),
-                            ),
-                      ],
-                    ),
+                      // Generational Guideline Watermarks on the left
+                      if (!isMobile &&
+                          widget.layoutMode == TreeLayoutMode.pedigree)
+                        _buildGenerationalBackdrops(layout),
+
+                      // Vector Lines Painter (Draws Branches, "💍 Married", "🌿 Children / Lineage" Badges)
+                      Positioned.fill(
+                        child: CustomPaint(
+                          painter: _PedigreeBranchPainter(
+                            positions: layout.positions,
+                            spouseConnectors: layout.spouseConnectors,
+                            familyForks: layout.familyForks,
+                            lineageStems: layout.lineageStems,
+                            peopleMap: {for (var p in widget.people) p.id: p},
+                            relationships: widget.relationships,
+                            selectedPersonId: widget.selectedPerson?.id,
+                            hoveredPersonId: _hoveredPersonId,
+                            isDark: isDark,
+                            locale: Localizations.localeOf(context),
+                            cardW: cardWidth,
+                            cardH: cardHeight,
+                            compact: isMobile,
+                          ),
+                        ),
+                      ),
+
+                      // Keep background double-taps out of the person cards'
+                      // gesture arena, so opening a profile is immediate.
+                      Positioned.fill(
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onDoubleTapDown: (details) {
+                            _lastDoubleTapFocalPoint =
+                                MatrixUtils.transformPoint(
+                                  _transformController.value,
+                                  details.localPosition,
+                                );
+                          },
+                          onDoubleTap: () {
+                            if (_transformController.value.getMaxScaleOnAxis() <
+                                .85) {
+                              _animateToZoom(
+                                1.6,
+                                _lastDoubleTapFocalPoint ??
+                                    _viewportSize.center(Offset.zero),
+                              );
+                            } else {
+                              fitToScreen(
+                                layout.totalWidth,
+                                layout.totalHeight,
+                              );
+                            }
+                          },
+                        ),
+                      ),
+                      // Family Member Cards with Explicit Genealogical Roles
+                      for (final person in widget.people)
+                        if (layout.positions.containsKey(person.id))
+                          Positioned(
+                            left: layout.positions[person.id]!.dx,
+                            top: layout.positions[person.id]!.dy,
+                            child: _buildPersonCard(person, isDark),
+                          ),
+                    ],
                   ),
                 ),
               ),
