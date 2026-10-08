@@ -9,6 +9,7 @@ import '../providers/auth_provider.dart';
 import '../providers/tree_provider.dart';
 import '../services/api_service.dart';
 import '../views/family_connections_view.dart';
+import '../views/private_branches_view.dart';
 import 'ancestor_search_form.dart';
 
 class TreeManagerSheet extends StatefulWidget {
@@ -817,6 +818,12 @@ class _TreeManagerSheetState extends State<TreeManagerSheet> {
                           await _edit(tree: t);
                         } else if (value == 'delete') {
                           await _delete(t);
+                        } else if (value == 'branches') {
+                          await tree.loadData(targetTreeId: t.id);
+                          if (context.mounted &&
+                              tree.selectedTree?.id == t.id) {
+                            await PrivateBranchesView.show(context, t.id);
+                          }
                         } else {
                           await tree.loadData(targetTreeId: t.id);
                           if (context.mounted &&
@@ -833,6 +840,10 @@ class _TreeManagerSheetState extends State<TreeManagerSheet> {
                         PopupMenuItem(
                           value: 'access',
                           child: AppText('Invitations and access'),
+                        ),
+                        PopupMenuItem(
+                          value: 'branches',
+                          child: AppText('Private branches'),
                         ),
                         PopupMenuItem(
                           value: 'edit',

@@ -39,6 +39,11 @@ import 'package:flutter_frontend/widgets/mobile_person_sheet.dart';
 import 'package:flutter_frontend/widgets/node_action_sheet.dart';
 
 class WorkflowApi extends ApiService {
+  @override
+  Future<Map<String, dynamic>?> familyBranches(
+    int treeId, {
+    Map<String, dynamic>? payload,
+  }) async => {'outgoing': [], 'incoming': [], 'visible': []};
   Map<String, dynamic> accessData = {
     'requests': [],
     'members': [],

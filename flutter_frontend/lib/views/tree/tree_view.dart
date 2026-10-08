@@ -1,4 +1,7 @@
 import '../../l10n/app_strings.dart';
+import 'dart:async';
+import '../../models/family_branch.dart';
+import '../private_branches_view.dart';
 import '../../services/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -22,13 +25,77 @@ class TreeView extends StatefulWidget {
   State<TreeView> createState() => _TreeViewState();
 }
 
-class _TreeViewState extends State<TreeView> {
+class _TreeViewState extends State<TreeView> with WidgetsBindingObserver {
   final _search = TextEditingController();
   TreeLayoutMode _layout = TreeLayoutMode.pedigree;
   int _centerRequest = 0;
+  List<FamilyBranch> _branches = [];
+  String? _branchContext;
+  Timer? _branchTimer;
+  int _branchVersion = 0;
+  bool _foreground = true;
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _branchTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (_foreground) _loadBranches();
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final tree = context.read<TreeProvider>();
+    final key = '${tree.contextKey}:${tree.isOfflineMode}';
+    if (key != _branchContext) {
+      _branchContext = key;
+      _branches = [];
+      _branchVersion++;
+      Future.microtask(_loadBranches);
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _foreground = state == AppLifecycleState.resumed;
+    if (!_foreground) {
+      _branchVersion++;
+      if (mounted) setState(() => _branches = []);
+    } else {
+      _loadBranches();
+    }
+  }
+
+  Future<void> _loadBranches() async {
+    if (!mounted) return;
+    final tree = context.read<TreeProvider>(), api = context.read<ApiService>();
+    final id = tree.selectedTree?.id;
+    if (id == null || tree.isOfflineMode || api.isPreviewMode) return;
+    final key = '${tree.contextKey}:${tree.isOfflineMode}',
+        version = ++_branchVersion;
+    final data = await api.familyBranches(id);
+    if (!mounted ||
+        version != _branchVersion ||
+        key != '${tree.contextKey}:${tree.isOfflineMode}') {
+      return;
+    }
+    setState(
+      () => _branches = (data?['visible'] as List? ?? [])
+          .map(
+            (item) =>
+                FamilyBranch.fromJson(Map<String, dynamic>.from(item as Map)),
+          )
+          .toList(),
+    );
+  }
+
   @override
   void dispose() {
     _search.dispose();
+    _branchVersion++;
+    _branchTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
@@ -127,6 +194,21 @@ class _TreeViewState extends State<TreeView> {
                   style: Theme.of(ctx).textTheme.titleLarge,
                 ),
                 _controls(value, refresh: () => update(() {})),
+                if (value.selectedTree != null &&
+                    !value.isOfflineMode &&
+                    !context.read<ApiService>().isPreviewMode)
+                  TextButton.icon(
+                    icon: const Icon(Icons.privacy_tip_outlined),
+                    label: const AppText('Private branches'),
+                    onPressed: () async {
+                      Navigator.pop(ctx);
+                      await PrivateBranchesView.show(
+                        context,
+                        value.selectedTree!.id,
+                      );
+                      if (mounted) await _loadBranches();
+                    },
+                  ),
                 const SizedBox(height: 16),
                 FilledButton(
                   onPressed: () => Navigator.pop(ctx),
@@ -197,7 +279,10 @@ class _TreeViewState extends State<TreeView> {
                           tooltip: context.tr('Refresh tree'),
                           onPressed: tree.isLoading
                               ? null
-                              : () => tree.loadData(),
+                              : () async {
+                                  await tree.loadData();
+                                  await _loadBranches();
+                                },
                           icon: const Icon(Icons.refresh),
                         ),
                       ],
@@ -269,6 +354,15 @@ class _TreeViewState extends State<TreeView> {
                             searchQuery: _search.text,
                             centerRequest: _centerRequest,
                             orientation: tree.orientation,
+                            branches: _branches,
+                            onOpenBranch: (branch) async {
+                              await SharedBranchView.show(
+                                context,
+                                tree.selectedTree!.id,
+                                branch.id,
+                              );
+                              if (mounted) await _loadBranches();
+                            },
                             onSelectPerson: (person) {
                               tree.selectPerson(person);
                               if (compact) {

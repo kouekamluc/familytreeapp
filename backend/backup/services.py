@@ -14,18 +14,18 @@ from django.core.management.color import no_style
 from django.db import connection, transaction
 from django.utils import timezone
 from users.models import HeritageKey, AccountDeletionRequest, EmailAction
-from family.models import FamilyTree, Person, Relationship, Event, Media, TreeMembership, FamilyInvitation, JoinRequest, RecordChange, MutationReceipt, ContentReport
+from family.models import FamilyTree, Person, Relationship, Event, Media, TreeMembership, FamilyInvitation, JoinRequest, RecordChange, MutationReceipt, ContentReport, FamilyBranchLink
 from tags.models import Tag
 from .models import Backup
 
 
 class BackupService:
-    VERSION = '8.0'
+    VERSION = '9.0'
     MODELS = {'users': get_user_model(), 'family_trees': FamilyTree, 'people': Person,
               'relationships': Relationship, 'events': Event, 'media': Media,
               'tags': Tag, 'heritage_keys': HeritageKey, 'memberships': TreeMembership,
               'invitations': FamilyInvitation, 'join_requests': JoinRequest,
-              'record_changes': RecordChange, 'mutation_receipts': MutationReceipt, 'deletion_requests': AccountDeletionRequest, 'content_reports': ContentReport}
+              'record_changes': RecordChange, 'mutation_receipts': MutationReceipt, 'deletion_requests': AccountDeletionRequest, 'content_reports': ContentReport, 'family_branches': FamilyBranchLink}
     MAX_ARCHIVE_BYTES = 2 * 1024 * 1024 * 1024
 
     def __init__(self):
@@ -109,7 +109,7 @@ class BackupService:
             if 'manifest.json' not in names:
                 raise ValueError('Legacy backup requires offline conversion; no changes were made.')
             manifest = json.loads(archive.read('manifest.json'))
-            if manifest.get('version') not in ('4.0', '5.0', '6.0', '7.0', self.VERSION) or not isinstance(manifest.get('files'), dict):
+            if manifest.get('version') not in ('4.0', '5.0', '6.0', '7.0', '8.0', self.VERSION) or not isinstance(manifest.get('files'), dict):
                 raise ValueError('Unsupported or invalid backup manifest.')
             if set(names) != set(manifest['files']) | {'manifest.json'}:
                 raise ValueError('Archive contents do not match manifest.')
@@ -123,7 +123,7 @@ class BackupService:
                 contents[name] = content
         data = json.loads(contents['database.json'])
         if manifest.get('version') == '4.0':
-            expected = set(self.MODELS) - {'memberships', 'invitations', 'join_requests', 'record_changes', 'mutation_receipts', 'deletion_requests', 'content_reports'}
+            expected = set(self.MODELS) - {'memberships', 'invitations', 'join_requests', 'record_changes', 'mutation_receipts', 'deletion_requests', 'content_reports', 'family_branches'}
             if not isinstance(data, dict) or set(data) != expected:
                 raise ValueError('Missing or unexpected legacy database sections.')
             for record in data['family_trees']:
@@ -139,6 +139,7 @@ class BackupService:
                 record['fields'].setdefault('email_verified', False)
         if manifest.get('version') != self.VERSION:
             data.setdefault('content_reports', [])
+            data.setdefault('family_branches', [])
         # Old backup credentials retain validity without returning to plaintext storage.
         import re
         for record in data.get('heritage_keys', []):
@@ -209,7 +210,7 @@ class BackupService:
                     with transaction.atomic():
                         # Keep existing operator accounts and backup references; restore snapshot accounts in place.
                         EmailAction.objects.all().delete()
-                        for section in ['content_reports', 'deletion_requests', 'mutation_receipts', 'record_changes', 'join_requests', 'invitations', 'memberships', 'tags', 'media', 'events', 'relationships', 'heritage_keys', 'people', 'family_trees']:
+                        for section in ['family_branches', 'content_reports', 'deletion_requests', 'mutation_receipts', 'record_changes', 'join_requests', 'invitations', 'memberships', 'tags', 'media', 'events', 'relationships', 'heritage_keys', 'people', 'family_trees']:
                             self.MODELS[section].objects.all().delete()
                         for section, model in self.MODELS.items():
                             self._restore_model(model, data[section])

@@ -1,5 +1,61 @@
 // Shared English-first presentation catalog. Family records are never translated.
 const englishToFrench = <String, String>{
+  'Private branches': 'Branches privées',
+  'Review private branch requests': 'Examiner les demandes de branches privées',
+  'Shared branch': 'Branche partagée',
+  'Connect selected profiles': 'Relier les profils sélectionnés',
+  'Connect a private branch': 'Relier une branche privée',
+  'Choose where this branch belongs': 'Choisissez où relier cette branche',
+  'Choose what your relatives can see':
+      'Choisissez ce que vos proches peuvent voir',
+  'Shared branch name': 'Nom de la branche partagée',
+  'Extended family tree': 'Arbre de la famille élargie',
+  'Root of my private branch': 'Racine de ma branche privée',
+  'Their connection to the extended tree': 'Son lien avec la famille élargie',
+  'Connect to this person': 'Relier à cette personne',
+  'Choose shared profiles': 'Choisir les profils à partager',
+  'Preview shared profiles': 'Aperçu des profils partagés',
+  'Change sharing': 'Modifier le partage',
+  'Stop sharing': 'Arrêter le partage',
+  'Stop sharing this branch?': 'Arrêter le partage de cette branche ?',
+  'Confirm this branch connection?': 'Confirmer ce lien de branche ?',
+  'Remove this branch connection?': 'Retirer ce lien de branche ?',
+  'Needs new confirmation': 'Nouvelle confirmation nécessaire',
+  'Private again': 'De nouveau privée',
+  'Branches I share': 'Branches que je partage',
+  'Connections to this extended family': 'Liens avec cette famille élargie',
+  'No shared branches yet.': 'Aucune branche partagée pour le moment.',
+  'No profiles are shared from this tree.':
+      'Aucun profil de cet arbre n’est partagé.',
+  'This profile connects your branch': 'Ce profil relie votre branche',
+  'Send branch for confirmation': 'Envoyer la branche pour confirmation',
+  'Shared profile · view only': 'Profil partagé · lecture seule',
+  'Unable to load branch sharing. Try again.':
+      'Impossible de charger le partage. Réessayez.',
+  'Unable to update branch sharing. Refresh and try again.':
+      'Impossible de modifier le partage. Actualisez et réessayez.',
+  'Unable to share this branch. Your selections are kept.':
+      'Impossible de partager cette branche. Vos choix sont conservés.',
+  'This branch is no longer shared or is unavailable.':
+      'Cette branche n’est plus partagée ou est indisponible.',
+  'Your own tree stays private. Connect a branch to an extended family and choose exactly which profiles they can see.':
+      'Votre arbre reste privé. Reliez une branche à une famille élargie et choisissez précisément les profils visibles.',
+  'Join the extended family first. Its owner confirms your branch’s placement. Your private tree stays separate.':
+      'Rejoignez d’abord la famille élargie. Son propriétaire confirme la place de votre branche. Votre arbre privé reste séparé.',
+  'Join or create your extended family before connecting this private tree.':
+      'Rejoignez ou créez votre famille élargie avant de relier cet arbre privé.',
+  'Only checked profiles share their names, gender, birth and death dates, birthplace and living status. Only links between checked profiles appear. Stories, photos, accounts and unchecked profiles stay private.':
+      'Seuls les profils cochés partagent leurs noms, genre, dates de naissance et de décès, lieu de naissance et statut vivant. Seuls les liens entre ces profils apparaissent. Récits, photos, comptes et autres profils restent privés.',
+  'Changing the selected profiles or placement requires a new branch review. You can stop sharing at any time.':
+      'Modifier les profils partagés ou leur emplacement nécessite un nouvel examen. Vous pouvez arrêter le partage à tout moment.',
+  'The extended family will no longer receive these shared profiles. Your private tree is kept.':
+      'La famille élargie ne recevra plus ces profils partagés. Votre arbre privé est conservé.',
+  'Verify the branch’s identity and placement. Only the selected profiles will appear. This does not grant access to the private tree.':
+      'Vérifiez l’identité et la place de la branche. Seuls les profils sélectionnés apparaîtront. Aucun accès à l’arbre privé n’est accordé.',
+  'This branch will no longer appear in your extended tree.':
+      'Cette branche n’apparaîtra plus dans votre arbre élargi.',
+  'Choose the tree, connection, branch root and up to 200 shared profiles.':
+      'Choisissez l’arbre, le lien, la racine de branche et au maximum 200 profils à partager.',
   'Ancestors you know': 'Les ancêtres que vous connaissez',
   'Parent and grandparent': 'Parent et grand-parent',
   'Grandparent and great-grandparent': 'Grand-parent et arrière-grand-parent',
@@ -1064,6 +1120,7 @@ const englishToFrench = <String, String>{
 };
 
 const messageTemplates = <(String, String, Set<int>)>[
+  ('{0} selected profiles', '{0} profils sélectionnés', <int>{}),
   ('Younger ancestor: {0}', 'Ancêtre le plus jeune : {0}', <int>{}),
   ('Older ancestor: {0}', 'Ancêtre le plus ancien : {0}', <int>{}),
   ('Ancestor to investigate : {0}', 'Ancêtre à vérifier : {0}', <int>{}),

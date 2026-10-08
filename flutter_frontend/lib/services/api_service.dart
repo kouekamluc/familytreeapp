@@ -387,7 +387,7 @@ class ApiService extends ChangeNotifier {
                   'last_name': lastName,
               }),
             )
-            .timeout(const Duration(seconds: 5));
+            .timeout(const Duration(seconds: 12));
 
         if (response.statusCode == 201 || response.statusCode == 200) {
           ApiConfig.setBaseUrl(base);
@@ -1284,6 +1284,28 @@ class ApiService extends ChangeNotifier {
           notifyListeners();
         }
         return data;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> familyBranches(
+    int treeId, {
+    Map<String, dynamic>? payload,
+  }) async {
+    if (_isPreviewMode) return null;
+    final openedIdentity = identity;
+    try {
+      final url = Uri.parse(
+        '${ApiConfig.baseUrl}/family-branches/${payload == null ? '?tree_id=$treeId' : ''}',
+      );
+      final response = payload == null
+          ? await _getWithAuth(url)
+          : await _postWithAuth(url, body: jsonEncode(payload));
+      if (identity != openedIdentity) return null;
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return jsonDecode(utf8.decode(response.bodyBytes))
+            as Map<String, dynamic>;
       }
     } catch (_) {}
     return null;

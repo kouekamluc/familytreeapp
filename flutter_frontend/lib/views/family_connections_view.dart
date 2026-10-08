@@ -2,6 +2,7 @@ import '../l10n/app_strings.dart';
 import 'dart:async';
 import '../services/android_handoff.dart';
 import '../widgets/ancestor_search_form.dart';
+import 'private_branches_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -1079,6 +1080,17 @@ class _FamilyConnectionsViewState extends State<FamilyConnectionsView>
                   },
           ),
         ]),
+        if ((_data['pending_branches'] as int? ?? 0) > 0)
+          TextButton.icon(
+            onPressed: _busy
+                ? null
+                : () async {
+                    await PrivateBranchesView.show(context, widget.treeId!);
+                    if (mounted) await _load();
+                  },
+            icon: const Icon(Icons.account_tree_outlined),
+            label: const AppText('Review private branch requests'),
+          ),
         AppText(
           'Requests to review',
           style: Theme.of(context).textTheme.titleMedium,

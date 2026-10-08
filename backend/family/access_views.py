@@ -10,6 +10,7 @@ from drf_spectacular.utils import extend_schema
 from drf_spectacular.types import OpenApiTypes
 
 from .models import TreeMembership, FamilyInvitation, JoinRequest, RecordChange
+from .branch_views import pending_branch_count
 from . import joining
 
 
@@ -40,8 +41,8 @@ class FamilyAccessView(APIView):
         if not tree_id:
             items = JoinRequest.objects.filter(applicant=request.user).select_related('tree').order_by('-created_at')[:50]
             return Response({'requests': [request_data(item) for item in items],
-                'pending_requests': JoinRequest.objects.filter(applicant=request.user, status='PENDING').count(),
-                'pending_reviews': JoinRequest.objects.filter(tree__owner=request.user, status='PENDING').count()})
+                'pending_requests': JoinRequest.objects.filter(applicant=request.user, status='PENDING').count() + pending_branch_count(source_tree__owner=request.user),
+                'pending_reviews': JoinRequest.objects.filter(tree__owner=request.user, status='PENDING').count() + pending_branch_count(target_tree__owner=request.user)})
         tree = joining.owner_tree(request.user, tree_id)
         memberships = TreeMembership.objects.filter(tree=tree).select_related('user', 'person')
         records = {m.user_id: m for m in memberships}
@@ -54,6 +55,7 @@ class FamilyAccessView(APIView):
                         'expires_at': i.expires_at}
                        for i in tree.invitations.select_related('anchor').order_by('-created_at')[:50]]
         return Response({'discovery_enabled': tree.discovery_enabled, 'members': members, 'invitations': invitations,
+            'pending_branches': pending_branch_count(target_tree=tree),
             'requests': [request_data(i, owner=True) for i in tree.join_requests.select_related('applicant', 'tree', 'anchor').order_by('-created_at')[:50]],
             'changes': [{'id': c.id, 'kind': c.kind, 'record_id': c.record_id, 'actor': c.actor.username if c.actor else 'Deleted account', 'created_at': c.created_at}
                         for c in RecordChange.objects.filter(tree=tree).select_related('actor').order_by('-created_at')[:30]]})

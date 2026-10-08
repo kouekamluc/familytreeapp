@@ -49,6 +49,7 @@ class BackupSafetyTests(TestCase):
         def downgrade(contents):
             data = json.loads(contents['database.json'])
             del data['content_reports']
+            del data['family_branches']
             for row in data['people']: del row['fields']['search_name']
             contents['database.json'] = json.dumps(data).encode()
             manifest = json.loads(contents['manifest.json'])
@@ -186,7 +187,7 @@ class BackupSafetyTests(TestCase):
         backup = self.service.create_backup(self.user)
         def downgrade(contents):
             data = json.loads(contents['database.json'])
-            for section in ['memberships', 'invitations', 'join_requests', 'record_changes', 'mutation_receipts', 'deletion_requests', 'content_reports']:
+            for section in ['memberships', 'invitations', 'join_requests', 'record_changes', 'mutation_receipts', 'deletion_requests', 'content_reports', 'family_branches']:
                 del data[section]
             for row in data['users']:
                 del row['fields']['email_verified']
@@ -237,3 +238,34 @@ class BackupSafetyTests(TestCase):
         self.service.restore_backup(backup.pk)
         self.assertEqual(AccountDeletionRequest.objects.get(user=self.user).status, 'PENDING')
         self.assertEqual(EmailAction.objects.count(), 0)
+
+    def test_selected_branch_consent_survives_restore_and_version_eight_is_supported(self):
+        from family.models import FamilyBranchLink
+        target = FamilyTree.objects.create(name='Extended', owner=self.user)
+        anchor = Person.objects.create(family_tree=target, first_name='Before', last_name='Backup', gender='O')
+        hidden = Person.objects.create(family_tree=self.tree, first_name='Hidden', last_name='Relative', gender='O')
+        link = FamilyBranchLink.objects.create(source_tree=self.tree, target_tree=target,
+            source_root=self.person, attachment=anchor, label='Selected branch', connection='EXISTING',
+            status='WITHDRAWN', revision=4, created_by=self.user)
+        link.shared_people.add(self.person)
+        backup = self.service.create_backup(self.user)
+        FamilyTree.objects.all().delete()
+        self.service.restore_backup(backup.pk)
+        restored = FamilyBranchLink.objects.get(pk=link.pk)
+        self.assertEqual(restored.status, 'WITHDRAWN')
+        self.assertEqual(restored.revision, 4)
+        self.assertEqual(list(restored.shared_people.values_list('pk', flat=True)), [self.person.pk])
+        self.assertTrue(Person.objects.filter(pk=hidden.pk).exists())
+        legacy = self.service.create_backup(self.user)
+        def downgrade(contents):
+            data = json.loads(contents['database.json'])
+            del data['family_branches']
+            contents['database.json'] = json.dumps(data).encode()
+            manifest = json.loads(contents['manifest.json'])
+            manifest['version'] = '8.0'
+            manifest['files']['database.json'] = {'size': len(contents['database.json']), 'sha256': hashlib.sha256(contents['database.json']).hexdigest()}
+            contents['manifest.json'] = json.dumps(manifest).encode()
+        self.tamper(legacy, downgrade)
+        self.service.restore_backup(legacy.pk)
+        self.assertFalse(FamilyBranchLink.objects.exists())
+        self.assertTrue(Person.objects.filter(pk=self.person.pk).exists())

@@ -343,6 +343,26 @@ class RecordChange(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
 
+class FamilyBranchLink(models.Model):
+    """A reviewed projection of selected records; never membership in its source."""
+    source_tree = models.ForeignKey(FamilyTree, on_delete=models.CASCADE, related_name='outgoing_branches')
+    target_tree = models.ForeignKey(FamilyTree, on_delete=models.CASCADE, related_name='incoming_branches')
+    source_root = models.ForeignKey(Person, on_delete=models.CASCADE, related_name='+')
+    attachment = models.ForeignKey(Person, on_delete=models.CASCADE, related_name='+')
+    shared_people = models.ManyToManyField(Person, related_name='shared_branch_links')
+    label = models.CharField(max_length=100)
+    connection = models.CharField(max_length=8, choices=[('EXISTING', 'Same person'), ('CHILD', 'Child'), ('SIBLING', 'Sibling'), ('SPOUSE', 'Partner')])
+    status = models.CharField(max_length=10, default='PENDING', choices=[('PENDING', 'Pending'), ('APPROVED', 'Approved'), ('REJECTED', 'Rejected'), ('WITHDRAWN', 'Withdrawn')])
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    reviewed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    revision = models.PositiveIntegerField(default=1)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['source_tree', 'target_tree'], name='unique_private_tree_branch')]
+
+
 class ContentReport(models.Model):
     reporter = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name='content_reports')
     tree = models.ForeignKey(FamilyTree, null=True, on_delete=models.SET_NULL)

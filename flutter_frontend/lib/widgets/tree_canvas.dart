@@ -8,6 +8,8 @@ import '../models/person.dart';
 import '../models/relationship.dart';
 import '../providers/tree_provider.dart';
 import '../utils/genealogy_helper.dart';
+import '../utils/family_graph_layout.dart';
+import '../models/family_branch.dart';
 import 'monogram_medallion.dart';
 
 enum TreeLayoutMode { pedigree, tiered }
@@ -20,6 +22,9 @@ class TreeCanvas extends StatefulWidget {
   final TreeLayoutMode layoutMode;
   final String searchQuery;
   final int centerRequest;
+  final bool fitInitially;
+  final List<FamilyBranch> branches;
+  final ValueChanged<FamilyBranch>? onOpenBranch;
   final Function(Person) onSelectPerson;
 
   const TreeCanvas({
@@ -31,6 +36,9 @@ class TreeCanvas extends StatefulWidget {
     this.layoutMode = TreeLayoutMode.pedigree,
     this.searchQuery = '',
     this.centerRequest = 0,
+    this.fitInitially = false,
+    this.branches = const [],
+    this.onOpenBranch,
     required this.onSelectPerson,
   });
 
@@ -71,6 +79,7 @@ class _TreeCanvasState extends State<TreeCanvas>
       _textScale,
       Object.hashAll(widget.people),
       Object.hashAll(widget.relationships),
+      Object.hashAll(widget.branches),
     );
     if (_cachedLayout == null || _layoutStamp != stamp) {
       _layoutStamp = stamp;
@@ -276,6 +285,9 @@ class _TreeCanvasState extends State<TreeCanvas>
   @override
   void didUpdateWidget(covariant TreeCanvas oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.branches.length != oldWidget.branches.length) {
+      _initializedFit = false;
+    }
     if (widget.selectedPerson != null &&
         (widget.selectedPerson?.id != oldWidget.selectedPerson?.id ||
             widget.centerRequest != oldWidget.centerRequest)) {
@@ -359,7 +371,9 @@ class _TreeCanvasState extends State<TreeCanvas>
         if (widget.selectedPerson != null &&
             layout.positions.containsKey(widget.selectedPerson!.id)) {
           centerOnPerson(widget.selectedPerson!.id, layout.positions);
-        } else if (isMobile) {
+        } else if (isMobile &&
+            widget.branches.isEmpty &&
+            !widget.fitInitially) {
           centerOnAncestors(layout.positions, animated: false);
         } else {
           fitToScreen(layout.totalWidth, layout.totalHeight, animated: false);
@@ -422,6 +436,7 @@ class _TreeCanvasState extends State<TreeCanvas>
                             lineageStems: layout.lineageStems,
                             peopleMap: {for (var p in widget.people) p.id: p},
                             relationships: widget.relationships,
+                            branches: widget.branches,
                             selectedPersonId: widget.selectedPerson?.id,
                             hoveredPersonId: _hoveredPersonId,
                             isDark: isDark,
@@ -469,6 +484,64 @@ class _TreeCanvasState extends State<TreeCanvas>
                             left: layout.positions[person.id]!.dx,
                             top: layout.positions[person.id]!.dy,
                             child: _buildPersonCard(person, isDark),
+                          ),
+                      for (final branch in widget.branches)
+                        if (layout.positions.containsKey(branch.portalId))
+                          Positioned(
+                            left: layout.positions[branch.portalId]!.dx,
+                            top: layout.positions[branch.portalId]!.dy,
+                            child: SizedBox(
+                              width: cardWidth,
+                              height: cardHeight,
+                              child: Material(
+                                color: isDark
+                                    ? RoyalTheme.obsidianDark
+                                    : const Color(0xFFF0EAFE),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(24),
+                                  side: const BorderSide(
+                                    color: RoyalTheme.violet,
+                                    width: 2,
+                                  ),
+                                ),
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(24),
+                                  onTap: widget.onOpenBranch == null
+                                      ? null
+                                      : () => widget.onOpenBranch!(branch),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(12),
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        const Icon(
+                                          Icons.account_tree_outlined,
+                                          color: RoyalTheme.violet,
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          branch.label,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          textAlign: TextAlign.center,
+                                        ),
+                                        const AppText(
+                                          'Shared branch',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        AppText(
+                                          branch.connectionLabel,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
                           ),
                     ],
                   ),
@@ -1168,376 +1241,109 @@ class _TreeCanvasState extends State<TreeCanvas>
   // PEDIGREE TREE HIERARCHICAL LAYOUT ALGORITHM
   // ==========================================
 
-  _PedigreeLayoutResult _computePedigreeLayout() {
-    final positions = <int, Offset>{};
+  _PedigreeLayoutResult _computePedigreeLayout() => _computeFamilyLayout();
+  _PedigreeLayoutResult _computeTieredLayout() =>
+      _computeFamilyLayout(orderByParents: false);
+
+  _PedigreeLayoutResult _computeFamilyLayout({bool orderByParents = true}) {
+    final visibleBranches = widget.branches
+        .where((b) => widget.people.any((p) => p.id == b.attachmentId))
+        .toList();
+    final graph = layoutFamilyGraph(
+      [
+        ...widget.people,
+        for (final branch in visibleBranches)
+          Person(
+            id: branch.portalId,
+            firstName: branch.label,
+            lastName: '',
+            gender: 'O',
+          ),
+      ],
+      [
+        ...widget.relationships,
+        for (final branch in visibleBranches)
+          Relationship(
+            id: -branch.id,
+            person1Id: branch.attachmentId,
+            person2Id: branch.portalId,
+            relationshipType: branch.connection == 'CHILD'
+                ? 'PARENT'
+                : 'SIBLING',
+          ),
+      ],
+      cardWidth: cardWidth,
+      cardHeight: cardHeight,
+      partnerGap: gapSpouse,
+      branchGap: gapBranch,
+      generationGap: gapVertical,
+      orderByParents: orderByParents,
+    );
+    final positions = graph.positions;
     final spouseConnectors = <_SpouseConnector>[];
-    final familyForks = <_FamilyForkConnector>[];
-    final lineageStems = <_LineageStemConnector>[];
-    final tierYLevels = <int, double>{};
-
-    final peopleMap = {for (var p in widget.people) p.id: p};
-    final spouses = <int, List<int>>{};
-    final parents = <int, Set<int>>{};
-    final children = <int, Set<int>>{};
-
-    for (var r in widget.relationships) {
+    final groups = <String, List<Relationship>>{};
+    final parentsByChild = <int, List<Relationship>>{};
+    for (final r in widget.relationships) {
+      if (!positions.containsKey(r.person1Id) ||
+          !positions.containsKey(r.person2Id)) {
+        continue;
+      }
       if (r.isSpouse) {
-        spouses.putIfAbsent(r.person1Id, () => []).add(r.person2Id);
-        spouses.putIfAbsent(r.person2Id, () => []).add(r.person1Id);
-      } else if (r.isParent) {
-        parents.putIfAbsent(r.person2Id, () => {}).add(r.person1Id);
-        children.putIfAbsent(r.person1Id, () => {}).add(r.person2Id);
+        spouseConnectors.add(_SpouseConnector(r.person1Id, r.person2Id));
       }
+      if (r.isParent) parentsByChild.putIfAbsent(r.person2Id, () => []).add(r);
     }
-
-    // Identify True Roots (Ancestors without parents in tree)
-    final trueRoots = <int>[];
-    final visitedRoots = <int>{};
-
-    for (var p in widget.people) {
-      final pid = p.id;
-      if (parents.containsKey(pid) && parents[pid]!.isNotEmpty) continue;
-      final spList = spouses[pid] ?? [];
-      bool hasParentInSpouses = false;
-      for (final sp in spList) {
-        if (parents.containsKey(sp) && parents[sp]!.isNotEmpty) {
-          hasParentInSpouses = true;
-          break;
-        }
-      }
-      if (hasParentInSpouses) continue;
-
-      if (!visitedRoots.contains(pid)) {
-        trueRoots.add(pid);
-        visitedRoots.add(pid);
-        for (final sp in spList) {
-          visitedRoots.add(sp);
-        }
-      }
+    for (final links in parentsByChild.values) {
+      links.sort((a, b) => a.person1Id.compareTo(b.person1Id));
+      final key = links
+          .map((r) => '${r.person1Id}:${r.relationshipType}')
+          .join('|');
+      groups.putIfAbsent(key, () => []).addAll(links);
     }
-
-    if (trueRoots.isEmpty && widget.people.isNotEmpty) {
-      trueRoots.add(widget.people.first.id);
-    }
-
-    // Build hierarchical tree nodes
-    final placed = <int>{};
-
-    _LayoutTreeNode buildTree(int pid) {
-      final spList = (spouses[pid] ?? [])
-          .where((s) => !placed.contains(s) && peopleMap.containsKey(s))
+    final forks = <_FamilyForkConnector>[];
+    for (final links in groups.values) {
+      final parentIds = links.map((r) => r.person1Id).toSet().toList();
+      final childIds = links.map((r) => r.person2Id).toSet().toList();
+      final anchors = parentIds
+          .map((id) => positions[id]! + Offset(cardWidth / 2, cardHeight))
           .toList();
-      final node = _LayoutTreeNode(primaryId: pid, spouseIds: spList);
-      placed.add(pid);
-      for (final sp in spList) {
-        placed.add(sp);
-      }
-
-      // Group and order children by maternal concession (spouse) followed by unwed/direct children
-      final orderedKids = <int>[];
-      for (final sp in spList) {
-        final spKids = (children[pid] ?? {})
-            .intersection(children[sp] ?? {})
-            .toList();
-        for (final k in spKids) {
-          if (!orderedKids.contains(k)) orderedKids.add(k);
-        }
-      }
-      for (final k in (children[pid] ?? {})) {
-        if (!orderedKids.contains(k)) orderedKids.add(k);
-      }
-      for (final sp in spList) {
-        for (final k in (children[sp] ?? {})) {
-          if (!orderedKids.contains(k)) orderedKids.add(k);
-        }
-      }
-
-      for (final k in orderedKids) {
-        if (!placed.contains(k) && peopleMap.containsKey(k)) {
-          node.children.add(buildTree(k));
-        }
-      }
-      return node;
-    }
-
-    double measureTree(_LayoutTreeNode node) {
-      final totalAdults = 1 + node.spouseIds.length;
-      final unitWidth = totalAdults * cardWidth + (totalAdults - 1) * gapSpouse;
-      if (node.children.isEmpty) {
-        node.width = unitWidth;
-        return node.width;
-      }
-
-      double childrenTotalWidth = 0;
-      for (int i = 0; i < node.children.length; i++) {
-        if (i > 0) childrenTotalWidth += gapBranch;
-        childrenTotalWidth += measureTree(node.children[i]);
-      }
-
-      node.width = math.max(unitWidth, childrenTotalWidth);
-      return node.width;
-    }
-
-    void placeTree(_LayoutTreeNode node, double startX, double y) {
-      node.y = y;
-      final pPerson = peopleMap[node.primaryId];
-      if (pPerson != null) {
-        tierYLevels.putIfAbsent(pPerson.generationTier, () => y);
-      }
-
-      final totalAdults = 1 + node.spouseIds.length;
-      final unitWidth = totalAdults * cardWidth + (totalAdults - 1) * gapSpouse;
-
-      if (node.children.isEmpty) {
-        final ux = startX + (node.width - unitWidth) / 2;
-        positions[node.primaryId] = Offset(ux, y);
-        for (int i = 0; i < node.spouseIds.length; i++) {
-          final spId = node.spouseIds[i];
-          final spX = ux + (i + 1) * (cardWidth + gapSpouse);
-          positions[spId] = Offset(spX, y);
-          spouseConnectors.add(_SpouseConnector(node.primaryId, spId));
-        }
-        return;
-      }
-
-      // First place children
-      double childrenCombinedWidth = 0;
-      for (int i = 0; i < node.children.length; i++) {
-        if (i > 0) childrenCombinedWidth += gapBranch;
-        childrenCombinedWidth += node.children[i].width;
-      }
-
-      double currX = startX + (node.width - childrenCombinedWidth) / 2;
-      final childMidpoints = <Offset>[];
-      final childY = y + cardHeight + gapVertical;
-
-      for (final c in node.children) {
-        placeTree(c, currX, childY);
-        final cTotalAdults = 1 + c.spouseIds.length;
-        final cUnitW =
-            cTotalAdults * cardWidth + (cTotalAdults - 1) * gapSpouse;
-        final cPos = positions[c.primaryId]!;
-        final cCenter = cPos.dx + (cUnitW / 2);
-        childMidpoints.add(Offset(cCenter, childY));
-        currX += c.width + gapBranch;
-      }
-
-      // Center parent couple or single parent directly above children
-      final midChildrenX =
-          (childMidpoints.first.dx + childMidpoints.last.dx) / 2;
-      final ux = midChildrenX - (unitWidth / 2);
-      positions[node.primaryId] = Offset(ux, y);
-
-      for (int i = 0; i < node.spouseIds.length; i++) {
-        final spId = node.spouseIds[i];
-        final spX = ux + (i + 1) * (cardWidth + gapSpouse);
-        positions[spId] = Offset(spX, y);
-        spouseConnectors.add(_SpouseConnector(node.primaryId, spId));
-      }
-
-      final Offset originPoint;
-      if (node.spouseIds.isEmpty) {
-        originPoint = Offset(ux + (cardWidth / 2), y + cardHeight);
-      } else if (node.spouseIds.length == 1) {
-        originPoint = Offset(ux + cardWidth + (gapSpouse / 2), y + cardHeight);
-      } else {
-        originPoint = Offset(ux + (unitWidth / 2), y + cardHeight);
-      }
-
-      // Register descendant family fork
-      familyForks.add(
+      final bottom = anchors.map((p) => p.dy).reduce(math.max);
+      final origin = anchors.length == 1
+          ? anchors.first
+          : Offset(
+              anchors.map((p) => p.dx).reduce((a, b) => a + b) / anchors.length,
+              bottom + gapVertical * .25,
+            );
+      forks.add(
         _FamilyForkConnector(
-          origin: originPoint,
-          childrenCenters: childMidpoints,
-          forkY: y + cardHeight + (gapVertical / 2),
-          parentIds: [node.primaryId, ...node.spouseIds],
-          childIds: node.children.map((c) => c.primaryId).toList(),
+          origin: origin,
+          parentAnchors: anchors.length == 1 ? const [] : anchors,
+          childrenCenters: childIds
+              .map((id) => positions[id]! + Offset(cardWidth / 2, 0))
+              .toList(),
+          forkY: bottom + gapVertical * .6,
+          parentIds: parentIds,
+          childIds: childIds,
         ),
       );
     }
-
-    // Dedicated left margin (310px) so generational labels never touch cards, plus top headroom (90px)
-    const double leftMargin = 310.0;
-    const double topMargin = 90.0;
-
-    double currentRootX = leftMargin;
-
-    for (final rootId in trueRoots) {
-      if (placed.contains(rootId)) continue;
-      final rootNode = buildTree(rootId);
-      measureTree(rootNode);
-      placeTree(rootNode, currentRootX, topMargin);
-      currentRootX += rootNode.width + 100.0;
-    }
-
-    // Handle any orphan / unplaced people
-    for (final p in widget.people) {
-      if (!positions.containsKey(p.id)) {
-        positions[p.id] = Offset(
-          currentRootX,
-          topMargin + (p.generationTier - 1) * (cardHeight + gapVertical),
-        );
-        currentRootX += cardWidth + gapBranch;
-      }
-    }
-
-    // Single parent lineage stems (only if child is not already part of a family fork)
-    final childrenInForks = familyForks.expand((f) => f.childIds).toSet();
-    for (final r in widget.relationships) {
-      if (r.isParent) {
-        final p1 = positions[r.person1Id];
-        final p2 = positions[r.person2Id];
-        if (p1 != null &&
-            p2 != null &&
-            !childrenInForks.contains(r.person2Id)) {
-          lineageStems.add(
-            _LineageStemConnector(
-              start: Offset(p1.dx + cardWidth / 2, p1.dy + cardHeight),
-              end: Offset(p2.dx + cardWidth / 2, p2.dy),
-              person1Id: r.person1Id,
-              person2Id: r.person2Id,
-            ),
-          );
-        }
-      }
-    }
-
-    // Measure exact bounding box
-    double minX = double.infinity;
-    double maxX = 0;
-    double minY = double.infinity;
-    double maxY = 0;
-    for (final pos in positions.values) {
-      if (pos.dx < minX) minX = pos.dx;
-      if (pos.dx + cardWidth > maxX) maxX = pos.dx + cardWidth;
-      if (pos.dy < minY) minY = pos.dy;
-      if (pos.dy + cardHeight > maxY) maxY = pos.dy + cardHeight;
-    }
-
-    // Normalize X: if any branch drifted to the left of leftMargin, shift all positions and connectors
-    if (minX.isFinite && minX < leftMargin) {
-      final shiftX = leftMargin - minX;
-      for (final key in positions.keys.toList()) {
-        positions[key] = Offset(
-          positions[key]!.dx + shiftX,
-          positions[key]!.dy,
-        );
-      }
-      for (int i = 0; i < familyForks.length; i++) {
-        final fork = familyForks[i];
-        familyForks[i] = _FamilyForkConnector(
-          origin: Offset(fork.origin.dx + shiftX, fork.origin.dy),
-          childrenCenters: fork.childrenCenters
-              .map((c) => Offset(c.dx + shiftX, c.dy))
-              .toList(),
-          forkY: fork.forkY,
-          parentIds: fork.parentIds,
-          childIds: fork.childIds,
-        );
-      }
-      for (int i = 0; i < lineageStems.length; i++) {
-        final stem = lineageStems[i];
-        lineageStems[i] = _LineageStemConnector(
-          start: Offset(stem.start.dx + shiftX, stem.start.dy),
-          end: Offset(stem.end.dx + shiftX, stem.end.dy),
-          person1Id: stem.person1Id,
-          person2Id: stem.person2Id,
-        );
-      }
-      maxX += shiftX;
-    }
-
-    // Normalize Y: ensure ample top headroom
-    if (minY.isFinite && minY < topMargin) {
-      final shiftY = topMargin - minY;
-      for (final key in positions.keys.toList()) {
-        positions[key] = Offset(
-          positions[key]!.dx,
-          positions[key]!.dy + shiftY,
-        );
-      }
-      for (final key in tierYLevels.keys.toList()) {
-        tierYLevels[key] = tierYLevels[key]! + shiftY;
-      }
-      for (int i = 0; i < familyForks.length; i++) {
-        final fork = familyForks[i];
-        familyForks[i] = _FamilyForkConnector(
-          origin: Offset(fork.origin.dx, fork.origin.dy + shiftY),
-          childrenCenters: fork.childrenCenters
-              .map((c) => Offset(c.dx, c.dy + shiftY))
-              .toList(),
-          forkY: fork.forkY + shiftY,
-          parentIds: fork.parentIds,
-          childIds: fork.childIds,
-        );
-      }
-      for (int i = 0; i < lineageStems.length; i++) {
-        final stem = lineageStems[i];
-        lineageStems[i] = _LineageStemConnector(
-          start: Offset(stem.start.dx, stem.start.dy + shiftY),
-          end: Offset(stem.end.dx, stem.end.dy + shiftY),
-          person1Id: stem.person1Id,
-          person2Id: stem.person2Id,
-        );
-      }
-      maxY += shiftY;
-    }
-
+    final maxX = positions.isEmpty
+        ? 0.0
+        : positions.values.map((p) => p.dx + cardWidth).reduce(math.max);
+    final maxY = positions.isEmpty
+        ? 0.0
+        : positions.values.map((p) => p.dy + cardHeight).reduce(math.max);
     return _PedigreeLayoutResult(
       positions: positions,
       spouseConnectors: spouseConnectors,
-      familyForks: familyForks,
-      lineageStems: lineageStems,
-      tierYLevels: tierYLevels,
-      totalWidth: math.max(maxX + 320.0, 2200.0),
-      totalHeight: math.max(maxY + 260.0, 1300.0),
-    );
-  }
-
-  // ==========================================
-  // TIERED FALLBACK LAYOUT (BY GENERATIONS)
-  // ==========================================
-
-  _PedigreeLayoutResult _computeTieredLayout() {
-    final positions = <int, Offset>{};
-    final spouseConnectors = <_SpouseConnector>[];
-    final familyForks = <_FamilyForkConnector>[];
-    final lineageStems = <_LineageStemConnector>[];
-    final tierYLevels = <int, double>{};
-
-    final generations = <int, List<Person>>{};
-    for (var p in widget.people) {
-      generations.putIfAbsent(p.generationTier, () => []).add(p);
-    }
-    final sortedTiers = generations.keys.toList()..sort();
-
-    const double leftMargin = 310.0;
-    double currentY = 90.0;
-    double maxRowWidth = 0;
-
-    for (final tier in sortedTiers) {
-      tierYLevels[tier] = currentY;
-      final rowPeople = generations[tier]!;
-      final rowWidth =
-          rowPeople.length * cardWidth + (rowPeople.length - 1) * 40.0;
-      if (rowWidth > maxRowWidth) maxRowWidth = rowWidth;
-
-      double currentX = leftMargin;
-      for (final person in rowPeople) {
-        positions[person.id] = Offset(currentX, currentY);
-        currentX += cardWidth + 40.0;
-      }
-      currentY += cardHeight + gapVertical;
-    }
-
-    return _PedigreeLayoutResult(
-      positions: positions,
-      spouseConnectors: spouseConnectors,
-      familyForks: familyForks,
-      lineageStems: lineageStems,
-      tierYLevels: tierYLevels,
-      totalWidth: math.max(leftMargin + maxRowWidth + 320.0, 2200.0),
-      totalHeight: math.max(currentY + 260.0, 1300.0),
+      familyForks: forks,
+      lineageStems: const [],
+      tierYLevels: {
+        for (final level in graph.generations.values.toSet())
+          level + 1: 90 + level * (cardHeight + gapVertical),
+      },
+      totalWidth: math.max(maxX + 320, 2200),
+      totalHeight: math.max(maxY + 260, 1300),
     );
   }
 }
@@ -1545,17 +1351,6 @@ class _TreeCanvasState extends State<TreeCanvas>
 // ==========================================
 // TREE DATA CLASSES & CUSTOM PAINTER
 // ==========================================
-
-class _LayoutTreeNode {
-  final int primaryId;
-  final List<int> spouseIds;
-  final List<_LayoutTreeNode> children = [];
-  double width = 0;
-  double y = 0;
-
-  _LayoutTreeNode({required this.primaryId, List<int>? spouseIds})
-    : spouseIds = spouseIds ?? [];
-}
 
 class _SpouseConnector {
   final int person1Id;
@@ -1565,6 +1360,7 @@ class _SpouseConnector {
 
 class _FamilyForkConnector {
   final Offset origin;
+  final List<Offset> parentAnchors;
   final List<Offset> childrenCenters;
   final double forkY;
   final List<int> parentIds;
@@ -1572,6 +1368,7 @@ class _FamilyForkConnector {
 
   _FamilyForkConnector({
     required this.origin,
+    this.parentAnchors = const [],
     required this.childrenCenters,
     required this.forkY,
     required this.parentIds,
@@ -1621,6 +1418,7 @@ class _PedigreeBranchPainter extends CustomPainter {
   final List<_LineageStemConnector> lineageStems;
   final Map<int, Person> peopleMap;
   final List<Relationship> relationships;
+  final List<FamilyBranch> branches;
   final int? selectedPersonId;
   final int? hoveredPersonId;
   final bool isDark;
@@ -1636,6 +1434,7 @@ class _PedigreeBranchPainter extends CustomPainter {
     required this.lineageStems,
     required this.peopleMap,
     required this.relationships,
+    this.branches = const [],
     this.selectedPersonId,
     this.hoveredPersonId,
     required this.isDark,
@@ -1670,6 +1469,81 @@ class _PedigreeBranchPainter extends CustomPainter {
 
     final activeId = selectedPersonId ?? hoveredPersonId;
 
+    for (final branch in branches) {
+      final anchor = positions[branch.attachmentId],
+          portal = positions[branch.portalId];
+      if (anchor == null || portal == null) continue;
+      final paint = Paint()
+        ..color = RoyalTheme.violet
+        ..strokeWidth = compact ? 4 : 2.5
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round;
+      if (branch.connection == 'CHILD') {
+        final a = anchor + Offset(cardW / 2, cardH),
+            b = portal + Offset(cardW / 2, 0);
+        final mid = (a.dy + b.dy) / 2;
+        canvas.drawPath(
+          Path()
+            ..moveTo(a.dx, a.dy)
+            ..cubicTo(a.dx, mid, b.dx, mid, b.dx, b.dy),
+          paint,
+        );
+      } else {
+        final left = anchor.dx < portal.dx ? anchor : portal,
+            right = anchor.dx < portal.dx ? portal : anchor;
+        if (right.dx - left.dx < cardW * 2) {
+          final a = left + Offset(cardW, cardH / 2),
+              b = right + Offset(0, cardH / 2);
+          final mid = (a.dx + b.dx) / 2;
+          canvas.drawPath(
+            Path()
+              ..moveTo(a.dx, a.dy)
+              ..cubicTo(mid, a.dy, mid, b.dy, b.dx, b.dy),
+            paint,
+          );
+        } else {
+          final lane = math.min(anchor.dy, portal.dy) - 36;
+          canvas.drawPath(
+            Path()
+              ..moveTo(anchor.dx + cardW / 2, anchor.dy)
+              ..cubicTo(
+                anchor.dx + cardW / 2,
+                lane,
+                portal.dx + cardW / 2,
+                lane,
+                portal.dx + cardW / 2,
+                portal.dy,
+              ),
+            paint,
+          );
+        }
+      }
+    }
+
+    for (final link in relationships.where((r) => r.isSibling)) {
+      final a = positions[link.person1Id], b = positions[link.person2Id];
+      if (a == null || b == null) continue;
+      final lane = math.max(a.dy, b.dy) + cardH + 22;
+      final paint = Paint()
+        ..color = RoyalTheme.blue.withValues(alpha: .65)
+        ..strokeWidth = compact ? 3 : 2
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round;
+      canvas.drawPath(
+        Path()
+          ..moveTo(a.dx + cardW / 2, a.dy + cardH)
+          ..cubicTo(
+            a.dx + cardW / 2,
+            lane,
+            b.dx + cardW / 2,
+            lane,
+            b.dx + cardW / 2,
+            b.dy + cardH,
+          ),
+        paint,
+      );
+    }
+
     // 1. Draw Spousal Horizontal Connectors with African Customary Alliance Badge
     for (final conn in spouseConnectors) {
       final pos1 = positions[conn.person1Id];
@@ -1680,14 +1554,34 @@ class _PedigreeBranchPainter extends CustomPainter {
           activeId != null &&
           (conn.person1Id == activeId || conn.person2Id == activeId);
 
-      final p1 = Offset(pos1.dx + cardW, pos1.dy + cardH / 2);
-      final p2 = Offset(pos2.dx, pos2.dy + cardH / 2);
+      final left = pos1.dx <= pos2.dx ? pos1 : pos2;
+      final right = pos1.dx <= pos2.dx ? pos2 : pos1;
+      final p1 = Offset(left.dx + cardW, left.dy + cardH / 2);
+      final p2 = Offset(right.dx, right.dy + cardH / 2);
 
       final unionPaint = Paint()
         ..color = isDark ? const Color(0xFFF6AD9B) : RoyalTheme.coral
         ..style = PaintingStyle.stroke
         ..strokeWidth = compact ? 4 : (isBranchActive ? 3.5 : 2.2);
-      canvas.drawLine(p1, p2, unionPaint);
+      if (right.dx - left.dx < cardW * 2) {
+        canvas.drawLine(p1, p2, unionPaint);
+      } else {
+        final lane =
+            math.min(left.dy, right.dy) - 24 - (right.dx - left.dx) * .04;
+        canvas.drawPath(
+          Path()
+            ..moveTo(left.dx + cardW / 2, left.dy)
+            ..cubicTo(
+              left.dx + cardW / 2,
+              lane,
+              right.dx + cardW / 2,
+              lane,
+              right.dx + cardW / 2,
+              right.dy,
+            ),
+          unionPaint,
+        );
+      }
 
       // Customary Alliance Badge ("💍 Alliance Coutumière")
       final mid = Offset((p1.dx + p2.dx) / 2, (p1.dy + p2.dy) / 2);
@@ -1733,6 +1627,21 @@ class _PedigreeBranchPainter extends CustomPainter {
           ? highlightPaint
           : defaultPaint;
 
+      for (final anchor in fork.parentAnchors) {
+        canvas.drawPath(
+          Path()
+            ..moveTo(anchor.dx, anchor.dy)
+            ..cubicTo(
+              anchor.dx,
+              fork.origin.dy,
+              fork.origin.dx,
+              fork.origin.dy,
+              fork.origin.dx,
+              fork.origin.dy,
+            ),
+          paintToUse,
+        );
+      }
       if (compact) {
         paintToUse.strokeWidth = 5;
         for (final child in fork.childrenCenters) {
