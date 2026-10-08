@@ -9,6 +9,7 @@ import '../providers/auth_provider.dart';
 import '../providers/tree_provider.dart';
 import '../services/api_service.dart';
 import '../views/family_connections_view.dart';
+import 'ancestor_search_form.dart';
 
 class TreeManagerSheet extends StatefulWidget {
   const TreeManagerSheet({super.key});
@@ -34,6 +35,8 @@ class _TreeManagerSheetState extends State<TreeManagerSheet> {
     final provider = context.read<TreeProvider>();
     final openedContext = provider.contextKey;
     bool saving = false;
+    bool knowsAncestors = false;
+    Map<String, dynamic> facts = {'ancestor_level': 2};
     String? error;
     await showDialog(
       context: context,
@@ -92,6 +95,32 @@ class _TreeManagerSheetState extends State<TreeManagerSheet> {
                         labelText: context.tr('Description'),
                       ),
                     ),
+                    if (tree == null) ...[
+                      const SizedBox(height: 16),
+                      const AppText(
+                        'Your tree can include your whole extended family. Check your roots to avoid missing a family that is already here.',
+                      ),
+                      SwitchListTile.adaptive(
+                        contentPadding: EdgeInsets.zero,
+                        title: const AppText(
+                          'I know two consecutive ancestors',
+                        ),
+                        value: knowsAncestors,
+                        onChanged: saving
+                            ? null
+                            : (value) => update(() => knowsAncestors = value),
+                      ),
+                      if (knowsAncestors) ...[
+                        AncestorSearchForm(
+                          facts: facts,
+                          enabled: !saving,
+                          onChanged: (value) => update(() => facts = value),
+                        ),
+                        const AppText(
+                          'These details check for existing families. Add their profiles to your tree after creating it. Discovery stays off until you enable it.',
+                        ),
+                      ],
+                    ],
                   ],
                 ),
               ),
@@ -106,6 +135,13 @@ class _TreeManagerSheetState extends State<TreeManagerSheet> {
                     ? null
                     : () async {
                         if (!form.currentState!.validate()) return;
+                        if (tree == null && knowsAncestors) {
+                          final validation = AncestorSearchForm.validate(facts);
+                          if (validation != null) {
+                            update(() => error = validation);
+                            return;
+                          }
+                        }
                         if (provider.contextKey != openedContext) {
                           update(
                             () => error =
@@ -117,6 +153,107 @@ class _TreeManagerSheetState extends State<TreeManagerSheet> {
                           saving = true;
                           error = null;
                         });
+                        if (tree == null && knowsAncestors) {
+                          final api = context.read<ApiService>();
+                          final result = await api.familyAccess({
+                            'action': 'matches',
+                            ...AncestorSearchForm.payload(facts),
+                          });
+                          if (!ctx.mounted) return;
+                          if (provider.contextKey != openedContext) {
+                            update(() {
+                              saving = false;
+                              error =
+                                  'The family or account has changed. Close this form.';
+                            });
+                            return;
+                          }
+                          if (result == null) {
+                            update(() {
+                              saving = false;
+                              error =
+                                  api.lastError ??
+                                  'Unable to check existing families. Your information is kept. Try again.';
+                            });
+                            return;
+                          }
+                          final matches = result['matches'] as List? ?? [];
+                          if (matches.isNotEmpty) {
+                            final choice = await showDialog<String>(
+                              context: ctx,
+                              builder: (warningContext) => AlertDialog(
+                                title: const AppText(
+                                  'This family may already exist',
+                                ),
+                                scrollable: true,
+                                content: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    const AppText(
+                                      'Your ancestor details match a recorded connection in these families. Ask their owners to investigate before starting another tree. A match does not prove kinship.',
+                                    ),
+                                    const SizedBox(height: 12),
+                                    for (final match in matches)
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 4,
+                                        ),
+                                        child: Text(
+                                          match['family_name'] as String,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(warningContext),
+                                    child: const AppText('Cancel'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(warningContext, 'CREATE'),
+                                    child: const AppText(
+                                      'Create my own branch',
+                                    ),
+                                  ),
+                                  FilledButton(
+                                    onPressed: () => Navigator.pop(
+                                      warningContext,
+                                      'INQUIRE',
+                                    ),
+                                    child: const AppText(
+                                      'Explore these connections',
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                            if (!ctx.mounted) return;
+                            if (choice != 'CREATE') {
+                              update(() => saving = false);
+                              if (choice == 'INQUIRE') {
+                                await FamilyConnectionsView.show(
+                                  ctx,
+                                  initialPath: 'ancestry',
+                                  initialFacts: facts,
+                                  initialMatches: matches,
+                                );
+                              }
+                              return;
+                            }
+                          }
+                        }
+                        if (provider.contextKey != openedContext) {
+                          update(() {
+                            saving = false;
+                            error =
+                                'The family or account has changed. Close this form.';
+                          });
+                          return;
+                        }
                         final ok = tree == null
                             ? await provider.createTree(
                                     name.text.trim(),

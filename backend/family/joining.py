@@ -6,7 +6,7 @@ from datetime import timedelta
 
 from django.core import signing
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Q, Case, When, Value, IntegerField
 from django.utils import timezone
 from rest_framework import exceptions, serializers
 
@@ -131,14 +131,22 @@ def review(user, payload):
             if request.invitation and request.invitation.mode == 'GRANDCHILD' and not Relationship.objects.filter(
                     person1=request.invitation.anchor, person2=anchor, relationship_type__in=('PARENT', 'ADOPTED', 'STEP')).exists():
                 raise serializers.ValidationError('The grandparent and parent connection has changed. Create a new invitation.')
-            if request.evidence and not tree.discovery_enabled:
+            if request.evidence.get('path_parent_id') and not tree.discovery_enabled:
                 raise serializers.ValidationError('Family discovery has been disabled. Use an invitation.')
-            if request.evidence:
+            if request.evidence.get('path_parent_id'):
                 parent = validate_match_path(tree, request.evidence['path_parent_id'],
                     request.evidence['path_grandparent_id'], request.evidence['path_type'], request.evidence)
+                if request.mode == 'INQUIRY':
+                    mode = payload.get('connection_mode')
+                    selected = Person.objects.filter(pk=payload.get('anchor_id'), family_tree=tree).first()
+                    level = request.evidence.get('ancestor_level', 1)
+                    distance = level if mode == 'EXISTING' else level - 1
+                    if mode not in ('EXISTING', 'CHILD') or not selected or not descendant_at_distance(tree, parent, selected, distance):
+                        raise serializers.ValidationError('Choose the verified profile or recorded parent in this ancestor’s branch. Add any missing generations before confirming.')
+                    anchor = selected
+                    request.anchor, request.mode = anchor, mode
                 if request.mode == 'EXISTING':
-                    if not Relationship.objects.filter(person1=parent, person2=anchor,
-                            relationship_type__in=('PARENT', 'ADOPTED', 'STEP')).exists():
+                    if not descendant_at_distance(tree, parent, anchor, request.evidence.get('ancestor_level', 1)):
                         raise serializers.ValidationError('The profile has moved to another family. Search again.')
                     if normalized(str(anchor)) != normalized(f"{request.person_data['first_name']} {request.person_data['last_name']}"):
                         raise serializers.ValidationError('The personal profile has changed. Use an invitation for the correct profile.')
@@ -155,14 +163,15 @@ def review(user, payload):
                 form = PersonSerializer(data={**request.person_data, 'generation_tier': (anchor.generation_tier or 1) + 1})
                 form.is_valid(raise_exception=True)
                 person = form.save(family_tree=tree)
-                link = RelationshipSerializer(data={'person1': anchor.id, 'person2': person.id, 'relationship_type': 'PARENT'})
+                link_type = serializers.ChoiceField(choices=('PARENT', 'ADOPTED', 'STEP')).run_validation(payload.get('relationship_type', 'PARENT'))
+                link = RelationshipSerializer(data={'person1': anchor.id, 'person2': person.id, 'relationship_type': link_type})
                 link.is_valid(raise_exception=True)
                 link.save()
             TreeMembership.objects.create(tree=tree, user=request.applicant, person=person, role='VIEWER')
             tree.members.add(request.applicant)
             record_change(tree, user, 'JOIN_APPROVED', person.id, after={'applicant_id': request.applicant_id, 'request_id': request.id})
         request.status, request.reviewed_by, request.reviewed_at = decision, user, timezone.now()
-        request.save(update_fields=['status', 'reviewed_by', 'reviewed_at'])
+        request.save(update_fields=['status', 'reviewed_by', 'reviewed_at', 'anchor', 'mode'])
         return request
 
 
@@ -172,6 +181,38 @@ class AncestryInput(serializers.Serializer):
     grandparent_name = serializers.CharField(max_length=200)
     parent_birth_date = serializers.DateField(required=False, allow_null=True)
     parent_birth_place = serializers.CharField(max_length=200, required=False, allow_blank=True)
+    grandparent_birth_date = serializers.DateField(required=False, allow_null=True)
+    grandparent_birth_place = serializers.CharField(max_length=200, required=False, allow_blank=True)
+    # Distance from the applicant to the younger of two consecutive ancestors.
+    ancestor_level = serializers.IntegerField(min_value=1, max_value=3, default=1)
+
+
+def descendant_at_distance(tree, ancestor, person, distance):
+    if distance == 0:
+        return ancestor.pk == person.pk
+    ancestors = Person.objects.filter(pk=ancestor.pk, family_tree=tree)
+    for _ in range(distance):
+        ancestors = Person.objects.filter(family_tree=tree,
+            relationships_as_person2__person1__in=ancestors,
+            relationships_as_person2__relationship_type__in=('PARENT', 'ADOPTED', 'STEP'))
+    return ancestors.filter(pk=person.pk).exists()
+
+
+def matched_facts(parent, gp, facts):
+    """Return corroboration, or None for a known contradiction. Missing is not matching."""
+    supported = []
+    for prefix, person in (('parent', parent), ('grandparent', gp)):
+        birth = facts.get(f'{prefix}_birth_date')
+        place = normalized(facts.get(f'{prefix}_birth_place', ''))
+        if birth and person.date_of_birth:
+            if str(birth) != str(person.date_of_birth):
+                return None
+            supported.append(f'{prefix}_birth_date')
+        if place and person.birth_place:
+            if place != normalized(person.birth_place):
+                return None
+            supported.append(f'{prefix}_birth_place')
+    return supported
 
 
 def validate_match_path(tree, parent_id, grandparent_id, link_type, facts):
@@ -183,11 +224,8 @@ def validate_match_path(tree, parent_id, grandparent_id, link_type, facts):
     if (normalized(str(parent)) != normalized(facts['parent_name']) or
             normalized(str(gp)) != normalized(facts['grandparent_name'])):
         raise serializers.ValidationError('The profiles have changed. Search again.')
-    birth = facts.get('parent_birth_date')
-    place = normalized(facts.get('parent_birth_place', ''))
-    if ((birth and parent.date_of_birth and str(parent.date_of_birth) != str(birth)) or
-            (place and parent.birth_place and place != normalized(parent.birth_place))):
-        raise serializers.ValidationError('The parent details have changed. Search again.')
+    if matched_facts(parent, gp, facts) is None:
+        raise serializers.ValidationError('The ancestor details have changed. Search again.')
     return parent
 
 
@@ -199,22 +237,32 @@ def ancestry_candidates(user, payload):
     facts = form.validated_data
     parent_name, grandparent_name = normalized(facts['parent_name']), normalized(facts['grandparent_name'])
     if len(parent_name) < 3 or len(grandparent_name) < 3:
-        raise serializers.ValidationError('Enter the full names of the parent and grandparent.')
+        raise serializers.ValidationError('Enter the full names of two consecutive ancestors.')
     links = Relationship.objects.filter(person1__family_tree__discovery_enabled=True,
         person2__family_tree__discovery_enabled=True,
         person1__search_name=grandparent_name, person2__search_name=parent_name,
         relationship_type__in=('PARENT', 'ADOPTED', 'STEP'))
     links = links.exclude(Q(person1__family_tree__owner=user) | Q(person1__family_tree__members=user))
+    # Rank date corroboration first, then places. A weak early record must not
+    # fill the result limit before a better supported match later in the table.
+    score = Value(0, output_field=IntegerField())
+    for prefix, field in (('parent', 'person2'), ('grandparent', 'person1')):
+        birth = facts.get(f'{prefix}_birth_date')
+        place = facts.get(f'{prefix}_birth_place')
+        if birth:
+            score += Case(When(**{f'{field}__date_of_birth': birth}, then=Value(2)), default=Value(0), output_field=IntegerField())
+        if place:
+            # Normalized place comparison happens below; presence is a coarse
+            # database ordering only, never evidence by itself.
+            score += Case(When(**{f'{field}__birth_place': ''}, then=Value(0)), default=Value(1), output_field=IntegerField())
+    links = links.annotate(evidence_score=score)
     candidates, seen = [], set()
-    for link in links.select_related('person1', 'person2', 'person2__family_tree').order_by('id').iterator(chunk_size=200):
+    for link in links.select_related('person1', 'person2', 'person2__family_tree').order_by('-evidence_score', 'id').iterator(chunk_size=200):
         gp, parent = link.person1, link.person2
         if gp.family_tree_id != parent.family_tree_id or normalized(str(gp)) != grandparent_name or normalized(str(parent)) != parent_name:
             continue
-        birth = facts.get('parent_birth_date')
-        place = normalized(facts.get('parent_birth_place', ''))
-        if birth and parent.date_of_birth and birth != parent.date_of_birth:
-            continue
-        if place and parent.birth_place and place != normalized(parent.birth_place):
+        supported = matched_facts(parent, gp, facts)
+        if supported is None:
             continue
         if parent.pk in seen:
             continue
@@ -223,7 +271,10 @@ def ancestry_candidates(user, payload):
         token = signing.dumps({'user': user.pk, 'tree': parent.family_tree_id, 'parent': parent.pk,
                               'grandparent': gp.pk, 'type': link.relationship_type, 'evidence': evidence}, salt='family-match-v1')
         candidates.append({'candidate': token, 'family_name': parent.family_tree.name,
-            'reason': 'A recorded parent and grandparent connection matches your details. Family confirmation is required.',
+            'reason': 'Two linked ancestor names match. Family confirmation is required.',
+            'matched_facts': supported,
+            'evidence_level': 'CORROBORATED' if supported else 'NAMES_ONLY',
+            'ancestor_level': facts['ancestor_level'],
             'relationship_type': link.relationship_type})
         if len(candidates) == 10:
             break
@@ -254,8 +305,11 @@ def request_match(user, payload):
             relationships_as_person2__relationship_type__in=('PARENT', 'ADOPTED', 'STEP'), family_tree=tree).distinct()
         matches = [p for p in children if normalized(str(p)) == own_name and
                    (not data.get('date_of_birth') or not p.date_of_birth or data['date_of_birth'] == p.date_of_birth)]
-        if len(matches) > 1:
+        message = serializers.CharField(max_length=1000, allow_blank=True).run_validation(payload.get('message', ''))
+        purpose = serializers.ChoiceField(choices=('JOIN', 'INQUIRE')).run_validation(payload.get('purpose', 'JOIN'))
+        inquiry = candidate['evidence'].get('ancestor_level', 1) > 1 or purpose == 'INQUIRE'
+        if len(matches) > 1 and not inquiry:
             raise serializers.ValidationError('Several profiles could match. Ask the owner for an invitation for your profile.')
-        return JoinRequest.objects.create(tree=tree, applicant=user, anchor=matches[0] if matches else parent,
-            mode='EXISTING' if matches else 'CHILD', evidence={**candidate['evidence'], 'path_parent_id': parent.pk, 'path_grandparent_id': gp.pk, 'path_type': candidate['type']},
+        return JoinRequest.objects.create(tree=tree, applicant=user, anchor=parent if inquiry else (matches[0] if matches else parent),
+            mode='INQUIRY' if inquiry else ('EXISTING' if matches else 'CHILD'), evidence={**candidate['evidence'], 'path_parent_id': parent.pk, 'path_grandparent_id': gp.pk, 'path_type': candidate['type'], 'purpose': purpose, 'message': message},
             person_data=json.loads(json.dumps(data, cls=DjangoJSONEncoder)))

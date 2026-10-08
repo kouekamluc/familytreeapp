@@ -125,7 +125,7 @@ class FamilyJoiningTests(TestCase):
         result = self.command(self.user, 'matches', **facts)
         self.assertEqual(len(result.data['matches']), 1)
         match = result.data['matches'][0]
-        self.assertEqual(set(match), {'candidate', 'family_name', 'reason', 'relationship_type'})
+        self.assertEqual(set(match), {'candidate', 'family_name', 'reason', 'relationship_type', 'matched_facts', 'evidence_level', 'ancestor_level'})
         self.assertFalse(self.tree.members.filter(pk=self.user.pk).exists())
         self.assertEqual(self.command(self.other, 'request_match', candidate=match['candidate'], person={'first_name':'Other', 'last_name':'One'}).status_code, 403)
         pending = self.command(self.user, 'request_match', candidate=match['candidate'])

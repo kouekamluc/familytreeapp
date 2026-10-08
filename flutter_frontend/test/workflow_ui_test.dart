@@ -33,6 +33,7 @@ import 'package:flutter_frontend/widgets/relationship_editor_dialog.dart';
 import 'package:flutter_frontend/widgets/relative_editor_dialog.dart';
 import 'package:flutter_frontend/widgets/royal_button.dart';
 import 'package:flutter_frontend/widgets/tree_manager_sheet.dart';
+import 'package:flutter_frontend/widgets/ancestor_search_form.dart';
 import 'package:flutter_frontend/widgets/user_profile_sheet.dart';
 import 'package:flutter_frontend/widgets/mobile_person_sheet.dart';
 import 'package:flutter_frontend/widgets/node_action_sheet.dart';
@@ -44,6 +45,15 @@ class WorkflowApi extends ApiService {
     'invitations': [],
   };
   bool accessFail = false;
+  List<dynamic> matches = [];
+  final List<Map<String, dynamic>> accessPayloads = [];
+  int treeCreates = 0;
+  @override
+  Future<FamilyTree?> createTree(String name, String description) async {
+    treeCreates++;
+    return null;
+  }
+
   @override
   Future<Map<String, dynamic>?> getFamilyAccess({int? treeId}) async =>
       accessData;
@@ -51,11 +61,12 @@ class WorkflowApi extends ApiService {
   Future<Map<String, dynamic>?> familyAccess(
     Map<String, dynamic> payload,
   ) async {
+    accessPayloads.add(payload);
     if (accessFail) {
       lastError = 'Code inconnu, expiré ou révoqué.';
       return null;
     }
-    return {'id': 1};
+    return payload['action'] == 'matches' ? {'matches': matches} : {'id': 1};
   }
 
   bool signedIn = true;
@@ -160,6 +171,37 @@ class WorkflowApi extends ApiService {
 }
 
 void main() {
+  test('ancestor form rejects invented dates and omits unknown facts', () {
+    final facts = {
+      'parent_name': 'Mariam Family',
+      'grandparent_name': 'Samuel Family',
+      'ancestor_level': 2,
+      'parent_birth_date': '',
+    };
+    expect(AncestorSearchForm.validate(facts), isNull);
+    expect(
+      AncestorSearchForm.payload(facts).containsKey('parent_birth_date'),
+      isFalse,
+    );
+    expect(
+      AncestorSearchForm.validate({
+        ...facts,
+        'parent_birth_date': '1900-02-30',
+      }),
+      isNotNull,
+    );
+    expect(
+      AncestorSearchForm.validate({
+        ...facts,
+        'grandparent_birth_date': '2999-01-01',
+      }),
+      isNotNull,
+    );
+    expect(
+      AncestorSearchForm.validate({...facts, 'grandparent_name': ''}),
+      isNotNull,
+    );
+  });
   test('kinship generation badges follow recorded links for every gender', () {
     final people = [
       Person(id: 1, firstName: 'Parent', lastName: 'Test', gender: 'O'),
@@ -497,7 +539,10 @@ void main() {
         (tester.widget<TextField>(code).controller!).text,
         'INVALID-EXAMPLE',
       );
-      expect(find.text('This invitation code is invalid, expired or revoked.'), findsOneWidget);
+      expect(
+        find.text('This invitation code is invalid, expired or revoked.'),
+        findsOneWidget,
+      );
       expect(tester.takeException(), isNull);
     },
   );
@@ -544,6 +589,165 @@ void main() {
       await tester.tap(find.text('Cancel'));
       await tester.pumpAndSettle();
       await tester.ensureVisible(find.text('View only\nA recorded person'));
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'creation checks known grandparents before creating a duplicate and carries facts to inquiry',
+    (tester) async {
+      final f = await fixture();
+      f.api.matches = [
+        {
+          'candidate': 'signed-candidate',
+          'family_name': 'Possible extended family',
+          'reason':
+              'Two linked ancestor names match. Family confirmation is required.',
+          'ancestor_level': 2,
+          'evidence_level': 'NAMES_ONLY',
+          'relationship_type': 'PARENT',
+        },
+      ];
+      await pump(tester, f.wrap, const TreeManagerSheet(), scale: 1.6);
+      Future<void> tap(String label) async {
+        final found = find.text(label).last;
+        await tester.ensureVisible(found);
+        await tester.pumpAndSettle();
+        await tester.tap(found);
+        await tester.pumpAndSettle();
+      }
+
+      Future<void> enter(String label, String value) async {
+        final found = find.byWidgetPredicate(
+          (w) => w is TextField && w.decoration?.labelText == label,
+        );
+        await tester.ensureVisible(found);
+        await tester.enterText(found, value);
+        await tester.pumpAndSettle();
+      }
+
+      await tap('Create a family tree');
+      await enter('Family name *', 'My extended family');
+      await tap('I know two consecutive ancestors');
+      await enter('Grandparent’s full name', 'Mariam Family');
+      await enter(
+        'Their parent’s full name (your great-grandparent)',
+        'Samuel Family',
+      );
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+      await tap('Save');
+      expect(find.text('This family may already exist'), findsOneWidget);
+      expect(f.api.treeCreates, 0);
+      expect(f.api.accessPayloads.last['ancestor_level'], 2);
+      await tap('Explore these connections');
+      expect(find.byType(FamilyConnectionsView), findsOneWidget);
+      expect(find.text('Mariam Family'), findsOneWidget);
+      await tap('Ask if we are related');
+      await enter('Message', 'My grandmother came from this branch.');
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+      await tap('Send request');
+      expect(f.api.accessPayloads.last['purpose'], 'INQUIRE');
+      expect(f.api.accessPayloads.last['candidate'], 'signed-candidate');
+      expect(
+        f.api.accessPayloads.last['message'],
+        'My grandmother came from this branch.',
+      );
+      expect(f.api.treeCreates, 0);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'distant ancestor approval requires a recorded parent and owner reply stays separate',
+    (tester) async {
+      final f = await fixture();
+      f.api.accessData = {
+        'discovery_enabled': true,
+        'members': [],
+        'invitations': [],
+        'requests': [
+          {
+            'id': 7,
+            'status': 'PENDING',
+            'applicant': 'Relative',
+            'person': {'first_name': 'Anna', 'last_name': 'Family'},
+            'mode': 'INQUIRY',
+            'anchor_name': 'Ancestor',
+            'message': 'Could we be related?',
+            'evidence': {
+              'path_parent_id': 1,
+              'ancestor_level': 2,
+              'parent_name': 'Grandparent Family',
+              'grandparent_name': 'Great Family',
+            },
+          },
+        ],
+      };
+      await pump(
+        tester,
+        f.wrap,
+        const FamilyConnectionsView(treeId: 1),
+        scale: 2,
+      );
+      final approve = find.text('Approve');
+      await tester.ensureVisible(approve);
+      await tester.pumpAndSettle();
+      await tester.tap(approve);
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          'No recorded profile fits this generation. Add the missing branch in your tree, then return to this request.',
+        ),
+        findsOneWidget,
+      );
+      final mode = find
+          .descendant(
+            of: find.byType(AlertDialog),
+            matching: find.byType(DropdownButtonFormField<String>),
+          )
+          .first;
+      await tester.ensureVisible(mode);
+      await tester.tap(mode);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Child of a member').last);
+      await tester.pumpAndSettle();
+      final parent = find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.byType(DropdownButtonFormField<int>),
+      );
+      await tester.ensureVisible(parent);
+      await tester.tap(parent);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Child Example').last);
+      await tester.pumpAndSettle();
+      final confirm = find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.text('Approve'),
+      );
+      await tester.ensureVisible(confirm);
+      await tester.tap(confirm);
+      await tester.pumpAndSettle();
+      expect(f.api.accessPayloads.last['connection_mode'], 'CHILD');
+      expect(f.api.accessPayloads.last['anchor_id'], 2);
+      final reply = find.text('Reply');
+      await tester.ensureVisible(reply);
+      await tester.pumpAndSettle();
+      await tester.tap(reply);
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byWidgetPredicate(
+          (w) => w is TextField && w.decoration?.labelText == 'Message',
+        ),
+        'Please confirm your parents.',
+      );
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Send reply'));
+      await tester.tap(find.text('Send reply'));
+      await tester.pumpAndSettle();
+      expect(f.api.accessPayloads.last['action'], 'reply');
       expect(tester.takeException(), isNull);
     },
   );

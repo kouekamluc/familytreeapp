@@ -16,6 +16,9 @@ from . import joining
 def request_data(item, owner=False):
     result = {'id': item.pk, 'family_name': item.tree.name, 'status': item.status,
               'mode': item.mode, 'created_at': item.created_at, 'reviewed_at': item.reviewed_at}
+    result.update(message=item.evidence.get('message', ''),
+                  owner_response=item.evidence.get('owner_response', ''),
+                  purpose=item.evidence.get('purpose', 'JOIN'))
     if item.status == 'APPROVED':
         membership = TreeMembership.objects.filter(tree=item.tree, user=item.applicant).first()
         if membership and item.tree.members.filter(pk=item.applicant_id).exists():
@@ -92,6 +95,13 @@ class FamilyAccessView(APIView):
                     raise serializers.ValidationError('Choose whether to enable family discovery.')
                 tree.discovery_enabled = value
                 tree.save(update_fields=['discovery_enabled', 'updated_at'])
+            elif action == 'reply':
+                item = JoinRequest.objects.select_for_update().filter(pk=payload.get('request_id'), tree=tree, status='PENDING').first()
+                if not item:
+                    raise exceptions.NotFound()
+                reply = serializers.CharField(max_length=1000).run_validation(payload.get('message'))
+                item.evidence = {**item.evidence, 'owner_response': reply}
+                item.save(update_fields=['evidence'])
             elif action == 'revoke':
                 invitation = FamilyInvitation.objects.filter(tree=tree, pk=payload.get('invitation_id')).first()
                 if not invitation:

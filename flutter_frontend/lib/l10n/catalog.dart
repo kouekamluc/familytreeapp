@@ -1,5 +1,89 @@
 // Shared English-first presentation catalog. Family records are never translated.
 const englishToFrench = <String, String>{
+  'Ancestors you know': 'Les ancêtres que vous connaissez',
+  'Parent and grandparent': 'Parent et grand-parent',
+  'Grandparent and great-grandparent': 'Grand-parent et arrière-grand-parent',
+  'Great-grandparent and their parent': 'Arrière-grand-parent et son parent',
+  'Grandparent’s full name': 'Nom complet du grand-parent',
+  'Great-grandparent’s full name': 'Nom complet de l’arrière-grand-parent',
+  'Their parent’s full name (your great-grandparent)':
+      'Nom complet de son parent (votre arrière-grand-parent)',
+  'Their parent’s full name': 'Nom complet de son parent',
+  'Birth details improve matching':
+      'Les informations de naissance améliorent la recherche',
+  'Only enter facts you know. Unknown details do not count as matching evidence.':
+      'Saisissez uniquement les faits que vous connaissez. Les informations inconnues ne constituent pas une concordance.',
+  'Younger ancestor’s birthplace':
+      'Lieu de naissance de l’ancêtre le plus jeune',
+  'Younger ancestor’s birth date':
+      'Date de naissance de l’ancêtre le plus jeune',
+  'Older ancestor’s birthplace':
+      'Lieu de naissance de l’ancêtre le plus ancien',
+  'Older ancestor’s birth date':
+      'Date de naissance de l’ancêtre le plus ancien',
+  'Younger ancestor': 'Ancêtre le plus jeune',
+  'Older ancestor': 'Ancêtre le plus ancien',
+  'Clear': 'Effacer',
+  'Enter the full names of two consecutive ancestors.':
+      'Saisissez les noms complets de deux ancêtres de générations consécutives.',
+  'Use a valid birth date: YYYY-MM-DD.':
+      'Utilisez une date de naissance valide : AAAA-MM-JJ.',
+  'Enter two consecutive ancestors you know. Only families that enable discovery can appear. A suggestion does not prove you are related.':
+      'Saisissez deux ancêtres de générations consécutives. Seules les familles qui autorisent la découverte peuvent apparaître. Une suggestion ne prouve pas un lien de parenté.',
+  'Two linked ancestor names match. Family confirmation is required.':
+      'Les noms de deux ancêtres liés correspondent. La famille doit confirmer le lien.',
+  'Birth details also match. The family still needs to confirm your connection.':
+      'Des informations de naissance correspondent aussi. La famille doit toujours confirmer votre lien.',
+  'Names and a recorded link match. No birth details have been corroborated.':
+      'Les noms et un lien enregistré correspondent. Aucune information de naissance n’a été corroborée.',
+  'Recorded connection: adoption': 'Lien enregistré : adoption',
+  'Recorded connection: stepfamily': 'Lien enregistré : famille recomposée',
+  'Recorded connection: parent and child': 'Lien enregistré : parent et enfant',
+  'Ask if we are related': 'Demander si nous sommes apparentés',
+  'Ask about a family connection': 'Se renseigner sur un lien familial',
+  'Request family confirmation': 'Demander une confirmation familiale',
+  'Explain the branch you know and how you may be related. The family owner will receive this request inside the app.':
+      'Décrivez la branche que vous connaissez et votre lien possible. Le responsable de la famille recevra cette demande dans l’application.',
+  'Message': 'Message',
+  'Enter a message.': 'Saisissez un message.',
+  'Send request': 'Envoyer la demande',
+  'Send reply': 'Envoyer la réponse',
+  'Reply': 'Répondre',
+  'Reply to this request': 'Répondre à cette demande',
+  'Your reply is visible to this applicant. Sending a reply does not grant access to the family tree.':
+      'Votre réponse est visible par le demandeur. Répondre ne donne aucun accès à l’arbre familial.',
+  'Family owner’s reply': 'Réponse du responsable de la famille',
+  'Ancestor to investigate': 'Ancêtre à vérifier',
+  'Verify their identity and actual branch first. Approval gives viewing access to the whole private family tree. Missing generations must be recorded before joining.':
+      'Vérifiez d’abord son identité et sa branche réelle. L’approbation donne accès en lecture à tout l’arbre privé. Les générations manquantes doivent être enregistrées avant l’adhésion.',
+  'Parent connection': 'Lien parental',
+  'No recorded profile fits this generation. Add the missing branch in your tree, then return to this request.':
+      'Aucun profil enregistré ne correspond à cette génération. Ajoutez la branche manquante, puis revenez à cette demande.',
+  'Choose the verified profile or parent.':
+      'Choisissez le profil ou le parent vérifié.',
+  'No matching discoverable family found. This does not rule out a connection. Try another branch or ask for an invitation.':
+      'Aucune famille découvrable correspondante trouvée. Cela n’exclut pas un lien. Essayez une autre branche ou demandez une invitation.',
+  'Your tree can include your whole extended family. Check your roots to avoid missing a family that is already here.':
+      'Votre arbre peut inclure toute votre famille élargie. Vérifiez vos origines pour retrouver une famille déjà présente.',
+  'I know two consecutive ancestors':
+      'Je connais deux ancêtres de générations consécutives',
+  'These details check for existing families. Add their profiles to your tree after creating it. Discovery stays off until you enable it.':
+      'Ces informations servent à rechercher des familles existantes. Ajoutez leurs profils après la création de l’arbre. La découverte reste désactivée tant que vous ne l’activez pas.',
+  'Unable to check existing families. Your information is kept. Try again.':
+      'Impossible de rechercher les familles existantes. Vos informations sont conservées. Réessayez.',
+  'This family may already exist': 'Cette famille existe peut-être déjà',
+  'Your ancestor details match a recorded connection in these families. Ask their owners to investigate before starting another tree. A match does not prove kinship.':
+      'Vos informations sur les ancêtres correspondent à un lien enregistré dans ces familles. Demandez à leurs responsables de vérifier avant de créer un autre arbre. Une concordance ne prouve pas la parenté.',
+  'Create my own branch': 'Créer ma propre branche',
+  'Explore these connections': 'Explorer ces liens',
+  'This family’s name can be suggested when linked ancestors match. Profiles remain private and you approve each request.':
+      'Le nom de cette famille peut être suggéré lorsque des ancêtres liés correspondent. Les profils restent privés et vous approuvez chaque demande.',
+  'People with matching ancestors can see your family’s name and which of their supplied birth details agree with your records. Profiles stay private until you approve access.':
+      'Les personnes dont les ancêtres correspondent peuvent voir le nom de votre famille et les informations de naissance fournies qui concordent avec vos données. Les profils restent privés jusqu’à votre approbation.',
+  'The ancestor details have changed. Search again.':
+      'Les informations sur les ancêtres ont changé. Relancez la recherche.',
+  'Choose the verified profile or recorded parent in this ancestor’s branch. Add any missing generations before confirming.':
+      'Choisissez le profil vérifié ou le parent enregistré dans la branche de cet ancêtre. Ajoutez les générations manquantes avant de confirmer.',
   'Use a family export with people and connections.':
       'Utilisez un export familial contenant des personnes et des liens.',
   'Review these copies': 'Vérifier ces copies',
@@ -980,6 +1064,9 @@ const englishToFrench = <String, String>{
 };
 
 const messageTemplates = <(String, String, Set<int>)>[
+  ('Younger ancestor: {0}', 'Ancêtre le plus jeune : {0}', <int>{}),
+  ('Older ancestor: {0}', 'Ancêtre le plus ancien : {0}', <int>{}),
+  ('Ancestor to investigate : {0}', 'Ancêtre à vérifier : {0}', <int>{}),
   ('{0} → {1}: {2}', '{0} → {1} : {2}', <int>{1}),
   ('{0} connection', '{0} lien', <int>{}),
   ('{0} connections', '{0} liens', <int>{}),

@@ -1,7 +1,7 @@
 import '../l10n/app_strings.dart';
 import 'dart:async';
 import '../services/android_handoff.dart';
-import '../widgets/person_editor_dialog.dart';
+import '../widgets/ancestor_search_form.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -13,19 +13,29 @@ import '../services/api_service.dart';
 class FamilyConnectionsView extends StatefulWidget {
   final int? treeId;
   final String initialPath;
+  final Map<String, dynamic>? initialFacts;
+  final List<dynamic> initialMatches;
   const FamilyConnectionsView({
     super.key,
     this.treeId,
     this.initialPath = 'code',
+    this.initialFacts,
+    this.initialMatches = const [],
   });
   static Future<bool?> show(
     BuildContext context, {
     int? treeId,
     String initialPath = 'code',
+    Map<String, dynamic>? initialFacts,
+    List<dynamic> initialMatches = const [],
   }) => Navigator.of(context).push<bool>(
     MaterialPageRoute(
-      builder: (_) =>
-          FamilyConnectionsView(treeId: treeId, initialPath: initialPath),
+      builder: (_) => FamilyConnectionsView(
+        treeId: treeId,
+        initialPath: initialPath,
+        initialFacts: initialFacts,
+        initialMatches: initialMatches,
+      ),
     ),
   );
   @override
@@ -39,11 +49,8 @@ class _FamilyConnectionsViewState extends State<FamilyConnectionsView>
   final _scroll = ScrollController();
   late final ApiService _api;
   late final String _identity;
-  final _code = TextEditingController(),
-      _parent = TextEditingController(),
-      _grandparent = TextEditingController(),
-      _parentBirth = TextEditingController(),
-      _parentPlace = TextEditingController();
+  final _code = TextEditingController();
+  Map<String, dynamic> _facts = {'ancestor_level': 1};
   final _first = TextEditingController(), _last = TextEditingController();
   String _path = 'code', _mode = 'EXISTING';
   int? _anchor, _through;
@@ -58,6 +65,8 @@ class _FamilyConnectionsViewState extends State<FamilyConnectionsView>
   void initState() {
     super.initState();
     _path = widget.initialPath;
+    _facts = {..._facts, ...?widget.initialFacts};
+    _matches = widget.initialMatches;
     _api = context.read<ApiService>();
     _identity = _api.identity;
     _first.text = _api.currentUser?.firstName ?? '';
@@ -86,15 +95,7 @@ class _FamilyConnectionsViewState extends State<FamilyConnectionsView>
     WidgetsBinding.instance.removeObserver(this);
     _refreshTimer?.cancel();
     _scroll.dispose();
-    for (final c in [
-      _code,
-      _parent,
-      _grandparent,
-      _parentBirth,
-      _parentPlace,
-      _first,
-      _last,
-    ]) {
+    for (final c in [_code, _first, _last]) {
       c.dispose();
     }
     super.dispose();
@@ -234,13 +235,23 @@ class _FamilyConnectionsViewState extends State<FamilyConnectionsView>
         ),
       );
 
-  Future<void> _join({String? candidate}) async {
+  Future<void> _join({String? candidate, bool inquire = false}) async {
     final person = _person();
     if (person == null) return;
     if (candidate == null && _code.text.trim().isEmpty) {
       setState(() => _error = 'Enter the invitation code from your family.');
       _revealError();
       return;
+    }
+    String? message;
+    if (candidate != null) {
+      message = await _messageDialog(
+        inquire
+            ? 'Ask about a family connection'
+            : 'Request family confirmation',
+        'Explain the branch you know and how you may be related. The family owner will receive this request inside the app.',
+      );
+      if (message == null || !mounted) return;
     }
     final result = await _command(
       candidate == null
@@ -249,6 +260,8 @@ class _FamilyConnectionsViewState extends State<FamilyConnectionsView>
               'action': 'request_match',
               'candidate': candidate,
               'person': person,
+              'purpose': inquire ? 'INQUIRE' : 'JOIN',
+              'message': message ?? '',
             },
     );
     if (result != null && mounted) {
@@ -262,6 +275,216 @@ class _FamilyConnectionsViewState extends State<FamilyConnectionsView>
         ),
       );
     }
+  }
+
+  Future<String?> _messageDialog(
+    String title,
+    String explanation, {
+    bool requiredMessage = false,
+  }) async {
+    final controller = TextEditingController();
+    String? error;
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, update) => AlertDialog(
+          title: AppText(title),
+          scrollable: true,
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              AppText(explanation),
+              const SizedBox(height: 16),
+              TextField(
+                controller: controller,
+                maxLength: 1000,
+                maxLines: 4,
+                decoration: InputDecoration(
+                  labelText: ctx.tr('Message'),
+                  errorText: error == null ? null : ctx.tr(error!),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const AppText('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                if (requiredMessage && controller.text.trim().isEmpty) {
+                  update(() => error = 'Enter a message.');
+                  return;
+                }
+                Navigator.pop(ctx, controller.text.trim());
+              },
+              child: AppText(requiredMessage ? 'Send reply' : 'Send request'),
+            ),
+          ],
+        ),
+      ),
+    );
+    Future.delayed(const Duration(milliseconds: 400), controller.dispose);
+    return result;
+  }
+
+  Future<void> _reviewInquiry(dynamic item) async {
+    final tree = context.read<TreeProvider>();
+    final evidence = item['evidence'] as Map;
+    final level = evidence['ancestor_level'] as int? ?? 1;
+    final ancestor = evidence['path_parent_id'] as int;
+    String mode = 'EXISTING', linkType = 'PARENT';
+    int? anchor;
+    String? error;
+    List<Person> choices() {
+      var ids = {ancestor};
+      for (
+        var depth = 0;
+        depth < (mode == 'EXISTING' ? level : level - 1);
+        depth++
+      ) {
+        ids = tree.relationships
+            .where((r) => r.isParent && ids.contains(r.person1Id))
+            .map((r) => r.person2Id)
+            .toSet();
+      }
+      return tree.people
+          .where((p) => p.familyTreeId == widget.treeId && ids.contains(p.id))
+          .toList();
+    }
+
+    final selection = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, update) => AlertDialog(
+          title: const AppText('Confirm this member?'),
+          scrollable: true,
+          content: SizedBox(
+            width: 440,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const AppText(
+                  'Verify their identity and actual branch first. Approval gives viewing access to the whole private family tree. Missing generations must be recorded before joining.',
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  initialValue: mode,
+                  isExpanded: true,
+                  decoration: InputDecoration(
+                    labelText: ctx.tr('Connection type'),
+                  ),
+                  items: const [
+                    DropdownMenuItem(
+                      value: 'EXISTING',
+                      child: AppText('Existing profile'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'CHILD',
+                      child: AppText('Child of a member'),
+                    ),
+                  ],
+                  onChanged: (value) => update(() {
+                    mode = value!;
+                    anchor = null;
+                    error = null;
+                  }),
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<int>(
+                  key: ValueKey(mode),
+                  initialValue: anchor,
+                  isExpanded: true,
+                  decoration: InputDecoration(
+                    labelText: ctx.tr(
+                      mode == 'EXISTING' ? 'Their profile' : 'Their parent',
+                    ),
+                  ),
+                  items: choices()
+                      .map(
+                        (p) => DropdownMenuItem(
+                          value: p.id,
+                          child: Text(
+                            p.fullName,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) => update(() => anchor = value),
+                ),
+                if (mode == 'CHILD') ...[
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    initialValue: linkType,
+                    isExpanded: true,
+                    decoration: InputDecoration(
+                      labelText: ctx.tr('Parent connection'),
+                    ),
+                    items: const [
+                      DropdownMenuItem(
+                        value: 'PARENT',
+                        child: AppText('Parent'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'ADOPTED',
+                        child: AppText('Adoptive parent'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'STEP',
+                        child: AppText('Stepparent'),
+                      ),
+                    ],
+                    onChanged: (value) => update(() => linkType = value!),
+                  ),
+                ],
+                if (choices().isEmpty)
+                  const AppText(
+                    'No recorded profile fits this generation. Add the missing branch in your tree, then return to this request.',
+                  ),
+                if (error != null)
+                  AppText(
+                    error!,
+                    style: TextStyle(color: Theme.of(ctx).colorScheme.error),
+                  ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const AppText('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                if (anchor == null) {
+                  update(
+                    () => error = 'Choose the verified profile or parent.',
+                  );
+                  return;
+                }
+                Navigator.pop(ctx, {
+                  'connection_mode': mode,
+                  'anchor_id': anchor,
+                  'relationship_type': linkType,
+                });
+              },
+              child: const AppText('Approve'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (selection == null || !mounted) return;
+    await _command({
+      'action': 'review',
+      'request_id': item['id'],
+      'decision': 'APPROVED',
+      ...selection,
+    });
   }
 
   Future<void> _invite() async {
@@ -440,35 +663,22 @@ class _FamilyConnectionsViewState extends State<FamilyConnectionsView>
       else
         _card('Find your family through your roots', [
           const AppText(
-            'Enter a parent and one of their parents. Only families that enable discovery can appear. Names alone do not prove your identity.',
+            'Enter two consecutive ancestors you know. Only families that enable discovery can appear. A suggestion does not prove you are related.',
           ),
           const SizedBox(height: 16),
-          _field(_parent, 'Parent’s full name'),
-          _field(_grandparent, 'Their parent’s full name (your grandparent)'),
-          ExpansionTile(
-            title: const AppText('Parent details (optional)'),
-            children: [
-              DateFormField(
-                controller: _parentBirth,
-                label: 'Parent’s date of birth',
-                enabled: !_busy,
-              ),
-              _field(_parentPlace, 'Parent’s place of birth'),
-            ],
+          AncestorSearchForm(
+            facts: _facts,
+            enabled: !_busy,
+            onChanged: (facts) => setState(() {
+              _facts = facts;
+              _matches = [];
+            }),
           ),
           FilledButton.icon(
             onPressed: _busy
                 ? null
                 : () async {
-                    if (_parent.text.trim().isEmpty ||
-                        _grandparent.text.trim().isEmpty) {
-                      setState(() => _error = 'Enter both full names.');
-                      _revealError();
-                      return;
-                    }
-                    final dateError = DateFormField.validateDate(
-                      _parentBirth.text,
-                    );
+                    final dateError = AncestorSearchForm.validate(_facts);
                     if (dateError != null) {
                       setState(() => _error = dateError);
                       _revealError();
@@ -476,12 +686,7 @@ class _FamilyConnectionsViewState extends State<FamilyConnectionsView>
                     }
                     final result = await _command({
                       'action': 'matches',
-                      'parent_name': _parent.text.trim(),
-                      'grandparent_name': _grandparent.text.trim(),
-                      if (_parentBirth.text.trim().isNotEmpty)
-                        'parent_birth_date': _parentBirth.text.trim(),
-                      if (_parentPlace.text.trim().isNotEmpty)
-                        'parent_birth_place': _parentPlace.text.trim(),
+                      ...AncestorSearchForm.payload(_facts),
                     }, reload: false);
                     if (result != null && mounted) {
                       setState(() => _matches = result['matches'] as List);
@@ -489,7 +694,7 @@ class _FamilyConnectionsViewState extends State<FamilyConnectionsView>
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: AppText(
-                              'No close enough match. Ask your family for an invitation.',
+                              'No matching discoverable family found. This does not rule out a connection. Try another branch or ask for an invitation.',
                             ),
                           ),
                         );
@@ -512,6 +717,25 @@ class _FamilyConnectionsViewState extends State<FamilyConnectionsView>
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
                   AppText(match['reason'] as String),
+                  AppText(
+                    match['evidence_level'] == 'CORROBORATED'
+                        ? 'Birth details also match. The family still needs to confirm your connection.'
+                        : 'Names and a recorded link match. No birth details have been corroborated.',
+                  ),
+                  AppText(switch (match['relationship_type']) {
+                    'ADOPTED' => 'Recorded connection: adoption',
+                    'STEP' => 'Recorded connection: stepfamily',
+                    _ => 'Recorded connection: parent and child',
+                  }),
+                  TextButton(
+                    onPressed: _busy
+                        ? null
+                        : () => _join(
+                            candidate: match['candidate'] as String,
+                            inquire: true,
+                          ),
+                    child: const AppText('Ask if we are related'),
+                  ),
                   TextButton(
                     onPressed: _busy
                         ? null
@@ -591,14 +815,39 @@ class _FamilyConnectionsViewState extends State<FamilyConnectionsView>
       if (_owner) ...[
         Text('${item['person']['first_name']} ${item['person']['last_name']}'),
         AppText(
-          '${item['mode'] == 'EXISTING' ? 'Profile to confirm' : 'Child to connect'} : ${item['anchor_name'] ?? 'Deleted profile'}',
+          '${item['mode'] == 'EXISTING'
+              ? 'Profile to confirm'
+              : item['mode'] == 'INQUIRY'
+              ? 'Ancestor to investigate'
+              : 'Child to connect'} : ${item['anchor_name'] ?? 'Deleted profile'}',
         ),
         if (item['person']['date_of_birth'] != null)
           AppText('Birth: ${item['person']['date_of_birth']}'),
-        if ((item['evidence'] as Map? ?? {}).isNotEmpty)
+        if ((item['evidence'] as Map? ?? {})['path_parent_id'] != null)
           AppText(
-            'Reported parent: ${item['evidence']['parent_name']}\nReported grandparent: ${item['evidence']['grandparent_name']}',
+            'Younger ancestor: ${item['evidence']['parent_name']}\nOlder ancestor: ${item['evidence']['grandparent_name']}',
           ),
+        if ((item['evidence'] as Map? ?? {})['path_parent_id'] != null)
+          for (final key in [
+            'parent_birth_place',
+            'parent_birth_date',
+            'grandparent_birth_place',
+            'grandparent_birth_date',
+          ])
+            if (item['evidence'][key] != null && item['evidence'][key] != '')
+              Text(
+                '${context.tr(key.startsWith('parent_') ? 'Younger ancestor' : 'Older ancestor')} · ${context.tr(key.endsWith('place') ? 'Place of birth' : 'Date of birth')}: ${item['evidence'][key]}',
+              ),
+      ],
+      if ((item['message'] as String? ?? '').isNotEmpty) ...[
+        const AppText('Message'),
+        Text(item['message'] as String),
+        const SizedBox(height: 12),
+      ],
+      if ((item['owner_response'] as String? ?? '').isNotEmpty) ...[
+        const AppText('Family owner’s reply'),
+        Text(item['owner_response'] as String),
+        const SizedBox(height: 12),
       ],
       if (item['status'] == 'PENDING')
         Wrap(
@@ -609,6 +858,10 @@ class _FamilyConnectionsViewState extends State<FamilyConnectionsView>
                     onPressed: _busy
                         ? null
                         : () async {
+                            if (item['mode'] == 'INQUIRY') {
+                              await _reviewInquiry(item);
+                              return;
+                            }
                             if (await _confirm(
                               'Confirm this member?',
                               'Check their identity and family relationship. The account will be able to view the whole family tree, including its profiles, portraits and stories. It will not be able to edit. An existing profile will be kept.',
@@ -621,6 +874,24 @@ class _FamilyConnectionsViewState extends State<FamilyConnectionsView>
                             }
                           },
                     child: const AppText('Approve'),
+                  ),
+                  TextButton(
+                    onPressed: _busy
+                        ? null
+                        : () async {
+                            final reply = await _messageDialog(
+                              'Reply to this request',
+                              'Your reply is visible to this applicant. Sending a reply does not grant access to the family tree.',
+                              requiredMessage: true,
+                            );
+                            if (reply == null || !mounted) return;
+                            await _command({
+                              'action': 'reply',
+                              'request_id': item['id'],
+                              'message': reply,
+                            });
+                          },
+                    child: const AppText('Reply'),
                   ),
                   TextButton(
                     onPressed: _busy
@@ -792,7 +1063,7 @@ class _FamilyConnectionsViewState extends State<FamilyConnectionsView>
             contentPadding: EdgeInsets.zero,
             title: const AppText('Allow family suggestions'),
             subtitle: const AppText(
-              'This family’s name can be suggested when a parent / grandparent path matches. Profiles remain private and you approve each request.',
+              'This family’s name can be suggested when linked ancestors match. Profiles remain private and you approve each request.',
             ),
             value: _data['discovery_enabled'] == true,
             onChanged: _busy
@@ -801,7 +1072,7 @@ class _FamilyConnectionsViewState extends State<FamilyConnectionsView>
                     if (!v ||
                         await _confirm(
                           'Enable family suggestions?',
-                          'Your family’s name will be visible to people with matching ancestors. Private details will not be shown.',
+                          'People with matching ancestors can see your family’s name and which of their supplied birth details agree with your records. Profiles stay private until you approve access.',
                         )) {
                       await _command({'action': 'discovery', 'enabled': v});
                     }

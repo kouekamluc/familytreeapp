@@ -5,10 +5,12 @@ import 'package:integration_test/integration_test.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_frontend/config/royal_theme.dart';
 import 'package:flutter_frontend/providers/tree_provider.dart';
+import 'package:flutter_frontend/providers/auth_provider.dart';
 import 'package:flutter_frontend/services/api_service.dart';
 import 'package:flutter_frontend/services/local_storage_service.dart';
 import 'package:flutter_frontend/views/family_connections_view.dart';
 import 'package:flutter_frontend/views/tree/tree_view.dart';
+import 'package:flutter_frontend/widgets/tree_manager_sheet.dart';
 
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -72,6 +74,7 @@ void main() {
         providers: [
           ChangeNotifierProvider<ApiService>.value(value: api),
           ChangeNotifierProvider<TreeProvider>.value(value: tree),
+          ChangeNotifierProvider(create: (_) => AuthProvider(api)),
         ],
         child: MaterialApp(
           navigatorKey: root,
@@ -240,14 +243,143 @@ void main() {
       await waitFor(find.text('Joining test family $suffix'));
       expect(find.text('Joining test family $suffix'), findsOneWidget);
       await tap('Request confirmation');
+      await tap('Send request');
       await waitFor(find.text('Awaiting confirmation'));
       expect(find.text('Awaiting confirmation'), findsOneWidget);
       await tree.loadData();
       expect(tree.trees, isEmpty);
       expect(tester.takeException(), isNull);
+
+      final searchAccount = (await LocalStorageService().getSavedAccounts())
+          .firstWhere((a) => a.userId == api.currentUser!.id);
+      final oldPending = (await api.getFamilyAccess())!['requests'][0];
+      expect(
+        await api.familyAccess({
+          'action': 'cancel',
+          'request_id': oldPending['id'],
+        }),
+        isNotNull,
+      );
+      await tester.pumpWidget(const SizedBox());
+      expect(await api.switchToAccount(ownerAccount), isTrue);
+      await tree.loadData(targetTreeId: family.id);
+      final great = await tree.createRelative(
+        sourcePersonId: gp.id,
+        role: 'parent',
+        personData: {
+          'first_name': 'Samuel$suffix',
+          'last_name': 'Family',
+          'gender': 'O',
+          'birth_place': 'Bafoussam',
+          'date_of_birth': '1900-01-01',
+        },
+      );
+      expect(great, isNotNull);
+      expect(await api.switchToAccount(searchAccount), isTrue);
+      await tree.loadData();
+      await tester.pumpWidget(app());
+      root.currentState!.push(
+        MaterialPageRoute<void>(
+          builder: (_) => const Scaffold(body: TreeManagerSheet()),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tap('Create a family tree');
+      await enter('Family name *', 'A duplicate branch $suffix');
+      await tap('I know two consecutive ancestors');
+      await enter('Grandparent’s full name', 'Mariam$suffix Family');
+      await enter(
+        'Their parent’s full name (your great-grandparent)',
+        'Samuel$suffix Family',
+      );
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tap('Save');
+      await waitFor(find.text('This family may already exist'));
+      expect(tree.trees, isEmpty);
+      await binding.takeScreenshot('phone-existing-family-warning');
+      await tap('Explore these connections');
+      await tap('Ask if we are related');
+      await enter('Message', 'My grandmother may be from this branch.');
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tap('Send request');
+      await waitFor(find.text('Awaiting confirmation'));
+      final inquiry = (await api.getFamilyAccess())!['requests'][0];
+      expect(inquiry['mode'], 'INQUIRY');
+      expect(tree.trees, isEmpty);
+
+      await tester.pumpWidget(const SizedBox());
+      expect(await api.switchToAccount(ownerAccount), isTrue);
+      await tree.loadData(targetTreeId: family.id);
+      expect((await api.getFamilyAccess())!['pending_reviews'], 1);
+      await screen(treeId: family.id);
+      await tap('Reply');
+      await enter('Message', 'We have confirmed your recorded parent Paul.');
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tap('Send reply');
+      await tester.pumpWidget(const SizedBox());
+      expect(await api.switchToAccount(searchAccount), isTrue);
+      await tree.loadData();
+      await screen();
+      expect(
+        find.text('We have confirmed your recorded parent Paul.'),
+        findsOneWidget,
+      );
+      expect(tree.trees, isEmpty);
+
+      await tester.pumpWidget(const SizedBox());
+      expect(await api.switchToAccount(ownerAccount), isTrue);
+      await tree.loadData(targetTreeId: family.id);
+      await screen(treeId: family.id);
+      await tap('Approve');
+      final connectionMode = find
+          .descendant(
+            of: find.byType(AlertDialog),
+            matching: find.byType(DropdownButtonFormField<String>),
+          )
+          .first;
+      await tester.ensureVisible(connectionMode);
+      await tester.tap(connectionMode);
+      await tester.pumpAndSettle();
+      await tap('Child of a member');
+      final actualParent = find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.byType(DropdownButtonFormField<int>),
+      );
+      await tester.ensureVisible(actualParent);
+      await tester.tap(actualParent);
+      await tester.pumpAndSettle();
+      await tap('Paul$suffix Family');
+      await tap('Approve');
+      await waitFor(find.text('Accepted'));
+      await tester.pumpWidget(const SizedBox());
+      expect(await api.switchToAccount(searchAccount), isTrue);
+      await tree.loadData();
+      await screen();
+      await tap('Open my family');
+      final joined = tree.people.singleWhere(
+        (p) => p.fullName == 'Other Family',
+      );
+      expect(
+        tree.relationships.any(
+          (r) =>
+              r.isParent &&
+              r.person1Id == parent.id &&
+              r.person2Id == joined.id,
+        ),
+        isTrue,
+      );
+      expect(
+        tree.relationships.any(
+          (r) => r.isParent && r.person1Id == gp.id && r.person2Id == joined.id,
+        ),
+        isFalse,
+      );
+      expect(tree.canEditSelectedTree, isFalse);
+      expect(tester.takeException(), isNull);
+      await binding.takeScreenshot('phone-extended-family-joined');
       await api.logout();
       debugPrint(
-        'NATIVE JOINING PASSED: invitation UI, owner review, existing profile reuse, viewer enforcement, ancestry suggestion UI and pending privacy.',
+        'NATIVE JOINING PASSED: invitation UI, owner review, existing profile reuse, viewer enforcement, ancestry suggestions, duplicate-tree warning, grandparent inquiry, owner notification and reply, verified parent placement and pending privacy.',
       );
     },
   );
